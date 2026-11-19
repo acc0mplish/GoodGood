@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use crate::settings::{SettingsStore, UpdateChannel, UpdateRoute};
 
 /// The release repository: every manifest and installer comes from its Releases.
-pub(crate) const REPO: &str = "https://github.com/Ray-lea/GoodGood";
+pub(crate) const REPO: &str = "https://github.com/acc0mplish/GoodGood";
 /// Public GitHub proxies that served release downloads byte for byte when
 /// they were picked (2026-10). They come and go; users can enter their own.
 pub use goodgood_app::config::PROXY_PRESETS;

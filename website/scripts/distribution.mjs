@@ -59,13 +59,13 @@ export async function writeDistribution(root, dir, release) {
   await put(dir.www, "_redirects", "/* https://goodgoodtask.com/:splat 301\n");
 
   // Generate submission drafts outside the hosted assets. Package managers use immutable upstream URLs.
-  const id = "Ray-lea.GoodGood",
+  const id = "acc0mplish.GoodGood",
     schema = "1.10.0",
     common = `PackageIdentifier: ${id}\nPackageVersion: ${JSON.stringify(version)}\n`;
   const yaml = (type) =>
     `# yaml-language-server: $schema=https://aka.ms/winget-manifest.${type}.${schema}.schema.json\n\n` +
     common;
-  const winget = `winget/manifests/r/Ray-lea/GoodGood/${version}/`;
+  const winget = `winget/manifests/a/acc0mplish/GoodGood/${version}/`;
   await put(
     dir.packages,
     winget + id + ".yaml",
@@ -82,7 +82,7 @@ export async function writeDistribution(root, dir, release) {
     dir.packages,
     winget + id + ".locale.en-US.yaml",
     yaml("defaultLocale") +
-      `PackageLocale: en-US\nPublisher: GoodGood contributors\nPackageName: GoodGood\nPackageUrl: ${origin}/en/\nLicense: AGPL-3.0-or-later\nLicenseUrl: ${repo}/blob/${tag}/LICENSE\nShortDescription: A Windows task manager for processes, hardware and resource history.\nReleaseNotesUrl: ${repo}/releases/tag/${tag}\nManifestType: defaultLocale\nManifestVersion: ${schema}\n`,
+      `PackageLocale: en-US\nPublisher: GoodGood contributors\nPackageName: GoodGood\nPackageUrl: ${origin}/en/\nLicense: Apache-2.0\nLicenseUrl: ${repo}/blob/${tag}/LICENSE\nShortDescription: A Windows task manager for processes, hardware and resource history.\nReleaseNotesUrl: ${repo}/releases/tag/${tag}\nManifestType: defaultLocale\nManifestVersion: ${schema}\n`,
   );
   await put(
     dir.packages,
@@ -93,7 +93,7 @@ export async function writeDistribution(root, dir, release) {
         description:
           "Windows task manager for processes, hardware and resource history",
         homepage: origin,
-        license: "AGPL-3.0-or-later",
+        license: "Apache-2.0",
         architecture: {
           "64bit": {
             url: files.portable.upstream + "#/goodgood.exe",

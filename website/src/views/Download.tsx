@@ -126,7 +126,7 @@ export function Download({ lang }: { lang: Language }) {
             </li>
             <li>
               <Icon name="scale" size={15} />
-              AGPL-3.0
+              Apache-2.0
             </li>
           </ul>
         </header>

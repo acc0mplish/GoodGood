@@ -20,7 +20,7 @@
 
 | 주소 | 상수 | 연결된 것 | 용도 |
 |---|---|---|---|
-| `https://github.com/Ray-lea/GoodGood` | `REPO` | `updater.rs` 전체, `commands.rs` `open_repository()` / `project_page()`, `frontend/pages/about.rs` (저장소 카드) | GitHub 릴리스 매니페스트·설치 파일 다운로드, Releases/Issues/Discussions 링크, 정보 페이지 저장소 카드 |
+| `https://github.com/acc0mplish/GoodGood` | `REPO` | `updater.rs` 전체, `commands.rs` `open_repository()` / `project_page()`, `frontend/pages/about.rs` (저장소 카드) | GitHub 릴리스 매니페스트·설치 파일 다운로드, Releases/Issues/Discussions 링크, 정보 페이지 저장소 카드 |
 | ~~`https://update.goodgoodtask.com`~~ | ~~`OFFICIAL_FEEDS`~~ | 제거됨: 업데이터는 GitHub Releases에서만 매니페스트를 읽습니다. 주소는 웹사이트 배포(`website/scripts/release.mjs` `feedOrigin`)에만 남아 있습니다. | — |
 | ~~`https://dl.goodgoodtask.com`~~ | ~~`OFFICIAL_DOWNLOADS`~~ | 제거됨: 애플리케이션은 `{REPO}/releases/download/v{version}/…`에서만 받습니다. 주소는 웹사이트 다운로드 페이지(`downloadOrigin`)에만 남아 있습니다. | — |
 
@@ -50,10 +50,10 @@
 
 | 주소·식별자 | 위치 | 연결된 것 | 용도 |
 |---|---|---|---|
-| `Ray-lea.GoodGood` | `website/scripts/distribution.mjs:62` | winget 매니페스트 생성 | `winget/manifests/r/Ray-lea/GoodGood/{version}/` 경로 |
+| `acc0mplish.GoodGood` | `website/scripts/distribution.mjs:62` | winget 매니페스트 생성 | `winget/manifests/a/acc0mplish/GoodGood/{version}/` 경로 |
 | `https://goodgoodtask.com/download/` | `website/scripts/distribution.mjs:22` | `dl` Worker `_redirects` | 루트 → 다운로드 페이지 302 |
 | `https://goodgoodtask.com/:splat` | `website/scripts/distribution.mjs:59` | `www` Worker `_redirects` | `www` → 본도메인 301 |
-| `https://api.github.com/repos/Ray-lea/GoodGood/releases/latest` | `scripts/publish-beta.mjs:51` | GitHub API 호출 | 베타 릴리스 조회 |
+| `https://api.github.com/repos/acc0mplish/GoodGood/releases/latest` | `scripts/publish-beta.mjs:51` | GitHub API 호출 | 베타 릴리스 조회 |
 | `https://app.signpath.io/Api/v1/...` | `scripts/signpath-preflight.mjs:14` | `SIGNPATH_ORGANIZATION_ID` 환경변수 | 코드 서명 서비스 API |
 | `goodgoodtask-website-production` | `.github/workflows/website.yml:14` | concurrency 그룹 | 배포 동시성 제어 |
 
@@ -69,12 +69,12 @@
 
 | 주소 | 위치 | 용도 |
 |---|---|---|
-| `https://img.shields.io/github/v/release/Ray-lea/GoodGood` | 각 `README*.md` | 최신 릴리스 배지 |
-| `https://img.shields.io/github/downloads/Ray-lea/GoodGood/total` | 각 `README*.md` | 다운로드 수 배지 |
-| `https://github.com/Ray-lea/GoodGood/discussions/categories/q-a` | `.github/ISSUE_TEMPLATE/config.yml`, `.github/CONTRIBUTING.md` | Q&A 토론 |
-| `https://github.com/Ray-lea/GoodGood/security/advisories/new` | `.github/ISSUE_TEMPLATE/config.yml`, `.github/SECURITY.md` | 비공개 취약점 신고 |
-| `https://github.com/Ray-lea/GoodGood/security/policy` | `.github/ISSUE_TEMPLATE/bug_report.yml` | 보안 정책 |
-| `https://github.com/Ray-lea/GoodGood/blob/main/README.md#code-signing-policy` | `.github/workflows/release.yml:176` | 서명 정책 링크 |
+| `https://img.shields.io/github/v/release/acc0mplish/GoodGood` | 각 `README*.md` | 최신 릴리스 배지 |
+| `https://img.shields.io/github/downloads/acc0mplish/GoodGood/total` | 각 `README*.md` | 다운로드 수 배지 |
+| `https://github.com/acc0mplish/GoodGood/discussions/categories/q-a` | `.github/ISSUE_TEMPLATE/config.yml`, `.github/CONTRIBUTING.md` | Q&A 토론 |
+| `https://github.com/acc0mplish/GoodGood/security/advisories/new` | `.github/ISSUE_TEMPLATE/config.yml`, `.github/SECURITY.md` | 비공개 취약점 신고 |
+| `https://github.com/acc0mplish/GoodGood/security/policy` | `.github/ISSUE_TEMPLATE/bug_report.yml` | 보안 정책 |
+| `https://github.com/acc0mplish/GoodGood/blob/main/README.md#code-signing-policy` | `.github/workflows/release.yml:176` | 서명 정책 링크 |
 | `https://goodgoodtask.com/docs/guide/` | `.github/ISSUE_TEMPLATE/config.yml` | 사용 안내 |
 
 ---
@@ -84,7 +84,7 @@
 | 주소 | 위치 | 연결된 것 | 용도 |
 |---|---|---|---|
 | `https://goodgoodtask.com/` | `website/src/components/replica/Pages.tsx:1522` | 정보 페이지 목업 | 목업의 홈페이지 카드 |
-| `https://github.com/Ray-lea/GoodGood` | `website/src/components/replica/Pages.tsx:1534` | 정보 페이지 목업 | 목업의 저장소 카드 |
+| `https://github.com/acc0mplish/GoodGood` | `website/src/components/replica/Pages.tsx:1534` | 정보 페이지 목업 | 목업의 저장소 카드 |
 | `.../issues/new/choose`, `.../discussions`, `.../releases` | `Pages.tsx:1543-1545` | 목업 버튼 | 목업의 저장소 하위 페이지 |
 | `https://github.com/bronyaicu` 외 | `website/src/data/supporters.json` | 후원자 목록 | 후원자 프로필 링크 |
 | `goodgoodtask.com`, `www`, `dl.`, `update.` | `docs/development/website.md` (문서) | Cloudflare Workers 4개 | 배포 설명 |
@@ -129,13 +129,13 @@
 
 | 삭제 대상 | 영향 | 처리 |
 |---|---|---|
-| `REPO` (`github.com/Ray-lea/GoodGood`) | 업데이트 기능 전체가 이 주소를 씁니다 | **유지** — 업데이터의 유일한 소스입니다 |
+| `REPO` (`github.com/acc0mplish/GoodGood`) | 업데이트 기능 전체가 이 주소를 씁니다 | **유지** — 업데이터의 유일한 소스입니다 |
 | `OFFICIAL_FEEDS` / `OFFICIAL_DOWNLOADS` | 공식 미러 경로 | **제거** — `ReleaseSource`는 `GitHub`과 `Proxy(String)`만 가집니다 |
 | `PROXY_PRESETS` 3개 | 프록시 경로 | **유지** — 설정 ▸ 다운로드 소스에서 계속 씁니다 |
 | `community.url` / `channel` / `group` | 정보 페이지 QQ·Telegram 카드 | **제거** — 카드, 명령, 지역화 키를 함께 지웠습니다 |
 | `homepage` (`goodgoodtask.com`) | 정보 페이지 홈페이지 카드, 설치 안내 링크 | **유지** — 웹사이트가 계속 운영됩니다 |
 | 이메일 2개 | 사이트 문의·보안 신고 경로 | **자리 표시자로 교체** — `contact@example.com`, `security@example.com` |
-| `Ray-lea.GoodGood` (winget) | winget 배포 경로 | **유지** |
+| `acc0mplish.GoodGood` (winget) | winget 배포 경로 | **유지** |
 | shields.io 배지 | README 배지 | **유지** — QQ·Telegram 배지만 삭제 |
 | `.github/` 디렉터리 | 워크플로, 이슈 템플릿, 기여·보안 문서 | **삭제** — 릴리스 워크플로도 함께 사라졌으므로 `docs/development/release.md`의 CI 서술은 수동 절차로 읽어야 합니다 |
 

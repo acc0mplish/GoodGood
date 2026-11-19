@@ -480,7 +480,7 @@ impl Desktop {
             "note" => (label("common.marks.note"), name.clone(), None),
             "update" => (String::new(), String::new(), None),
             "license" => (
-                "GNU Affero General Public License".into(),
+                "Apache License 2.0".into(),
                 include_str!("../../../LICENSE").into(),
                 None,
             ),

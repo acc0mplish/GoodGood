@@ -12,13 +12,10 @@
 
 [公式サイト](https://goodgoodtask.com/ja/)では、インストールせずにブラウザー上で画面を操作し、機能ガイドを体験できます。
 
-[![最新バージョン](https://img.shields.io/github/v/release/Ray-lea/GoodGood?include_prereleases=&sort=semver&label=%E6%9C%80%E6%96%B0%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3&color=2f80ed)](https://github.com/Ray-lea/GoodGood/releases)
-[![ダウンロード](https://img.shields.io/github/downloads/Ray-lea/GoodGood/total?label=%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89&color=2ea44f)](https://github.com/Ray-lea/GoodGood/releases)
+[![最新バージョン](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases=&sort=semver&label=%E6%9C%80%E6%96%B0%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![ダウンロード](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![動作環境](https://img.shields.io/static/v1?label=%E5%8B%95%E4%BD%9C%E7%92%B0%E5%A2%83&message=Windows+10+%2F+11+x64&color=0078D4)](#system-requirements)
-[![ライセンス](https://img.shields.io/static/v1?label=%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9&message=AGPL-3.0-or-later&color=A42E2B&logo=gnu&logoColor=white)](LICENSE)
-
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily" alt="Ray-lea/GoodGood | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily?language=Rust" alt="Ray-lea/GoodGood | Trendshift Rust" width="250" height="55"/></a>
+[![ライセンス](https://img.shields.io/static/v1?label=%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9&message=Apache-2.0&color=A42E2B&logo=apache&logoColor=white)](LICENSE)
 
 [機能](#features) · [ダウンロード](#download) · [ソースからのビルド](#build-from-source) · [ショートカット](#keyboard-shortcuts) · [ドキュメント](#documentation)
 
@@ -43,10 +40,10 @@ GoodGood は Rust から Windows のネイティブ API を直接呼び出し、
 
 GoodGood が日常の作業に役立った際は、GitHub で Star を付けていただけると、プロジェクトの支援や認知拡大につながります。
 
-<a href="https://www.star-history.com/#Ray-lea/GoodGood&Date">
+<a href="https://www.star-history.com/#acc0mplish/GoodGood&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date" alt="GoodGood の GitHub Star 数の推移">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date&theme=dark">
+    <img src="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date" alt="GoodGood の GitHub Star 数の推移">
   </picture>
 </a>
 
@@ -90,7 +87,7 @@ GoodGood が日常の作業に役立った際は、GitHub で Star を付けて�
 
 ## 📦 ダウンロード
 
-最新の安定版と SHA-256 チェックサムは、[公式ダウンロード ページ](https://goodgoodtask.com/ja/download/)から取得できます。すべてのバージョンは [GitHub Releases](https://github.com/Ray-lea/GoodGood/releases) にあります。
+最新の安定版と SHA-256 チェックサムは、[公式ダウンロード ページ](https://goodgoodtask.com/ja/download/)から取得できます。すべてのバージョンは [GitHub Releases](https://github.com/acc0mplish/GoodGood/releases) にあります。
 
 | ファイル | 内容 |
 |---|---|
@@ -183,8 +180,6 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 
 テスト署名は導入済みです。現在の正式リリースには Windows Authenticode 署名がありません。正式署名の有効化後は、このリポジトリのソースから GitHub Actions でビルドする GoodGood 本体、タスク マネージャー補助プログラム、アンインストーラー、インストーラーが対象になります。同梱する第三者のプログラムは元の署名を維持します。
 
-- **コードの管理とレビュー**：[@Ray-lea](https://github.com/Ray-lea)。コードの保守と外部からの貢献のレビューを担当します。
-- **署名の承認**：[@Ray-lea](https://github.com/Ray-lea)。正式署名のリクエストを毎回手動で承認します。
 - **プライバシー ポリシー**：[English](PRIVACY.md#english) · [한국어](PRIVACY.md#한국어)。既定で有効な更新確認、プロキシへの切り替え、必要時の PawnIO ダウンロード、任意のフィードバック、第三者によるデータの取り扱いを説明しています。
 
 アプリ内更新では、独立した Minisign リリース キーでインストーラーとバージョン番号を検証します。Windows Authenticode は実行ファイルの署名者を確認するための仕組みです。
@@ -207,28 +202,14 @@ GoodGood は次のオープンソース プロジェクトを利用していま�
 
 第三者コンポーネントとライセンス表記の全一覧は [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) にあります。
 
-[LINUX DO](https://linux.do/) コミュニティの支援に感謝します。
-
 <!-- supporters:start · node scripts/supporters.mjs -->
-<p align="center">
-  <a href="https://github.com/bronyaicu" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/supporters/bronyaicu-ja-dark.svg"><img src="docs/images/supporters/bronyaicu-ja-light.svg" width="720" alt="プロジェクト支援 &amp; スペシャルサンクス：bronyaicu"></picture></a>
-</p>
 <!-- supporters:end -->
 
 <a id="license"></a>
 
 ## 📄 ライセンス
 
-GoodGood は、[GNU Affero General Public License](LICENSE) バージョン 3、または任意のそれ以降のバージョン（`AGPL-3.0-or-later`）で公開する自由ソフトウェアです。
-
-<a href="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors?repo_id=1415551131&limit=30" target="_blank" style="display: block" align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=dark" width="655" height="auto">
-    <img alt="Active Contributors of Ray-lea/GoodGood - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=light" width="655" height="auto">
-  </picture>
-</a>
-
-<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+GoodGood は [Apache License 2.0](LICENSE) で公開する自由ソフトウェアです。
 
 <div align="center">
 <br>

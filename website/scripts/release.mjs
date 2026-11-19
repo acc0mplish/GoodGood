@@ -8,7 +8,7 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { setTimeout as delay } from "node:timers/promises";
 
-export const repo = "https://github.com/Ray-lea/GoodGood";
+export const repo = "https://github.com/acc0mplish/GoodGood";
 export const origin = "https://goodgoodtask.com";
 export const downloadOrigin = "https://dl.goodgoodtask.com";
 export const feedOrigin = "https://update.goodgoodtask.com";
@@ -130,7 +130,7 @@ function verify(root, version, path, signature) {
 export async function repositoryStats() {
   const [info, releases] = await Promise.all(
     ["", "/releases?per_page=100"].map(async (path) =>
-      JSON.parse(await smallText("https://api.github.com/repos/Ray-lea/GoodGood" + path)),
+      JSON.parse(await smallText("https://api.github.com/repos/acc0mplish/GoodGood" + path)),
     ),
   );
   const published = releases.filter((r) => !r.draft);
@@ -152,7 +152,7 @@ export async function repositoryStats() {
 export async function buildRelease(root, cache, downloads, feeds) {
   const release = JSON.parse(
     await smallText(
-      "https://api.github.com/repos/Ray-lea/GoodGood/releases/latest",
+      "https://api.github.com/repos/acc0mplish/GoodGood/releases/latest",
     ),
   );
   const tag = release.tag_name;

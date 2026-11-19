@@ -4,50 +4,50 @@
 
 Modifications visibles par les utilisateurs dans chaque version de GoodGood. Les numéros de version suivent la [gestion sémantique de version](https://semver.org/lang/fr/). Ce fichier est traduit du [journal des modifications en coréen](ko-KR.md), auquel il correspond entrée par entrée.
 
-## [0.5.0](https://github.com/Ray-lea/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
+## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 
 v0.5.0 ajoute la suspension et la reprise des processus, le regroupement des processus par utilisateur, quatre colonnes d’informations sur les processus et des largeurs de colonnes calculées selon le contenu. La liste des périphériques de la page Performances permet de masquer et de réordonner les périphériques. L’interface est désormais disponible en espagnol, allemand, japonais, français et russe. Cette version évite aussi le blocage de certains systèmes Intel RST après le démarrage d’GoodGood, corrige notamment l’impossibilité d’éjecter en toute sécurité les disques USB et réduit l’utilisation de la mémoire et du CPU lorsque la fenêtre est masquée.
 
 ### Nouvelles fonctionnalités
 
-- **Suspendre et reprendre des processus**: Les menus des processus et groupes d’applications proposent « Suspendre le processus » et « Reprendre le processus ». GoodGood bloque la suspension des processus système critiques, du Gestionnaire de fenêtres du Bureau et de lui-même, et demande confirmation pour les autres. Les processus suspendus portent « Suspendu » après leur nom. ([@digital-bombyx](https://github.com/digital-bombyx) [#65](https://github.com/Ray-lea/GoodGood/pull/65))
-- **Colonnes d’informations sur les processus**: Quatre colonnes facultatives sont ajoutées : « Version du fichier », « Architecture », « Élevé » et « Ligne de commande ». Elles sont masquées par défaut. Vous pouvez les activer dans le menu contextuel des en-têtes de colonnes ou dans « Choisir les colonnes ». ([@digital-bombyx](https://github.com/digital-bombyx) [#72](https://github.com/Ray-lea/GoodGood/pull/72))
+- **Suspendre et reprendre des processus**: Les menus des processus et groupes d’applications proposent « Suspendre le processus » et « Reprendre le processus ». GoodGood bloque la suspension des processus système critiques, du Gestionnaire de fenêtres du Bureau et de lui-même, et demande confirmation pour les autres. Les processus suspendus portent « Suspendu » après leur nom. ([@digital-bombyx](https://github.com/digital-bombyx) [#65](https://github.com/acc0mplish/GoodGood/pull/65))
+- **Colonnes d’informations sur les processus**: Quatre colonnes facultatives sont ajoutées : « Version du fichier », « Architecture », « Élevé » et « Ligne de commande ». Elles sont masquées par défaut. Vous pouvez les activer dans le menu contextuel des en-têtes de colonnes ou dans « Choisir les colonnes ». ([@digital-bombyx](https://github.com/digital-bombyx) [#72](https://github.com/acc0mplish/GoodGood/pull/72))
 - **Largeur des colonnes de processus**: La largeur automatique suit le contenu et laisse l’espace libre à droite. Faites glisser la bordure d’une colonne pour régler sa largeur ou double-cliquez pour rétablir la largeur automatique. La nouvelle option « Pleine largeur » attribue l’espace restant à la colonne « Nom ».
 - **Grouper les processus par utilisateur**: « Paramètres → Langue et apparence → Grouper les processus par utilisateur » propose trois modes : « Automatique », « Toujours grouper » et « Ne jamais grouper ». Le mode automatique groupe les processus uniquement lorsque plusieurs utilisateurs sont connectés. Le menu contextuel des lignes de groupe propose « Gérer les comptes d’utilisateurs » et « Fermer la session ».
-- **Masquer les processus système**: Processus et Connexions proposent « Masquer les processus système », désactivé par défaut. Chaque page enregistre séparément l’état de ce commutateur. Les listes « Toujours afficher » et « Masquer également » se modifient dans Paramètres. ([#32](https://github.com/Ray-lea/GoodGood/issues/32))
+- **Masquer les processus système**: Processus et Connexions proposent « Masquer les processus système », désactivé par défaut. Chaque page enregistre séparément l’état de ce commutateur. Les listes « Toujours afficher » et « Masquer également » se modifient dans Paramètres. ([#32](https://github.com/acc0mplish/GoodGood/issues/32))
 - **Arborescence des processus et vue d’ensemble des ressources**: L’arborescence des processus est réduite par défaut ; le menu des en-têtes propose « Tout développer » et « Tout réduire ». « Vue d’ensemble des ressources » offre « Automatique », « Toujours afficher » et « Masquée ». Le mode automatique replie la vue si la fenêtre manque de hauteur.
 - **Liste des périphériques de la page Performances**: Masquez un périphérique par clic droit ou sélectionnez-le dans « Périphériques affichés ». Faites-le glisser pour modifier l’ordre. Les disques se trient par numéro, lettre de lecteur ou ordre personnalisé.
 - **Vue multicœur du CPU**: Chaque graphique de processeur logique affiche le temps du noyau, désactivable dans le menu du graphique CPU. GoodGood distingue les cœurs d’efficacité basse consommation d’Intel (cœurs LP E) par une couleur et un filtre propres. Les graphiques forment de préférence des lignes et des colonnes complètes.
 - **Informations matérielles**: La page GPU affiche la version du pilote, sa date et la version de DirectX, avec le niveau de fonctionnalité. Les détails du disque prennent en charge la durée de vie restante et le volume total lu et écrit de davantage de SSD SATA. Les statistiques HDD comprennent les heures de fonctionnement, les cycles de démarrage et d’arrêt, les secteurs réalloués et les secteurs en attente.
-- **Langues de l’interface**: Les langues suivantes sont ajoutées : espagnol, allemand, japonais, français et russe. L’interface, la zone de notification, les messages système et le programme d’installation sont traduits. Les nombres et les dates utilisent le format régional de Windows. ([@abc0922001](https://github.com/abc0922001) [#45](https://github.com/Ray-lea/GoodGood/pull/45), [@Rimuwu](https://github.com/Rimuwu) [#51](https://github.com/Ray-lea/GoodGood/pull/51), [@s0ftw4r8](https://github.com/s0ftw4r8) [#52](https://github.com/Ray-lea/GoodGood/pull/52), [@khativari](https://github.com/khativari) [#55](https://github.com/Ray-lea/GoodGood/pull/55), [@hayxe1](https://github.com/hayxe1) [#62](https://github.com/Ray-lea/GoodGood/pull/62))
+- **Langues de l’interface**: Les langues suivantes sont ajoutées : espagnol, allemand, japonais, français et russe. L’interface, la zone de notification, les messages système et le programme d’installation sont traduits. Les nombres et les dates utilisent le format régional de Windows. ([@abc0922001](https://github.com/abc0922001) [#45](https://github.com/acc0mplish/GoodGood/pull/45), [@Rimuwu](https://github.com/Rimuwu) [#51](https://github.com/acc0mplish/GoodGood/pull/51), [@s0ftw4r8](https://github.com/s0ftw4r8) [#52](https://github.com/acc0mplish/GoodGood/pull/52), [@khativari](https://github.com/khativari) [#55](https://github.com/acc0mplish/GoodGood/pull/55), [@hayxe1](https://github.com/hayxe1) [#62](https://github.com/acc0mplish/GoodGood/pull/62))
 - **Nouveautés**: La page « À propos » et la boîte de dialogue de mise à jour affichent les nouveautés dans la langue de l’interface. Dans « Paramètres → Mises à jour », « Voir les nouveautés » ouvre le dialogue avec « Tout développer » et « Tout réduire ». Les transitions à l’ouverture, au développement et au survol suivent « Animations de l’interface ».
 - **Icônes et animations**: Les icônes de l’interface proviennent désormais de la bibliothèque Lucide. Lorsque le pointeur passe sur un bouton ou un élément de navigation, son icône joue une courte animation une seule fois. L’animation n’est pas jouée lorsque l’option « Animations de l’interface » est désactivée.
-- **Fenêtre et zone de notification**: Un commutateur distinct « Transitions de fenêtres » est ajouté. « Réouverture depuis la zone de notification » permet de choisir « Ouvrir la page par défaut ». La taille par défaut passe à 1000×680 et la taille minimale à 640×480. ([#27](https://github.com/Ray-lea/GoodGood/issues/27), [#40](https://github.com/Ray-lea/GoodGood/issues/40))
+- **Fenêtre et zone de notification**: Un commutateur distinct « Transitions de fenêtres » est ajouté. « Réouverture depuis la zone de notification » permet de choisir « Ouvrir la page par défaut ». La taille par défaut passe à 1000×680 et la taille minimale à 640×480. ([#27](https://github.com/acc0mplish/GoodGood/issues/27), [#40](https://github.com/acc0mplish/GoodGood/issues/40))
 - **Remplacement du Gestionnaire des tâches**: « Remplacer le Gestionnaire des tâches » ajoute le bouton « Ouvrir temporairement le Gestionnaire des tâches Windows ». Ce bouton ouvre le Gestionnaire des tâches intégré à Windows. Les paramètres de remplacement ne changent pas.
 - **Avis et rappels**: La version portable explique ses différences avec la version installée et propose des liens de téléchargement dans le guide de démarrage et en bas à droite de la fenêtre. Le nouveau « Rappel d’étoile » apparaît au maximum une fois par jour et se désactive dans « Paramètres → Mises à jour ». Les astuces au-dessus de « Ce PC » peuvent être réduites.
 
 ### Performances
 
-- **Utilisation de la mémoire en arrière-plan**: Le nouveau paramètre « Libérer la mémoire lorsque la fenêtre est masquée » libère les images des graphiques et rend la mémoire inutilisée à Windows après la durée définie avec la fenêtre réduite ou masquée dans la zone de notification (10 minutes par défaut). Lorsque toutes les fenêtres sont masquées ou réduites, l’utilisation du CPU liée à l’interface diminue. La collecte, l’enregistrement de l’historique et les règles restent actifs. ([@SpookySandwich](https://github.com/SpookySandwich) [#54](https://github.com/Ray-lea/GoodGood/pull/54))
+- **Utilisation de la mémoire en arrière-plan**: Le nouveau paramètre « Libérer la mémoire lorsque la fenêtre est masquée » libère les images des graphiques et rend la mémoire inutilisée à Windows après la durée définie avec la fenêtre réduite ou masquée dans la zone de notification (10 minutes par défaut). Lorsque toutes les fenêtres sont masquées ou réduites, l’utilisation du CPU liée à l’interface diminue. La collecte, l’enregistrement de l’historique et les règles restent actifs. ([@SpookySandwich](https://github.com/SpookySandwich) [#54](https://github.com/acc0mplish/GoodGood/pull/54))
 
 ### Corrections
 
-- **Blocage du système**: GoodGood ne lit plus la température des disques connectés à un contrôleur RAID, comme Intel RST. Certaines versions du pilote ne répondaient pas à cette requête, et le système se bloquait quelques secondes après le démarrage d’GoodGood. La température de ces disques s’affiche comme inconnue. ([#48](https://github.com/Ray-lea/GoodGood/issues/48))
-- **Éjection sécurisée des disques USB**: La surveillance des disques n’occupe plus les périphériques en permanence. Les disques USB peuvent être éjectés en toute sécurité. ([#57](https://github.com/Ray-lea/GoodGood/issues/57))
+- **Blocage du système**: GoodGood ne lit plus la température des disques connectés à un contrôleur RAID, comme Intel RST. Certaines versions du pilote ne répondaient pas à cette requête, et le système se bloquait quelques secondes après le démarrage d’GoodGood. La température de ces disques s’affiche comme inconnue. ([#48](https://github.com/acc0mplish/GoodGood/issues/48))
+- **Éjection sécurisée des disques USB**: La surveillance des disques n’occupe plus les périphériques en permanence. Les disques USB peuvent être éjectés en toute sécurité. ([#57](https://github.com/acc0mplish/GoodGood/issues/57))
 - **Liste des disques et données de performances**: Certains disques NVMe affichaient uniquement les informations du périphérique, sans données de performances. Les disques disparaissaient aussi de la liste lorsque les compteurs de performances n’étaient pas disponibles. Ces deux problèmes sont corrigés.
 - **Détails du disque**: Le tableau SMART rapproche les valeurs des noms d’attributs et évite les grands espaces entre groupes. Les valeurs brutes tiennent dans les fenêtres étroites. Les barres de santé utilisent le vert pour les valeurs normales et des couleurs d’avertissement selon les seuils de température et de capacité de réserve.
-- **Données des processus**: Lorsque les requêtes système sont lentes, GoodGood actualise la liste des processus et conserve les dernières mesures valides des ressources. Les processus terminés ne restent plus dans la liste. Les actions sur les processus actualisent leur état affiché même lorsque l’actualisation est suspendue. ([#66](https://github.com/Ray-lea/GoodGood/issues/66))
+- **Données des processus**: Lorsque les requêtes système sont lentes, GoodGood actualise la liste des processus et conserve les dernières mesures valides des ressources. Les processus terminés ne restent plus dans la liste. Les actions sur les processus actualisent leur état affiché même lorsque l’actualisation est suspendue. ([#66](https://github.com/acc0mplish/GoodGood/issues/66))
 - **Tableau des processus**: Les indicateurs du mode d’efficacité et d’épinglage suivent le nom. Les en-têtes sont alignés sur les colonnes de données. Les valeurs d’utilisation des processus incluent le signe de pourcentage.
 - **Page Connexions**: Les connexions sans processus associé s’affichent désormais comme « Aucun processus associé ».
-- **Mesures du CPU**: Les processeurs à architecture hybride affichent désormais la bonne vitesse. Certains processeurs Ryzen à six cœurs affichent désormais la bonne tension et la bonne température de chaque cœur. Les mesures des capteurs internes Intel ne s’interrompent plus, et la courbe de température n’est plus coupée. ([#58](https://github.com/Ray-lea/GoodGood/issues/58))
-- **Autorisation et désinstallation**: GoodGood peut révoquer l’autorisation et effectuer la désinstallation après une modification des droits d’accès de Program Files ou du dossier d’exécution. Les capteurs du noyau peuvent utiliser un pilote PawnIO déjà en cours d’exécution. La désinstallation ne laisse plus le dossier GoodGood Sensor Setup ni un dossier GoodGood Runtime vide. ([#46](https://github.com/Ray-lea/GoodGood/issues/46))
+- **Mesures du CPU**: Les processeurs à architecture hybride affichent désormais la bonne vitesse. Certains processeurs Ryzen à six cœurs affichent désormais la bonne tension et la bonne température de chaque cœur. Les mesures des capteurs internes Intel ne s’interrompent plus, et la courbe de température n’est plus coupée. ([#58](https://github.com/acc0mplish/GoodGood/issues/58))
+- **Autorisation et désinstallation**: GoodGood peut révoquer l’autorisation et effectuer la désinstallation après une modification des droits d’accès de Program Files ou du dossier d’exécution. Les capteurs du noyau peuvent utiliser un pilote PawnIO déjà en cours d’exécution. La désinstallation ne laisse plus le dossier GoodGood Sensor Setup ni un dossier GoodGood Runtime vide. ([#46](https://github.com/acc0mplish/GoodGood/issues/46))
 - **Droits au démarrage**: Après l’installation ou une mise à jour depuis l’application, GoodGood tente d’abord de démarrer avec les droits du compte du bureau, comme depuis un raccourci. Exécuté en tant qu’administrateur, GoodGood peut redémarrer un Explorateur de fichiers qui dispose déjà de droits administrateur en conservant ces droits.
-- **Affichage de la fenêtre**: Après une restauration de taille ou un démarrage à froid par le remplacement du Gestionnaire des tâches, l’interface remplit la fenêtre. Windows 11 21H2 utilise un fond uni. Après le passage à une autre application, GoodGood cesse de recouvrir les autres fenêtres. ([#44](https://github.com/Ray-lea/GoodGood/issues/44), [#37](https://github.com/Ray-lea/GoodGood/issues/37), [#35](https://github.com/Ray-lea/GoodGood/issues/35))
-- **Zone de notification**: Lorsque la fenêtre est fermée et masquée dans la zone de notification, l’utilisation du CPU ne reste plus élevée. Après une mise à jour depuis l’application, l’icône de notification ne passe plus dans la zone de dépassement. ([#31](https://github.com/Ray-lea/GoodGood/issues/31))
-- **Affichage de l’interface**: La boîte de dialogue de mise à jour reste centrée au chargement, et celle des fichiers utilisés reste en place à l’affichage des résultats. Dans une fenêtre basse, le défilement donne accès à tout le contenu de la page « À propos ». Les menus contextuels des zones de texte utilisent la langue de l’interface. ([#39](https://github.com/Ray-lea/GoodGood/issues/39))
+- **Affichage de la fenêtre**: Après une restauration de taille ou un démarrage à froid par le remplacement du Gestionnaire des tâches, l’interface remplit la fenêtre. Windows 11 21H2 utilise un fond uni. Après le passage à une autre application, GoodGood cesse de recouvrir les autres fenêtres. ([#44](https://github.com/acc0mplish/GoodGood/issues/44), [#37](https://github.com/acc0mplish/GoodGood/issues/37), [#35](https://github.com/acc0mplish/GoodGood/issues/35))
+- **Zone de notification**: Lorsque la fenêtre est fermée et masquée dans la zone de notification, l’utilisation du CPU ne reste plus élevée. Après une mise à jour depuis l’application, l’icône de notification ne passe plus dans la zone de dépassement. ([#31](https://github.com/acc0mplish/GoodGood/issues/31))
+- **Affichage de l’interface**: La boîte de dialogue de mise à jour reste centrée au chargement, et celle des fichiers utilisés reste en place à l’affichage des résultats. Dans une fenêtre basse, le défilement donne accès à tout le contenu de la page « À propos ». Les menus contextuels des zones de texte utilisent la langue de l’interface. ([#39](https://github.com/acc0mplish/GoodGood/issues/39))
 - **Nombres et rendu**: Les nombres dynamiques restent en place lors de leur actualisation. Les contours du texte clair sur fond sombre et les petits résidus colorés sous la vue d’ensemble des ressources sont corrigés.
 - **Stabilité**: GoodGood ne se ferme plus lorsque le minutage de l’affichage est anormal ou lorsque l’énumération des adresses des cartes réseau échoue plusieurs fois de suite. L’interface ne se fige plus lorsque la récupération du périphérique graphique coïncide avec la fermeture de la fenêtre.
-- **Grandes polices, règles de processus et tâches de démarrage**: Avec une grande taille de police, les mesures de la page Performances ne chevauchent plus les spécifications. Lorsque le nom d’un programme contient des lettres non ASCII, le menu des processus n’ajoute plus de règle en double. GoodGood ne se ferme plus de manière inattendue lors de la lecture des tâches de démarrage des applications empaquetées. ([@hayxe1](https://github.com/hayxe1) [#59](https://github.com/Ray-lea/GoodGood/pull/59))
+- **Grandes polices, règles de processus et tâches de démarrage**: Avec une grande taille de police, les mesures de la page Performances ne chevauchent plus les spécifications. Lorsque le nom d’un programme contient des lettres non ASCII, le menu des processus n’ajoute plus de règle en double. GoodGood ne se ferme plus de manière inattendue lors de la lecture des tâches de démarrage des applications empaquetées. ([@hayxe1](https://github.com/hayxe1) [#59](https://github.com/acc0mplish/GoodGood/pull/59))
 - **Type de version**: Paramètres, À propos et la barre d’état affichent « Version de développement », « Bêta », « Stable » selon le programme exécuté. Le canal de mise à jour choisit séparément la source des prochaines recherches de mises à jour.
 
 ### Remarques sur la mise à jour
@@ -55,7 +55,7 @@ v0.5.0 ajoute la suspension et la reprise des processus, le regroupement des pro
 - **Service privilégié**: Cette version fait passer le protocole de communication du service à la version 11. Une mise à niveau de la version installée par le programme d’installation ou depuis l’application met aussi à jour le service installé et la copie de remplacement du Gestionnaire des tâches. Pour la version portable, après le remplacement de l’exécutable, cliquez sur « Mettre le service à jour » dans « Paramètres → Autorisations → Service privilégié », puis validez la demande administrateur.
 - **Paramètres et historique**: La mise à jour conserve les paramètres et l’historique existants. Au premier démarrage, « Transitions de fenêtres » reprend le réglage des transitions de fenêtre défini auparavant dans « Animations de l’interface ».
 
-## [0.4.0](https://github.com/Ray-lea/GoodGood/compare/v0.3.4...v0.4.0) - 2026-11-06
+## [0.4.0](https://github.com/acc0mplish/GoodGood/compare/v0.3.4...v0.4.0) - 2026-11-06
 
 v0.4.0 migre entièrement l’interface de Tauri, SolidJS et WebView2 vers une architecture native Rust + GPUI Kit. Elle supprime la surcharge du moteur de navigateur, reconstruit le rendu natif DirectX et les interactions, et optimise en profondeur les animations à haute fréquence, les courbes en temps réel, l’actualisation des échantillons des listes et les ressources consommées en arrière-plan. Cette version ajoute aussi des colonnes de processus personnalisables, l’état de santé des disques et les détails SMART, davantage de mesures des GPU intégrés Intel et des options de disposition de la fenêtre. Le [site officiel d’GoodGood](https://goodgoodtask.com/fr/) est désormais en ligne et relié au miroir officiel des mises à jour.
 
@@ -92,17 +92,17 @@ v0.4.0 migre entièrement l’interface de Tauri, SolidJS et WebView2 vers une a
 - **Paramètres et historique**: Les paramètres et fichiers d’historique sont conservés. Depuis v0.3.3 ou v0.3.4, les préférences d’interface enregistrées séparément sont reprises. Une mise à jour directe depuis v0.3.2 ou antérieur rétablit les valeurs par défaut des préférences présentes uniquement dans l’ancien cache WebView2 (disposition, notes de lignes et éléments épinglés) ; elles doivent être reconfigurées. La nouvelle version nettoie automatiquement les anciennes données WebView2 d’GoodGood en arrière-plan.
 - **Service privilégié**: Le protocole du service passe à la version 10. Une mise à jour de la version installée par l’installateur ou depuis l’application actualise aussi le service installé et la copie remplaçant le Gestionnaire des tâches. Après remplacement de l’exécutable portable, il faut sélectionner « Mettre le service à jour » dans « Paramètres → Autorisations → Service privilégié » et valider la demande administrateur.
 
-## [0.3.4](https://github.com/Ray-lea/GoodGood/compare/v0.3.3...v0.3.4) - 2026-10-26
+## [0.3.4](https://github.com/acc0mplish/GoodGood/compare/v0.3.3...v0.3.4) - 2026-10-26
 
 ### Corrections
 
-- **Redémarrage de l’Explorateur**: Correction de l’absence de restauration du bureau et de la barre des tâches lorsque l’ancien processus reste bloqué pendant le nettoyage de fin ou le rapport d’erreur. Si l’arrêt normal expire, seule l’ancienne instance identifiée est terminée ; le bureau est restauré après confirmation de son arrêt. Si Windows a déjà restauré le bureau, l’instance existante est réutilisée pour éviter un lancement en double. ([#20](https://github.com/Ray-lea/GoodGood/issues/20))
+- **Redémarrage de l’Explorateur**: Correction de l’absence de restauration du bureau et de la barre des tâches lorsque l’ancien processus reste bloqué pendant le nettoyage de fin ou le rapport d’erreur. Si l’arrêt normal expire, seule l’ancienne instance identifiée est terminée ; le bureau est restauré après confirmation de son arrêt. Si Windows a déjà restauré le bureau, l’instance existante est réutilisée pour éviter un lancement en double. ([#20](https://github.com/acc0mplish/GoodGood/issues/20))
 
 ### Remarques sur la mise à jour
 
 - La mise à jour depuis v0.3.x conserve les paramètres et l’historique existants.
 
-## [0.3.3](https://github.com/Ray-lea/GoodGood/compare/v0.3.2...v0.3.3) - 2026-10-26
+## [0.3.3](https://github.com/acc0mplish/GoodGood/compare/v0.3.2...v0.3.3) - 2026-10-26
 
 Cette version ajoute le réglage de l’échelle de l’interface et de la taille du texte, améliore la sauvegarde des préférences de fenêtre et de listes, et ajuste les statistiques GPU.
 
@@ -113,7 +113,7 @@ Cette version ajoute le réglage de l’échelle de l’interface et de la taill
 
 ### Corrections
 
-- **Statistiques GPU**: Tentative de correction d’une utilisation globale trop faible sous certaines charges de calcul, des pics anormaux à la reprise de l’échantillonnage et des totaux excessifs avec plusieurs GPU ou moteurs. Ajout des compteurs de moteurs par processus et de l’utilisation du cœur NVIDIA lorsqu’elle est disponible, avec affichage de la source. ([#19](https://github.com/Ray-lea/GoodGood/issues/19))
+- **Statistiques GPU**: Tentative de correction d’une utilisation globale trop faible sous certaines charges de calcul, des pics anormaux à la reprise de l’échantillonnage et des totaux excessifs avec plusieurs GPU ou moteurs. Ajout des compteurs de moteurs par processus et de l’utilisation du cœur NVIDIA lorsqu’elle est disponible, avec affichage de la source. ([#19](https://github.com/acc0mplish/GoodGood/issues/19))
 - **Restauration de la fenêtre**: Taille, position et état agrandi sont restaurés après fermeture et relancement. Une fermeture à l’état réduit ne laisse plus la fenêtre réduite au prochain démarrage ; une fenêtre hors écran revient dans la zone visible disponible.
 - **Préférences des listes**: Processus, services, démarrage et connexions conservent chacun la colonne de tri et son sens. Services et Connexions restaurent également les filtres sélectionnés.
 - **Enregistrement des préférences**: Les préférences d’interface sont enregistrées séparément, avec migration depuis l’ancien cache. Elles restent récupérables après nettoyage du cache de l’interface.
@@ -123,7 +123,7 @@ Cette version ajoute le réglage de l’échelle de l’interface et de la taill
 
 - La mise à jour depuis v0.3.x conserve les paramètres et l’historique. Les anciennes préférences d’interface migrent automatiquement au premier lancement, sans reconfiguration manuelle.
 
-## [0.3.2](https://github.com/Ray-lea/GoodGood/compare/v0.3.1...v0.3.2) - 2026-10-23
+## [0.3.2](https://github.com/acc0mplish/GoodGood/compare/v0.3.1...v0.3.2) - 2026-10-23
 
 Cette version remplace v0.3.1, qui a été retirée. Elle corrige la détection erronée de la version installée comme portable après un lancement administrateur ou via le Gestionnaire des tâches, qui empêchait les mises à jour intégrées.
 
@@ -140,7 +140,7 @@ Cette version remplace v0.3.1, qui a été retirée. Elle corrige la détection 
 
 - Inclut le lancement administrateur après une autorisation unique de v0.3.1, ainsi que les corrections du redémarrage de l’Explorateur, des statistiques CPU, des courbes après restauration de la fenêtre, du curseur de la liste des processus et de l’installation des mises à jour.
 
-## [0.3.1](https://github.com/Ray-lea/GoodGood/compare/v0.3.0...v0.3.1) - 2026-10-23
+## [0.3.1](https://github.com/acc0mplish/GoodGood/compare/v0.3.0...v0.3.1) - 2026-10-23
 
 **Cette version a été retirée. Ses fonctionnalités et corrections sont incluses dans v0.3.2.**
 
@@ -154,27 +154,27 @@ Ajout du lancement administrateur après une autorisation unique, avec des droit
 
 ### Nouvelles fonctionnalités
 
-- **Lancement administrateur**: Après une autorisation unique, GoodGood s’ouvre avec les droits administrateur à l’ouverture de session, depuis les raccourcis et les icônes épinglées. Avec le remplacement du Gestionnaire des tâches activé, Ctrl+Shift+Esc et le menu contextuel de la barre des tâches fonctionnent également. Les paramètres et le guide affichent l’état de l’autorisation et les droits actuels, avec désactivation et réparation de l’autorisation. ([#13](https://github.com/Ray-lea/GoodGood/issues/13))
+- **Lancement administrateur**: Après une autorisation unique, GoodGood s’ouvre avec les droits administrateur à l’ouverture de session, depuis les raccourcis et les icônes épinglées. Avec le remplacement du Gestionnaire des tâches activé, Ctrl+Shift+Esc et le menu contextuel de la barre des tâches fonctionnent également. Les paramètres et le guide affichent l’état de l’autorisation et les droits actuels, avec désactivation et réparation de l’autorisation. ([#13](https://github.com/acc0mplish/GoodGood/issues/13))
 
 ### Corrections
 
-- **Explorateur**: Correction des échecs de redémarrage avec droits standard ou administrateur, des anomalies du bureau après redémarrage et des droits insuffisants lors d’un nouveau redémarrage. La liste des fichiers utilisés propose « Redémarrer » pour l’Explorateur du bureau actuel, évitant la disparition du bureau et de la barre des tâches causée par une fermeture directe. ([#14](https://github.com/Ray-lea/GoodGood/issues/14), [#15](https://github.com/Ray-lea/GoodGood/issues/15))
-- **Statistiques CPU**: Correction de l’utilisation restant à 100 % lorsque les compteurs d’inactivité cessent de se mettre à jour sur certains systèmes. ([#12](https://github.com/Ray-lea/GoodGood/issues/12))
+- **Explorateur**: Correction des échecs de redémarrage avec droits standard ou administrateur, des anomalies du bureau après redémarrage et des droits insuffisants lors d’un nouveau redémarrage. La liste des fichiers utilisés propose « Redémarrer » pour l’Explorateur du bureau actuel, évitant la disparition du bureau et de la barre des tâches causée par une fermeture directe. ([#14](https://github.com/acc0mplish/GoodGood/issues/14), [#15](https://github.com/acc0mplish/GoodGood/issues/15))
+- **Statistiques CPU**: Correction de l’utilisation restant à 100 % lorsque les compteurs d’inactivité cessent de se mettre à jour sur certains systèmes. ([#12](https://github.com/acc0mplish/GoodGood/issues/12))
 - **Courbes**: Correction des données accumulées formant des pics serrés à la restauration depuis l’état réduit ou la zone de notification.
-- **Liste des processus**: Suppression du curseur de texte clignotant après un clic dans la liste, tout en conservant la recherche par saisie directe et les méthodes de saisie chinoises. ([#16](https://github.com/Ray-lea/GoodGood/issues/16))
+- **Liste des processus**: Suppression du curseur de texte clignotant après un clic dans la liste, tout en conservant la recherche par saisie directe et les méthodes de saisie chinoises. ([#16](https://github.com/acc0mplish/GoodGood/issues/16))
 - **Installation des mises à jour**: Affichage des processus utilisant l’exécutable et possibilité de réessayer, ajout des étapes en échec et des codes d’erreur. Correction de la lecture impossible des journaux de diagnostic après une autorisation avec un autre compte administrateur.
 
 ### Problèmes connus
 
 - **Signature de code**: Les exécutables publiés n’ont pas encore de signature de code Windows ; Windows SmartScreen peut signaler un « éditeur inconnu » au premier lancement. Les mises à jour intégrées restent vérifiées par leur signature de mise à jour.
 
-## [0.3.0](https://github.com/Ray-lea/GoodGood/compare/v0.2.0...v0.3.0) - 2026-10-22
+## [0.3.0](https://github.com/acc0mplish/GoodGood/compare/v0.2.0...v0.3.0) - 2026-10-22
 
 Ajout de l’exécution de nouvelles tâches, du redémarrage de l’Explorateur et de la copie des caractéristiques du PC. Les groupes de processus, les vues de performances et la compatibilité avec Windows 10 sont améliorés.
 
 ### Changements incompatibles
 
-- **Historique**: Après mise à jour, la page Historique commence de nouveaux enregistrements et remplace l’ancien fichier du jour. Pour conserver les anciens enregistrements, une [sauvegarde du dossier d’historique](https://github.com/Ray-lea/GoodGood/blob/main/docs/guide/README.md#기록) est nécessaire au préalable.
+- **Historique**: Après mise à jour, la page Historique commence de nouveaux enregistrements et remplace l’ancien fichier du jour. Pour conserver les anciens enregistrements, une [sauvegarde du dossier d’historique](https://github.com/acc0mplish/GoodGood/blob/main/docs/guide/README.md#기록) est nécessaire au préalable.
 
 ### Remarques sur la mise à jour
 
@@ -224,7 +224,7 @@ Ajout de l’exécution de nouvelles tâches, du redémarrage de l’Explorateur
 
 Merci à @kostyanp95 pour sa contribution à l’historique de batterie.
 
-## [0.2.0](https://github.com/Ray-lea/GoodGood/compare/v0.1.0...v0.2.0) - 2026-10-18
+## [0.2.0](https://github.com/acc0mplish/GoodGood/compare/v0.1.0...v0.2.0) - 2026-10-18
 
 Cette version ajoute les débits de lecture et d’écriture disque par processus et des intervalles distincts pour la fenêtre réduite et masquée dans la zone de notification. Elle améliore les mises à jour intégrées et les raccourcis, et corrige notamment des plantages après un certain temps sur certains PC. Avec le service privilégié installé, la section « Changements incompatibles » est à consulter en premier.
 
@@ -272,7 +272,7 @@ Cette version ajoute les débits de lecture et d’écriture disque par processu
 
 - **Lectures et écritures disque**: La méthode de Windows 11 24H2 et ultérieur n’a été vérifiée que sur le build 26300. Les systèmes antérieurs passent par le service privilégié ou les droits administrateur et n’ont pas encore été vérifiés. Si les deux colonnes affichent toujours « — », un signalement peut inclure le journal de diagnostic, qui contient le motif de l’échec de lecture.
 - **Signature de code**: Le programme n’est pas encore signé ; Windows SmartScreen peut signaler un « éditeur inconnu » au premier lancement.
-- **Autres**: Les autres limitations figurent dans le document [Problèmes connus](https://github.com/Ray-lea/GoodGood/blob/main/docs/known-issues.md) sur GitHub.
+- **Autres**: Les autres limitations figurent dans le document [Problèmes connus](https://github.com/acc0mplish/GoodGood/blob/main/docs/known-issues.md) sur GitHub.
 
 ## 0.1.0 - 2026-10-16
 
@@ -299,5 +299,5 @@ Première version publique d’GoodGood.
 ### Limitations connues
 
 - Le programme n’est pas encore signé ; Windows SmartScreen peut signaler un « éditeur inconnu » au premier lancement.
-- Les capteurs internes du CPU nécessitent l’activation des capteurs du noyau (service privilégié et pilote PawnIO). Les processeurs et cartes mères compatibles figurent dans les [données matérielles](https://github.com/Ray-lea/GoodGood/blob/main/docs/guide/hardware-data.md#소비자용-하드웨어-호환-범위).
-- Les autres limitations figurent dans les [problèmes connus](https://github.com/Ray-lea/GoodGood/blob/main/docs/known-issues.md).
+- Les capteurs internes du CPU nécessitent l’activation des capteurs du noyau (service privilégié et pilote PawnIO). Les processeurs et cartes mères compatibles figurent dans les [données matérielles](https://github.com/acc0mplish/GoodGood/blob/main/docs/guide/hardware-data.md#소비자용-하드웨어-호환-범위).
+- Les autres limitations figurent dans les [problèmes connus](https://github.com/acc0mplish/GoodGood/blob/main/docs/known-issues.md).

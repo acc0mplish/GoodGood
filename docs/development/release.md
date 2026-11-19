@@ -105,8 +105,8 @@ pnpm commitlint --message "feat(ui): 새 기능"  # 메시지 하나 검사
 - 애플리케이션 안의 기능과 사용자가 분명히 알아차릴 수 있는 변경만 싣습니다. 웹사이트, 지속적 통합, 빌드 스크립트, 테스트와 진단 로그에만 영향을 주는 변경은 넣지 않습니다.
 - 이전 버전을 기준으로 삼습니다. 이번 주기에 새로 추가한 기능을 이후에 고치거나 조정했다면 그 기능 항목에 합쳐 최종 동작만 쓰고 수정으로 따로 적지 않습니다. "수정"에는 이전 버전에 이미 있던 문제만 적습니다. 같은 종류의 기능이나 수정은 하나로 합칠 수 있습니다.
 - 문어체로 ASD-STE100의 원칙에 따라 씁니다. 짧은 문장, 한 문장에 한 가지, 능동태를 쓰고 용어는 `locales/`의 인터페이스 문구와 맞춥니다. 한 항목은 두세 문장으로 제한하고 길게 늘이지 않습니다.
-- 외부 기여자의 끌어오기 요청은 해당 항목 끝에 기여자와 번호를 적고 그 GitHub 프로필과 끌어오기 요청에 각각 링크합니다. 한국어와 다른 언어는 ` ([@사용자 이름](https://github.com/사용자 이름) [#번호](https://github.com/Ray-lea/GoodGood/pull/번호))`로 쓰고 기여자가 여럿이면 `, `로 구분하며, 일본어는 `（[@사용자 이름](…) [#번호](…)）`처럼 전각 괄호를 쓰고 여럿이면 `、`로 구분합니다. 같은 기여자의 끌어오기 요청이 여럿이면 번호를 차례로 나열합니다. 유지 관리자 자신의 끌어오기 요청은 적지 않습니다.
-- 항목에 대응하는 issue도 끝에 `https://github.com/Ray-lea/GoodGood/issues/번호`로 링크하고 괄호와 구분자는 위와 같게 씁니다. 한 항목에 기여자와 issue가 모두 있으면 같은 괄호 안에 씁니다.
+- 외부 기여자의 끌어오기 요청은 해당 항목 끝에 기여자와 번호를 적고 그 GitHub 프로필과 끌어오기 요청에 각각 링크합니다. 한국어와 다른 언어는 ` ([@사용자 이름](https://github.com/사용자 이름) [#번호](https://github.com/acc0mplish/GoodGood/pull/번호))`로 쓰고 기여자가 여럿이면 `, `로 구분하며, 일본어는 `（[@사용자 이름](…) [#번호](…)）`처럼 전각 괄호를 쓰고 여럿이면 `、`로 구분합니다. 같은 기여자의 끌어오기 요청이 여럿이면 번호를 차례로 나열합니다. 유지 관리자 자신의 끌어오기 요청은 적지 않습니다.
+- 항목에 대응하는 issue도 끝에 `https://github.com/acc0mplish/GoodGood/issues/번호`로 링크하고 괄호와 구분자는 위와 같게 씁니다. 한 항목에 기여자와 issue가 모두 있으면 같은 괄호 안에 씁니다.
 
 ## 릴리스 절차
 
@@ -197,7 +197,7 @@ GitHub의 최신 안정판 Release는 `releases/latest/download/latest.json`(안
    gh release edit vX.Y.Z --prerelease
    gh release edit vX.Y.W --latest   # 이전 안정판
    gh release view --json tagName    # 이전 안정판이어야 함
-   curl -sL https://github.com/Ray-lea/GoodGood/releases/latest/download/latest.json   # version은 이전 버전이어야 함
+   curl -sL https://github.com/acc0mplish/GoodGood/releases/latest/download/latest.json   # version은 이전 버전이어야 함
    ```
 
    GitHub의 최신 안정판에는 Pre-release가 포함되지 않으므로 `releases/latest/download/`가 이전 안정판의 `latest.json`과 `beta.json`을 가리키고 이전 버전은 확인할 때 "최신 버전입니다"를 받습니다. 이 두 매니페스트만 삭제하지 마십시오. 주소가 404를 반환하면 확인에 실패한 0.2 이후 버전은 이미 내려받은 업데이트를 유지하고 여전히 설치할 수 있으며, 다운로드 경로가 "자동"이면 가속 프록시로 바꾸어 프록시가 캐시한 이전 매니페스트를 받을 수도 있습니다.
@@ -211,7 +211,7 @@ GitHub의 최신 안정판 Release는 `releases/latest/download/latest.json`(안
 gh release download vX.Y.W --pattern latest.json --dir rollback   # 최신 안정판
 mv rollback/latest.json rollback/beta.json
 gh release upload vX.Y.W rollback/beta.json --clobber
-curl -sL https://github.com/Ray-lea/GoodGood/releases/latest/download/beta.json   # version은 그 안정판이어야 함
+curl -sL https://github.com/acc0mplish/GoodGood/releases/latest/download/beta.json   # version은 그 안정판이어야 함
 ```
 
 이후 2단계와 3단계는 베타 채널 사용자에게도 그대로 적용됩니다. 수정 후 새 베타판이나 안정판을 릴리스하면 릴리스 단계가 `beta.json`을 다시 씁니다.

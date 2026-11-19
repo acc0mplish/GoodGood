@@ -12,13 +12,10 @@
 
 Die interaktive Oberfläche und die Funktionsübersicht können auf der [offiziellen Website](https://goodgoodtask.com/de/) direkt im Browser ausprobiert werden, ohne Installation.
 
-[![Aktuelle Version](https://img.shields.io/github/v/release/Ray-lea/GoodGood?include_prereleases=&sort=semver&label=Aktuelle+Version&color=2f80ed)](https://github.com/Ray-lea/GoodGood/releases)
-[![Downloads](https://img.shields.io/github/downloads/Ray-lea/GoodGood/total?label=Downloads&color=2ea44f)](https://github.com/Ray-lea/GoodGood/releases)
+[![Aktuelle Version](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases=&sort=semver&label=Aktuelle+Version&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![Downloads](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=Downloads&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![Plattform](https://img.shields.io/static/v1?label=Plattform&message=Windows+10+%2F+11+x64&color=0078D4)](#system-requirements)
-[![Lizenz](https://img.shields.io/static/v1?label=Lizenz&message=AGPL-3.0-or-later&color=A42E2B&logo=gnu&logoColor=white)](LICENSE)
-
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily" alt="Ray-lea/GoodGood | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily?language=Rust" alt="Ray-lea/GoodGood | Trendshift Rust" width="250" height="55"/></a>
+[![Lizenz](https://img.shields.io/static/v1?label=Lizenz&message=Apache-2.0&color=A42E2B&logo=apache&logoColor=white)](LICENSE)
 
 [Funktionen](#features) · [Download](#download) · [Aus dem Quellcode bauen](#build-from-source) · [Tastenkombinationen](#keyboard-shortcuts) · [Dokumentation](#documentation)
 
@@ -43,10 +40,10 @@ GoodGood fragt die nativen Windows-APIs direkt über Rust ab. Die Oberfläche ve
 
 Wenn GoodGood im Alltag hilfreich ist, unterstützt ein Stern auf GitHub das Projekt und macht es für weitere Interessierte sichtbar.
 
-<a href="https://www.star-history.com/#Ray-lea/GoodGood&Date">
+<a href="https://www.star-history.com/#acc0mplish/GoodGood&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date" alt="Entwicklung der GitHub-Sterne von GoodGood">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date&theme=dark">
+    <img src="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date" alt="Entwicklung der GitHub-Sterne von GoodGood">
   </picture>
 </a>
 
@@ -90,7 +87,7 @@ Wenn GoodGood im Alltag hilfreich ist, unterstützt ein Stern auf GitHub das Pro
 
 ## 📦 Download
 
-Die aktuelle stabile Version und SHA-256-Prüfsummen stehen auf der [offiziellen Downloadseite](https://goodgoodtask.com/de/download/) bereit. Alle Versionen sind unter [GitHub Releases](https://github.com/Ray-lea/GoodGood/releases) verfügbar.
+Die aktuelle stabile Version und SHA-256-Prüfsummen stehen auf der [offiziellen Downloadseite](https://goodgoodtask.com/de/download/) bereit. Alle Versionen sind unter [GitHub Releases](https://github.com/acc0mplish/GoodGood/releases) verfügbar.
 
 | Datei | Beschreibung |
 |---|---|
@@ -183,8 +180,6 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 
 Testsignierung ist integriert. Offizielle Veröffentlichungen werden derzeit ohne Windows-Authenticode-Signaturen ausgeliefert. Sobald die Produktionssignierung aktiviert ist, umfasst sie die GoodGood-Anwendung, Task-Manager-Hilfsprogramme sowie Deinstallations- und Installationsprogramme, die GitHub Actions aus dem Quellcode dieses Repositorys erstellt. Mitgelieferte Drittprogramme behalten ihre ursprünglichen Signaturen.
 
-- **Codepflege und Reviews**: [@Ray-lea](https://github.com/Ray-lea), zuständig für die Pflege des Codes und die Prüfung externer Beiträge.
-- **Freigaben**: [@Ray-lea](https://github.com/Ray-lea), zuständig für die manuelle Genehmigung jeder Produktionssignierung.
 - **Datenschutzrichtlinie**: [English](PRIVACY.md#english) · [한국어](PRIVACY.md#한국어). Beschreibt standardmäßig aktivierte Updateprüfungen, Proxy-Ausweichrouten, PawnIO-Downloads bei Bedarf, freiwillige Rückmeldungen und die Datenverarbeitung durch Dritte.
 
 Updates innerhalb der Anwendung verwenden einen separaten Minisign-Veröffentlichungsschlüssel zur Prüfung von Installationspaketen und Versionsnummern. Windows Authenticode identifiziert den Unterzeichner einer ausführbaren Datei.
@@ -207,28 +202,14 @@ GoodGood baut auf den folgenden Open-Source-Projekten auf:
 
 Alle Drittkomponenten und ihre Lizenzhinweise sind in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) aufgeführt.
 
-Vielen Dank an die Community [LINUX DO](https://linux.do/) für ihre Unterstützung.
-
 <!-- supporters:start · node scripts/supporters.mjs -->
-<p align="center">
-  <a href="https://github.com/bronyaicu" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/supporters/bronyaicu-de-dark.svg"><img src="docs/images/supporters/bronyaicu-de-light.svg" width="720" alt="Projektunterstützung &amp; besonderer Dank: bronyaicu"></picture></a>
-</p>
 <!-- supporters:end -->
 
 <a id="license"></a>
 
 ## 📄 Lizenz
 
-GoodGood ist freie Software unter der [GNU Affero General Public License](LICENSE), Version 3 oder (nach eigener Wahl) einer späteren Version (`AGPL-3.0-or-later`).
-
-<a href="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors?repo_id=1415551131&limit=30" target="_blank" style="display: block" align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=dark" width="655" height="auto">
-    <img alt="Active Contributors of Ray-lea/GoodGood - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=light" width="655" height="auto">
-  </picture>
-</a>
-
-<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+GoodGood ist freie Software unter der [Apache License 2.0](LICENSE).
 
 <div align="center">
 <br>

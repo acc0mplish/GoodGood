@@ -29,7 +29,7 @@ export function GET() {
     "",
     `- Latest release: ${r.tag}, released ${released}`,
     "- System requirements: " + site.translations.en.operatingSystem,
-    "- Price and license: free and open source under AGPL-3.0",
+    "- Price and license: free and open source under Apache-2.0",
     `- Installer: ${installer.url} (${mebibytes(installer.size)} MiB, SHA-256 ${installer.sha256})`,
     `- Portable edition: ${portable.url} (${mebibytes(portable.size)} MiB, SHA-256 ${portable.sha256})`,
     "- Source code: " + repo,

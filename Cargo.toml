@@ -12,9 +12,9 @@ gpui-pre-windows = { path = "vendor/gpui-pre-windows" }
 version = "0.5.0"
 edition = "2024"
 rust-version = "1.100.0"
-license = "AGPL-3.0-or-later"
+license = "Apache-2.0"
 authors = ["GoodGood contributors"]
-repository = "https://github.com/Ray-lea/GoodGood"
+repository = "https://github.com/acc0mplish/GoodGood"
 homepage = "https://goodgoodtask.com"
 
 [workspace.dependencies]

@@ -27,7 +27,7 @@ export function Footer({ lang = "ko" }: { lang?: Language }) {
       links: [
         [repo, "GitHub"],
         [repo + "/issues", localize(lang, en ? "Issues" : "문제 보고")],
-        [repo + "/blob/main/LICENSE", "AGPL-3.0"],
+        [repo + "/blob/main/LICENSE", "Apache-2.0"],
       ],
     },
     {

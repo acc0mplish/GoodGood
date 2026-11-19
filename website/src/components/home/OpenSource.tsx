@@ -70,7 +70,7 @@ export function OpenSource({ lang, guide }: { lang: Language; guide: string }) {
             <Icon name="github" size={22} />
           </span>
           <div>
-            <a href={repo}>Ray-lea / GoodGood</a>
+            <a href={repo}>GoodGood</a>
             <small>{localize(lang, en ? "A fast, modern, information-rich Windows task manager" : "빠르고 현대적이며 정보가 풍부한 Windows 작업 관리자")}</small>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function OpenSource({ lang, guide }: { lang: Language; guide: string }) {
           )}
           <li>
             <Icon name="scale" size={15} />
-            AGPL-3.0
+            Apache-2.0
           </li>
         </ul>
         <ul className="repo-tags">

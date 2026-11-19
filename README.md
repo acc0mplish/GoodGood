@@ -12,13 +12,10 @@
 
 설치 없이 [공식 웹사이트](https://goodgoodtask.com/)에서 전체 인터랙티브 인터페이스와 안내 투어를 브라우저에서 바로 사용해 볼 수 있습니다
 
-[![Latest release](https://img.shields.io/github/v/release/Ray-lea/GoodGood?include_prereleases&sort=semver&label=release&color=2f80ed)](https://github.com/Ray-lea/GoodGood/releases)
-[![Downloads](https://img.shields.io/github/downloads/Ray-lea/GoodGood/total?label=downloads&color=2ea44f)](https://github.com/Ray-lea/GoodGood/releases)
+[![Latest release](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases&sort=semver&label=release&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![Downloads](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=downloads&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-0078D4)](#-시스템-요구-사항)
-[![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-A42E2B?logo=gnu&logoColor=white)](LICENSE)
-
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily" alt="Ray-lea/GoodGood | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily?language=Rust" alt="Ray-lea/GoodGood | Trendshift Rust" width="250" height="55"/></a>
+[![License](https://img.shields.io/badge/license-Apache--2.0-A42E2B?logo=apache&logoColor=white)](LICENSE)
 
 [기능](#-기능) · [다운로드](#-다운로드) · [소스에서 빌드](#-소스에서-빌드) · [키보드 바로 가기](#-키보드-바로-가기) · [문서](#-문서)
 
@@ -39,10 +36,10 @@ GoodGood은 Rust로 Windows 네이티브 API를 직접 조회하며, GPUI Kit �
 
 GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 주십시오. 프로젝트를 후원하는 가장 직접적인 방법이며 더 많은 사람이 GoodGood을 발견하는 데 도움이 됩니다.
 
-<a href="https://www.star-history.com/#Ray-lea/GoodGood&Date">
+<a href="https://www.star-history.com/#acc0mplish/GoodGood&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date" alt="시간에 따른 GoodGood의 별표 수">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date&theme=dark">
+    <img src="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date" alt="시간에 따른 GoodGood의 별표 수">
   </picture>
 </a>
 
@@ -82,7 +79,7 @@ GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 �
 
 ## 📦 다운로드
 
-최신 안정판과 SHA-256 체크섬은 [공식 다운로드 페이지](https://goodgoodtask.com/download/)에서 받을 수 있습니다. 모든 버전은 [GitHub Releases](https://github.com/Ray-lea/GoodGood/releases)에서도 제공됩니다.
+최신 안정판과 SHA-256 체크섬은 [공식 다운로드 페이지](https://goodgoodtask.com/download/)에서 받을 수 있습니다. 모든 버전은 [GitHub Releases](https://github.com/acc0mplish/GoodGood/releases)에서도 제공됩니다.
 
 | 파일 | 설명 |
 |---|---|
@@ -161,8 +158,6 @@ GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 �
 
 테스트 서명은 연동되어 있으며 정식 릴리스는 현재 Windows Authenticode 서명 없이 배포됩니다. 정식 서명을 활성화하면 이 저장소의 소스를 GitHub Actions로 빌드한 GoodGood 애플리케이션, 작업 관리자 도우미, 제거 프로그램과 설치 프로그램에 적용됩니다. 함께 배포되는 타사 프로그램은 원래 서명을 유지합니다.
 
-- **커미터와 검토자**: [@Ray-lea](https://github.com/Ray-lea)가 코드를 유지 관리하고 외부 기여를 검토합니다.
-- **승인자**: [@Ray-lea](https://github.com/Ray-lea)가 정식 서명 요청을 직접 승인합니다.
 - **개인정보 처리방침**: [한국어](PRIVACY.md). 기본으로 켜져 있는 업데이트 확인, 프록시 대체, 필요할 때의 PawnIO 다운로드, 자발적 피드백과 타사 데이터 처리를 다룹니다.
 
 앱 내 업데이트는 별도의 Minisign 릴리스 키로 설치 프로그램과 버전 번호를 검증하며, Windows Authenticode는 실행 파일의 서명자를 확인합니다.
@@ -183,26 +178,12 @@ GoodGood은 다음 오픈 소스 프로젝트를 기반으로 만들어졌으며
 
 모든 타사 구성 요소와 라이선스 고지는 [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt)에 정리되어 있습니다.
 
-지원해 주신 [LINUX DO](https://linux.do/) 커뮤니티에 감사드립니다.
-
 <!-- supporters:start · node scripts/supporters.mjs -->
-<p align="center">
-  <a href="https://github.com/bronyaicu" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/supporters/bronyaicu-ko-dark.svg"><img src="docs/images/supporters/bronyaicu-ko-light.svg" width="720" alt="프로젝트 후원 &amp; 특별 감사: bronyaicu"></picture></a>
-</p>
 <!-- supporters:end -->
 
 ## 📄 라이선스
 
-GoodGood은 [GNU Affero 일반 공중 라이선스](LICENSE) 버전 3 또는 그 이후 버전(`AGPL-3.0-or-later`)으로 배포되는 자유 소프트웨어입니다.
-
-<a href="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors?repo_id=1415551131&limit=30" target="_blank" style="display: block" align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=dark" width="655" height="auto">
-    <img alt="Ray-lea/GoodGood의 최근 28일 활성 기여자" src="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=light" width="655" height="auto">
-  </picture>
-</a>
-
-<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+GoodGood은 [Apache License 2.0](LICENSE)으로 배포되는 자유 소프트웨어입니다.
 
 <div align="center">
 <br>

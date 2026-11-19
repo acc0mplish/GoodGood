@@ -252,7 +252,7 @@ export const exact: Record<string, string> = {
   "필수 설정과 팁을 다시 살펴봅니다.": "Go through the essential settings and tips again.",
   "가이드 열기": "Open guide",
   "라이선스": "License",
-  "GoodGood은 GNU Affero General Public License 버전 3 또는 이후 버전(AGPL-3.0-or-later)으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다.": "GoodGood is free software, released under the GNU Affero General Public License, version 3 or any later version (AGPL-3.0-or-later). It can be redistributed and modified under the terms of that license. GoodGood comes with no warranty.",
+  "GoodGood은 Apache License 2.0으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다.": "GoodGood is free software, released under the Apache License, Version 2.0. It can be redistributed and modified under the terms of that license. GoodGood comes with no warranty.",
   "라이선스 보기": "View license",
   "타사 구성 요소": "Third-party components",
   "GoodGood에 포함된 오픈 소스 구성 요소와 각 라이선스, 저작권 고지입니다.": "Open-source components included in GoodGood, with their licenses and copyright notices.",

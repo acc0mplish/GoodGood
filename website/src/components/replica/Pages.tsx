@@ -1531,18 +1531,18 @@ export function About({
           />
           <LinkCard
             repo
-            href="https://github.com/Ray-lea/GoodGood"
+            href="https://github.com/acc0mplish/GoodGood"
             mark={
               <span className="a-link-mark">
                 <Icon name="github" size={24} />
               </span>
             }
             title="GitHub 저장소"
-            address="github.com/Ray-lea/GoodGood"
+            address="github.com/acc0mplish/GoodGood"
             pages={[
-              ["issue", "문제 보고", "https://github.com/Ray-lea/GoodGood/issues/new/choose"],
-              ["discussion", "토론", "https://github.com/Ray-lea/GoodGood/discussions"],
-              ["release", "릴리스", "https://github.com/Ray-lea/GoodGood/releases"],
+              ["issue", "문제 보고", "https://github.com/acc0mplish/GoodGood/issues/new/choose"],
+              ["discussion", "토론", "https://github.com/acc0mplish/GoodGood/discussions"],
+              ["release", "릴리스", "https://github.com/acc0mplish/GoodGood/releases"],
             ]}
           />
         </div>
@@ -1553,7 +1553,7 @@ export function About({
         <Setting
           icon="document"
           title="라이선스"
-          desc="GoodGood은 GNU Affero General Public License 버전 3 또는 이후 버전(AGPL-3.0-or-later)으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다."
+          desc="GoodGood은 Apache License 2.0으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다."
         >
           <Button>라이선스 보기</Button>
         </Setting>

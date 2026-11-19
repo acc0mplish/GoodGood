@@ -16,7 +16,7 @@ SignPath 테스트 흐름은 조직이 제공한 자체 서명 인증서를 쓰�
 | `windows-application` | [application.xml](../../signpath/application.xml) | 주 프로그램, 제거 프로그램 |
 | `windows-installer` | [installer.xml](../../signpath/installer.xml) | NSIS 설치 관리자 |
 
-세 구성의 루트 요소는 모두 `zip-file`이며 `actions/upload-artifact`가 자동으로 만든 ZIP에 대응합니다. 재단 구독은 서명 설명을 자동으로 만들므로 `authenticode-sign`에 `description`이나 `description-url`을 설정하지 않습니다. 지정한 GoodGood 프로그램만 서명하고 PawnIO나 NSIS의 타사 구성 요소는 다시 서명하지 않습니다. 신뢰할 수 있는 빌드 검증을 켤 때는 GitHub.com을 프로젝트에 연결하고 저장소 URL을 `https://github.com/Ray-lea/GoodGood`으로 설정하며 조직의 기존 출처 제한과 승인 규칙은 그대로 적용됩니다.
+세 구성의 루트 요소는 모두 `zip-file`이며 `actions/upload-artifact`가 자동으로 만든 ZIP에 대응합니다. 재단 구독은 서명 설명을 자동으로 만들므로 `authenticode-sign`에 `description`이나 `description-url`을 설정하지 않습니다. 지정한 GoodGood 프로그램만 서명하고 PawnIO나 NSIS의 타사 구성 요소는 다시 서명하지 않습니다. 신뢰할 수 있는 빌드 검증을 켤 때는 GitHub.com을 프로젝트에 연결하고 저장소 URL을 `https://github.com/acc0mplish/GoodGood`으로 설정하며 조직의 기존 출처 제한과 승인 규칙은 그대로 적용됩니다.
 
 ## 테스트 흐름
 

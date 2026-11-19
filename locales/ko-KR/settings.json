@@ -410,7 +410,7 @@
     },
     "license": {
       "title": "라이선스",
-      "desc": "GoodGood은 GNU Affero General Public License 버전 3 또는 이후 버전(AGPL-3.0-or-later)으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다.",
+      "desc": "GoodGood은 Apache License 2.0으로 배포되는 자유 소프트웨어입니다. 해당 라이선스 조건에 따라 재배포하고 수정할 수 있습니다. GoodGood에는 어떠한 보증도 제공되지 않습니다.",
       "view": "라이선스 보기"
     },
     "notices": {

@@ -12,13 +12,10 @@
 
 На [официальном сайте](https://goodgoodtask.com/ru/) можно опробовать интерактивный интерфейс и обзор функций прямо в браузере, без установки приложения.
 
-[![Последняя версия](https://img.shields.io/github/v/release/Ray-lea/GoodGood?include_prereleases=&sort=semver&label=%D0%9F%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BD%D1%8F%D1%8F+%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F&color=2f80ed)](https://github.com/Ray-lea/GoodGood/releases)
-[![Загрузки](https://img.shields.io/github/downloads/Ray-lea/GoodGood/total?label=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8&color=2ea44f)](https://github.com/Ray-lea/GoodGood/releases)
+[![Последняя версия](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases=&sort=semver&label=%D0%9F%D0%BE%D1%81%D0%BB%D0%B5%D0%B4%D0%BD%D1%8F%D1%8F+%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![Загрузки](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![Платформа](https://img.shields.io/static/v1?label=%D0%9F%D0%BB%D0%B0%D1%82%D1%84%D0%BE%D1%80%D0%BC%D0%B0&message=Windows+10+%2F+11+x64&color=0078D4)](#system-requirements)
-[![Лицензия](https://img.shields.io/static/v1?label=%D0%9B%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F&message=AGPL-3.0-or-later&color=A42E2B&logo=gnu&logoColor=white)](LICENSE)
-
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily" alt="Ray-lea/GoodGood | Trendshift" width="250" height="55"/></a>
-<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily?language=Rust" alt="Ray-lea/GoodGood | Trendshift Rust" width="250" height="55"/></a>
+[![Лицензия](https://img.shields.io/static/v1?label=%D0%9B%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F&message=Apache-2.0&color=A42E2B&logo=apache&logoColor=white)](LICENSE)
 
 [Возможности](#features) · [Загрузка](#download) · [Сборка из исходников](#build-from-source) · [Сочетания клавиш](#keyboard-shortcuts) · [Документация](#documentation)
 
@@ -43,10 +40,10 @@ GoodGood обращается к нативным API Windows напрямую �
 
 Если GoodGood полезен в повседневной работе, звезда на GitHub поможет поддержать проект и познакомить с ним других пользователей.
 
-<a href="https://www.star-history.com/#Ray-lea/GoodGood&Date">
+<a href="https://www.star-history.com/#acc0mplish/GoodGood&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date" alt="Изменение числа звёзд GoodGood на GitHub">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date&theme=dark">
+    <img src="https://api.star-history.com/svg?repos=acc0mplish/GoodGood&type=Date" alt="Изменение числа звёзд GoodGood на GitHub">
   </picture>
 </a>
 
@@ -90,7 +87,7 @@ GoodGood обращается к нативным API Windows напрямую �
 
 ## 📦 Загрузка
 
-Последняя стабильная версия и контрольные суммы SHA-256 доступны на [официальной странице загрузки](https://goodgoodtask.com/ru/download/). Все версии находятся в [GitHub Releases](https://github.com/Ray-lea/GoodGood/releases).
+Последняя стабильная версия и контрольные суммы SHA-256 доступны на [официальной странице загрузки](https://goodgoodtask.com/ru/download/). Все версии находятся в [GitHub Releases](https://github.com/acc0mplish/GoodGood/releases).
 
 | Файл | Описание |
 |---|---|
@@ -183,8 +180,6 @@ Free code signing provided by [SignPath.io](https://about.signpath.io/), certifi
 
 Тестовая подпись уже интегрирована. Официальные выпуски пока распространяются без подписей Windows Authenticode. После включения подписи для официальных выпусков она будет охватывать приложение GoodGood, вспомогательные программы Диспетчера задач, деинсталлятор и установщик, собранные GitHub Actions из исходников этого репозитория. Включённые сторонние программы сохранят исходные подписи.
 
-- **Сопровождение кода и проверка изменений**: [@Ray-lea](https://github.com/Ray-lea), отвечает за поддержку кода и проверку внешних вкладов.
-- **Утверждение подписи**: [@Ray-lea](https://github.com/Ray-lea), вручную одобряет каждый запрос подписи для официального выпуска.
 - **Политика конфиденциальности**: [English](PRIVACY.md#english) · [한국어](PRIVACY.md#한국어). Описывает включённую по умолчанию проверку обновлений, резервные прокси, загрузку PawnIO по необходимости, добровольную обратную связь и обработку данных третьими лицами.
 
 Обновления из приложения используют отдельный ключ выпуска Minisign для проверки установщиков и номеров версий. Windows Authenticode определяет подписанта исполняемого файла.
@@ -207,28 +202,14 @@ GoodGood использует следующие проекты с открыт�
 
 Полный перечень сторонних компонентов и их лицензий приведён в [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).
 
-Благодарим сообщество [LINUX DO](https://linux.do/) за поддержку.
-
 <!-- supporters:start · node scripts/supporters.mjs -->
-<p align="center">
-  <a href="https://github.com/bronyaicu" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/supporters/bronyaicu-ru-dark.svg"><img src="docs/images/supporters/bronyaicu-ru-light.svg" width="720" alt="Поддержка проекта &amp; особая благодарность: bronyaicu"></picture></a>
-</p>
 <!-- supporters:end -->
 
 <a id="license"></a>
 
 ## 📄 Лицензия
 
-GoodGood — свободное программное обеспечение под лицензией [GNU Affero General Public License](LICENSE) версии 3 или, по выбору пользователя, любой более поздней версии (`AGPL-3.0-or-later`).
-
-<a href="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors?repo_id=1415551131&limit=30" target="_blank" style="display: block" align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=dark" width="655" height="auto">
-    <img alt="Active Contributors of Ray-lea/GoodGood - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=light" width="655" height="auto">
-  </picture>
-</a>
-
-<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+GoodGood — свободное программное обеспечение под лицензией [Apache License 2.0](LICENSE).
 
 <div align="center">
 <br>

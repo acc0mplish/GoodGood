@@ -422,7 +422,7 @@
     },
     "license": {
       "title": "Licence",
-      "desc": "GoodGood est un logiciel libre distribué sous la GNU Affero General Public License, version 3 ou toute version ultérieure (AGPL-3.0-or-later). Il peut être redistribué et modifié selon les termes de cette licence. GoodGood est fourni sans garantie.",
+      "desc": "GoodGood est un logiciel libre distribué sous la licence Apache 2.0. Il peut être redistribué et modifié selon les termes de cette licence. GoodGood est fourni sans garantie.",
       "view": "Afficher la licence"
     },
     "notices": {

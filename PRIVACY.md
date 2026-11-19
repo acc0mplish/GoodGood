@@ -21,7 +21,7 @@ GoodGood은 프로세스, 하드웨어, 네트워크 연결과 리소스 사용�
 - GitHub의 업데이트 다운로드, PawnIO 설치 파일 다운로드와 이슈 피드백: [GitHub 개인정보 보호정책](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 - `gh-proxy.com`과 현재 이 사이트로 연결되는 `gh-proxy.org`: [GH-Proxy 개인정보 처리방침](https://gh-proxy.com/privacy). `ghfast.top`의 서비스 설명은 [운영자 웹사이트](https://ghfast.top/)를 참고하십시오. 직접 지정한 프록시의 개인정보 규칙은 그 운영자가 공개합니다. 프록시 서비스는 각 운영자가 관리하며, GitHub만 연결을 선택하면 업데이트 요청이 프록시로 전송되지 않습니다.
 
-조작 방법은 [업데이트 설정](docs/guide/settings.md#업데이트)과 [커널 센서](docs/guide/settings.md#커널-센서)를 참고하십시오. 개인정보 관련 문의는 [GitHub Issues](https://github.com/Ray-lea/GoodGood/issues)로 유지 관리자에게 연락하고, 취약점이나 민감한 자료는 [비공개 보안 보고](https://github.com/Ray-lea/GoodGood/security/advisories/new)를 이용하십시오. 메일로는 contact@example.com, 보안 관련은 security@example.com으로 보낼 수 있습니다.
+조작 방법은 [업데이트 설정](docs/guide/settings.md#업데이트)과 [커널 센서](docs/guide/settings.md#커널-센서)를 참고하십시오. 개인정보 관련 문의는 [GitHub Issues](https://github.com/acc0mplish/GoodGood/issues)로 유지 관리자에게 연락하고, 취약점이나 민감한 자료는 [비공개 보안 보고](https://github.com/acc0mplish/GoodGood/security/advisories/new)를 이용하십시오. 메일로는 contact@example.com, 보안 관련은 security@example.com으로 보낼 수 있습니다.
 
 ## English
 
@@ -42,4 +42,4 @@ Third-party services handle request data under their own privacy rules:
 - GitHub update downloads, PawnIO installer downloads, and issue reports: [GitHub Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement).
 - `gh-proxy.com` and `gh-proxy.org`, which currently redirects there: [GH-Proxy Privacy Policy](https://gh-proxy.com/privacy). See the [operator's website](https://ghfast.top/) for `ghfast.top` service information; custom proxy operators publish their own privacy rules. Each operator manages its proxy service. Selecting GitHub only avoids sending update requests to proxies.
 
-See [update settings](docs/guide/settings.md#업데이트) and [kernel sensors](docs/guide/settings.md#커널-센서) for instructions. Contact the maintainer through [GitHub Issues](https://github.com/Ray-lea/GoodGood/issues) about privacy, or use a [private security report](https://github.com/Ray-lea/GoodGood/security/advisories/new) for vulnerabilities or sensitive material. Mail can be sent to contact@example.com, and security matters to security@example.com.
+See [update settings](docs/guide/settings.md#업데이트) and [kernel sensors](docs/guide/settings.md#커널-센서) for instructions. Contact the maintainer through [GitHub Issues](https://github.com/acc0mplish/GoodGood/issues) about privacy, or use a [private security report](https://github.com/acc0mplish/GoodGood/security/advisories/new) for vulnerabilities or sensitive material. Mail can be sent to contact@example.com, and security matters to security@example.com.

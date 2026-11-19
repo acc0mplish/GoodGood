@@ -1,0 +1,48 @@
+{
+  "state": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "startPending": "Starting",
+    "stopPending": "Stopping",
+    "paused": "Paused",
+    "pausePending": "Pausing",
+    "continuePending": "Resuming"
+  },
+  "startType": {
+    "auto": "Automatic",
+    "autoDelayed": "Automatic (Delayed Start)",
+    "manual": "Manual",
+    "disabled": "Disabled",
+    "boot": "Boot",
+    "system": "System"
+  },
+  "filter": {
+    "all": "All",
+    "running": "Running",
+    "stopped": "Stopped"
+  },
+  "search": "Search name, description or PID",
+  "control": {
+    "start": "Start service",
+    "stop": "Stop service",
+    "restart": "Restart service",
+    "openConsoleTitle": "Open the Windows Services console"
+  },
+  "menu": {
+    "startType": "Startup type: {type}",
+    "copyName": "Copy service name"
+  },
+  "copied": {
+    "name": "service name"
+  },
+  "column": {
+    "display": "Service",
+    "startType": "Startup type",
+    "description": "Description"
+  },
+  "loading": "Reading services…",
+  "noMatch": "No matching services",
+  "clearFilter": "Clear filters",
+  "summary": "{running} of {total} running",
+  "manageHint": "Most services can only be managed with the privileged service enabled or with GoodGood running as administrator."
+}

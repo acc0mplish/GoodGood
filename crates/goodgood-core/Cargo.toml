@@ -1,0 +1,17 @@
+[package]
+name = "goodgood-core"
+description = "GoodGood system data collection and process control layer (UI independent)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+log = "0.4.35"
+png = "0.18.1"
+serde = { version = "1.0.229", features = ["derive", "rc"] }
+serde_json = "1.0.154"
+windows = { workspace = true }

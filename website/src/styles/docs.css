@@ -1,0 +1,31 @@
+/* Fumadocs' neutral theme as fumadocs.dev uses it, with the app's accent
+   (the Windows accent blue) and fonts. */
+:root {
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+  --color-fd-primary: #0067c0;
+  --color-fd-ring: #0067c0;
+}
+.dark {
+  --color-fd-primary: #4cc2ff;
+  --color-fd-ring: #4cc2ff;
+}
+
+/* Chinese text reads better a little looser than Fumadocs' Latin defaults. */
+.docs-prose {
+  line-height: 1.85;
+}
+/* Every document opens with a summary paragraph: the lead under the title. */
+.docs-prose > p:first-child {
+  margin-top: 0;
+  color: var(--color-fd-muted-foreground);
+  font-size: 1.0625rem;
+}
+.docs-prose :where(code):not(:where(pre *)) {
+  font-size: 0.875em;
+}
+/* Short Chinese headers and row labels would otherwise break between characters
+   when the last column holds long text. */
+.docs-prose :where(th, td:first-child) {
+  white-space: nowrap;
+}

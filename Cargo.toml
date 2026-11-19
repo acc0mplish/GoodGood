@@ -1,0 +1,122 @@
+[workspace]
+resolver = "3"
+members = ["crates/goodgood-core", "crates/goodgood-service", "crates/goodgood-app", "src-gpui", "tools/window-probe", "tools/update-signer"]
+default-members = ["src-gpui"]
+exclude = ["vendor/gpui-pre", "vendor/gpui-pre-windows"]
+
+[patch.crates-io]
+gpui-pre = { path = "vendor/gpui-pre" }
+gpui-pre-windows = { path = "vendor/gpui-pre-windows" }
+
+[workspace.package]
+version = "0.5.0"
+edition = "2024"
+rust-version = "1.100.0"
+license = "AGPL-3.0-or-later"
+authors = ["GoodGood contributors"]
+repository = "https://github.com/Ray-lea/GoodGood"
+homepage = "https://goodgoodtask.com"
+
+[workspace.dependencies]
+# Shared Windows API features used by collection, services and the native host.
+windows = { version = "0.62.2", features = [
+  # goodgood-core and the host
+  "ApplicationModel",
+  "Data_Xml_Dom",
+  "Management_Deployment",
+  "Storage_Search",
+  "UI_ViewManagement",
+  "Wdk_Foundation",
+  "Wdk_Storage_FileSystem",
+  "Wdk_Graphics_Direct3D",
+  "Wdk_System_SystemInformation",
+  "Wdk_System_Threading",
+  "Win32_Devices_DeviceAndDriverInstallation",
+  "Win32_Devices_Display",
+  "Win32_Devices_Properties",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Direct3D12",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Gdi",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_Networking_WinSock",
+  "Win32_Security",
+  "Win32_Security_Authorization",
+  "Win32_Security_Cryptography",
+  "Win32_Security_WinTrust",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com",
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_Diagnostics_Etw",
+  "Win32_System_Environment",
+  "Win32_System_IO",
+  "Win32_System_Ioctl",
+  "Win32_System_JobObjects",
+  "Win32_System_Performance",
+  "Win32_System_Pipes",
+  "Win32_System_Power",
+  "Win32_System_ProcessStatus",
+  "Win32_System_Registry",
+  "Win32_System_RestartManager",
+  "Win32_System_Services",
+  "Win32_System_StationsAndDesktops",
+  "Win32_System_SystemInformation",
+  "Win32_System_SystemServices",
+  "Win32_System_TaskScheduler",
+  "Win32_System_Threading",
+  "Win32_System_Time",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_UI_WindowsAndMessaging",
+  # Native windowing, accessibility and input
+  "Win32_Devices_HumanInterfaceDevice",
+  "Win32_Globalization",
+  "Win32_Graphics_DirectWrite",
+  "Win32_Graphics_Dwm",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_DataExchange",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+  "Win32_System_WinRT",
+  "Win32_System_WindowsProgramming",
+  "Win32_UI_Accessibility",
+  "Win32_UI_Controls",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_Ime",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Input_Pointer",
+  "Win32_UI_Input_Touch",
+  "Win32_UI_TextServices",
+] }
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = 3
+panic = "abort"
+strip = true
+
+# Debug builds: keep backtraces readable but skip full debuginfo, which made
+# the dev exe ~250 MB and dominated target/ size and link time. For stepping
+# through code in a debugger, build with CARGO_PROFILE_DEV_DEBUG=full.
+[profile.dev]
+debug = "line-tables-only"
+
+# Dependencies are compiled once and cached: optimize them so the dev app is
+# responsive, and drop their debuginfo entirely.
+[profile.dev.package."*"]
+opt-level = 2
+debug = false
+
+# The interface and collection code run every frame and every sample: at
+# opt-level 0 the dev app scrolled tables at ~85 fps where release reaches
+# ~125. Level 2 keeps a one-line change rebuilding in about 30 s.
+[profile.dev.package.goodgood]
+opt-level = 2
+
+[profile.dev.package.goodgood-core]
+opt-level = 2

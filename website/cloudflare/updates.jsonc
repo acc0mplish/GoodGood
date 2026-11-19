@@ -1,0 +1,12 @@
+{
+  "name": "goodgoodtask-updates",
+  "compatibility_date": "2026-11-03",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "update.goodgoodtask.com", "custom_domain": true }],
+  "assets": {
+    "directory": "../../target/official-web/dist/updates",
+    "html_handling": "none",
+    "not_found_handling": "none",
+  },
+}

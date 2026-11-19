@@ -1,0 +1,371 @@
+{
+  "visibility": {
+    "toggle": "Ocultar procesos del sistema",
+    "show": "Mostrar procesos del sistema",
+    "processHint": "Oculta los componentes de Windows y los procesos de la lista adicional, excepto los de «Mostrar siempre». Solo afecta a la visualización.",
+    "networkHint": "Ocultar conexiones propiedad de procesos del sistema y entradas sin proceso propietario (PID 0). Solo cambia la lista mostrada.",
+    "edit": "Editar reglas de ocultación",
+    "description": "Los procesos del sistema se identifican mediante la información de componentes de Windows. Ambas páginas comparten estas reglas y guardan por separado la opción de ocultación.",
+    "keep": "Mostrar siempre",
+    "keepHint": "Mantenga estos programas visibles, incluidos los procesos del sistema. Esta lista tiene prioridad sobre ocultaciones adicionales.",
+    "hide": "También ocultar",
+    "hideHint": "Oculte estos programas cuando la ocultación esté habilitada. Déjelo vacío para ocultar únicamente los procesos del sistema.",
+    "namesHint": "Ingrese nombres de ejecutables separados por comas o punto y coma, hasta 128 por lista. Los nombres no distinguen entre mayúsculas y minúsculas.",
+    "invalid": "Ingrese nombres ejecutables válidos sin rutas ni comodines, hasta 128 por lista.",
+    "reset": "Restaurar reglas predeterminadas",
+    "empty": "Ningún elemento coincide con los filtros actuales.",
+    "clear": "Mostrar todo y borrar filtros"
+  },
+  "identityPending": "Confirmando la identidad del proceso. Vuelva a intentarlo más tarde.",
+  "countersPending": "Recopilando contadores de recursos para este proceso.",
+  "refreshPending": "Actualización de datos del proceso. Mostrando la última lectura recopilada correctamente.",
+  "diskUnavailable": {
+    "pending": "Aún no hay datos de disco: los procesos que acaban de aparecer tendrán lecturas en la próxima actualización.",
+    "enable": "No hay lectura de disco. Windows no proporciona estos contadores directamente, por lo que provienen del servicio privilegiado, que se puede habilitar en Configuración.",
+    "update": "No hay lectura de disco. La versión del servicio privilegiado no coincide con GoodGood; actualice el servicio en Configuración.",
+    "start": "No hay datos de disco: el servicio privilegiado está detenido. Puede iniciarlo en Configuración.",
+    "service": "No se pudieron obtener datos de disco del servicio privilegiado. Compruebe su estado en Configuración.",
+    "unavailable": "No hay lectura de disco. Los contadores de disco por proceso no se pueden leer en este momento."
+  },
+  "serviceHost": "Host de servicio: {names}",
+  "webView": {
+    "host": "WebView2: {name}",
+    "role": {
+      "browser": "Proceso del navegador",
+      "renderer": "Proceso de renderizado",
+      "gpu": "Proceso GPU",
+      "network": "Servicio de red",
+      "storage": "Servicio de almacenamiento",
+      "audio": "Servicio de audio",
+      "utility": "Proceso de utilidad",
+      "crashpad": "Controlador de fallos"
+    }
+  },
+  "total": {
+    "one": "{count} proceso",
+    "many": "{count} procesos",
+    "other": "{count} procesos"
+  },
+  "totalHidden": {
+    "one": "{total} ({count} oculto)",
+    "many": "{total} ({count} ocultos)",
+    "other": "{total} ({count} ocultos)"
+  },
+  "filtered": "La lista se filtra por la búsqueda.",
+  "orderHeld": "Ordenación en pausa: las filas mantienen su posición y los valores se siguen actualizando. Se vuelven a ordenar cuando el puntero sale de la lista o se cierra el menú o el cuadro de diálogo.",
+  "groupIn": "{user} · {group}",
+  "groupPlace": "{index} / {total}",
+  "column": {
+    "name": {
+      "label": "Nombre",
+      "title": "Nombre de la aplicación o descripción del archivo; el texto secundario muestra el nombre del ejecutable."
+    },
+    "pid": {
+      "label": "PID",
+      "title": "ID de proceso"
+    },
+    "cpu": {
+      "label": "CPU",
+      "title": "Porcentaje de la capacidad total del procesador"
+    },
+    "mem": {
+      "label": "Memoria",
+      "title": "Conjunto de trabajo privado: memoria física utilizada solo por este proceso"
+    },
+    "diskRead": {
+      "label": "Lectura de disco",
+      "title": "Bytes leídos del disco por segundo; no incluye la red ni las operaciones I/O de otros dispositivos"
+    },
+    "diskWrite": {
+      "label": "Escritura en disco",
+      "title": "Bytes escritos en el disco por segundo; no incluye la red ni las operaciones I/O de otros dispositivos"
+    },
+    "io": {
+      "label": "I/O",
+      "title": "Todo tipo de lectura, escritura y otros I/O, incluidos archivos, redes y dispositivos"
+    },
+    "gpu": {
+      "label": "GPU",
+      "title": "Porcentaje de tiempo que el proceso utiliza su motor GPU más ocupado"
+    },
+    "net": {
+      "label": "Red",
+      "title": "Bytes enviados y recibidos por segundo"
+    },
+    "threads": {
+      "label": "Subprocesos",
+      "title": "Número de subprocesos"
+    },
+    "handles": {
+      "label": "Identificadores",
+      "title": "Número de identificadores"
+    },
+    "imageName": {
+      "label": "Nombre de imagen",
+      "title": "Nombre del archivo ejecutable."
+    },
+    "ppid": {
+      "label": "PID principal",
+      "title": "ID del proceso principal registrado al crear el proceso."
+    },
+    "path": {
+      "label": "Ruta de imagen",
+      "title": "Ruta completa del ejecutable del proceso."
+    },
+    "description": {
+      "label": "Descripción",
+      "title": "Descripción del archivo ejecutable o nombre de la aplicación empaquetada."
+    },
+    "company": {
+      "label": "Empresa",
+      "title": "Nombre de la empresa de la información de la versión ejecutable."
+    },
+    "version": {
+      "label": "Versión del archivo",
+      "title": "Versión del archivo según la información de versión del ejecutable."
+    },
+    "architecture": {
+      "label": "Arquitectura",
+      "title": "Arquitectura de procesador con la que se ejecuta el proceso."
+    },
+    "elevated": {
+      "label": "Elevado",
+      "title": "Si el proceso se ejecuta con derechos de administrador (un token elevado)."
+    },
+    "commandLine": {
+      "label": "Línea de comandos",
+      "title": "Línea de comandos completa con la que se inició el proceso, con sus argumentos."
+    },
+    "sessionId": {
+      "label": "ID de sesión",
+      "title": "Número de la sesión de Windows a la que pertenece el proceso."
+    },
+    "createTime": {
+      "label": "Hora de inicio",
+      "title": "Hora de creación del proceso en la zona horaria local."
+    },
+    "suspended": {
+      "label": "Suspendido",
+      "title": "Todos los subprocesos del proceso están esperando en estado suspendido."
+    },
+    "efficiency": {
+      "label": "Modo de eficiencia",
+      "title": "Estado de eficiencia energética EcoQoS del proceso."
+    },
+    "cpuTime": {
+      "label": "Tiempo de CPU",
+      "title": "Tiempo acumulado de CPU en modo de usuario y de kernel; los grupos muestran la suma de sus miembros."
+    },
+    "cpuUserTime": {
+      "label": "Tiempo de CPU de usuario",
+      "title": "Tiempo acumulado de CPU del proceso en modo de usuario."
+    },
+    "cpuKernelTime": {
+      "label": "Tiempo de CPU del kernel",
+      "title": "Tiempo acumulado de CPU del proceso en modo de kernel."
+    },
+    "basePriority": {
+      "label": "Prioridad básica",
+      "title": "Prioridad base del proceso indicada por Windows, mostrada como su clase de prioridad. Un valor entre clases, que Windows asigna a algunos procesos del sistema, se muestra como número."
+    },
+    "workingSet": {
+      "label": "Conjunto de trabajo",
+      "title": "Memoria física residente, incluidas páginas compartidas. Los grupos suman conjuntos de trabajo de miembros."
+    },
+    "peakWorkingSet": {
+      "label": "Máximo conjunto de trabajo",
+      "title": "Conjunto de trabajo máximo de un proceso desde el inicio. Expanda un grupo de aplicaciones para ver sus procesos."
+    },
+    "commit": {
+      "label": "Tamaño de confirmación",
+      "title": "Memoria privada confirmada del proceso."
+    },
+    "virtualSize": {
+      "label": "Espacio de direcciones virtuales",
+      "title": "Rangos de direcciones virtuales reservados y confirmados de un proceso. La memoria confirmada figura en «Tamaño de confirmación»."
+    },
+    "pageFaults": {
+      "label": "Errores de página",
+      "title": "Fallos de página acumulados, incluidos fallos leves y graves."
+    },
+    "memoryPriority": {
+      "label": "Prioridad de memoria",
+      "title": "Orden en que Windows recupera las páginas de memoria del proceso cuando falta memoria; cuanto más baja, antes."
+    },
+    "ioRead": {
+      "label": "Lectura de I/O",
+      "title": "I/O bytes leídos por segundo, incluidos archivos, redes y dispositivos."
+    },
+    "ioWrite": {
+      "label": "Escritura de I/O",
+      "title": "I/O bytes escritos por segundo, incluidos archivos, redes y dispositivos."
+    },
+    "ioOther": {
+      "label": "Otras I/O",
+      "title": "Bytes transferidos por segundo por otras operaciones I/O."
+    },
+    "ioReadTotal": {
+      "label": "Lectura acumulada de I/O",
+      "title": "Total de bytes I/O leídos durante la vida útil del proceso."
+    },
+    "ioWriteTotal": {
+      "label": "Escritura acumulada de I/O",
+      "title": "Total de bytes I/O escritos durante la vida útil del proceso."
+    },
+    "ioOtherTotal": {
+      "label": "Otras I/O acumuladas",
+      "title": "Total de bytes transferidos por otros I/O durante la vida útil del proceso."
+    },
+    "ioPriority": {
+      "label": "Prioridad de I/O",
+      "title": "Indicación de prioridad para las solicitudes de disco y otras I/O del proceso."
+    },
+    "netReceived": {
+      "label": "Recepción de red",
+      "title": "Tráfico de red recibido por el proceso por segundo."
+    },
+    "netSent": {
+      "label": "Envío de red",
+      "title": "Tráfico de red enviado por el proceso por segundo."
+    },
+    "gpuEngine": {
+      "label": "Motor de GPU",
+      "title": "El motor GPU más ocupado del proceso."
+    },
+    "gpuDedicated": {
+      "label": "Memoria dedicada de GPU",
+      "title": "Memoria GPU dedicada residente actual atribuida al proceso. Los grupos suman contadores de miembros."
+    },
+    "gpuShared": {
+      "label": "Memoria compartida de GPU",
+      "title": "Lectura actual de memoria compartida de GPU residente atribuida al proceso; los grupos muestran la suma de sus miembros."
+    }
+  },
+  "noMatch": "Ningún proceso coincide con “{query}”",
+  "efficiencyCount": {
+    "one": "{count} proceso en modo de eficiencia",
+    "many": "{count} procesos en modo de eficiencia",
+    "other": "{count} procesos en modo de eficiencia"
+  },
+  "suspended": "Suspendido",
+  "netRates": "Envío {sent}, recepción {received}",
+  "section": {
+    "apps": "Aplicaciones",
+    "background": "Procesos en segundo plano",
+    "windows": "Procesos de Windows"
+  },
+  "user": {
+    "system": "Sistema",
+    "disconnected": "Desconectado",
+    "manage": "Administrar cuentas de usuario",
+    "manageFailed": "No se pudo abrir Cuentas de usuario en el Panel de control.",
+    "signOut": {
+      "action": "Cerrar sesión",
+      "title": "¿Cerrar la sesión de {name}?",
+      "body": "Se cerrarán todos los programas de este usuario. Los datos no guardados pueden perderse.",
+      "bodyCurrent": "Se cerrarán todos los programas de la cuenta actual, incluido GoodGood. Los datos no guardados pueden perderse.",
+      "needsAdmin": "Se requieren derechos de administrador",
+      "done": "Sesión de {name} cerrada",
+      "denied": "No se pudo cerrar la sesión de {name}: acceso denegado. Ejecute GoodGood como administrador y vuelva a intentarlo.",
+      "gone": "{name} ya no tiene la sesión iniciada.",
+      "failed": "No se pudo cerrar la sesión de {name}: {error}"
+    }
+  },
+  "sectionSearching": "Se muestran todas las coincidencias durante la búsqueda; borre la búsqueda para contraer los grupos",
+  "servicesSummary": "{names}, entre otros ({count} servicios)",
+  "pidExited": "El proceso con PID {pid} ya ha finalizado.",
+  "priority": {
+    "realtime": "Tiempo real",
+    "high": "Alta",
+    "aboveNormal": "Superior a la normal",
+    "normal": "Normal",
+    "belowNormal": "Inferior a la normal",
+    "idle": "Baja"
+  },
+  "ioPriority": {
+    "veryLow": "Muy baja",
+    "low": "Baja",
+    "normal": "Normal",
+    "high": "Alta",
+    "critical": "Crítica"
+  },
+  "memoryPriority": {
+    "veryLow": "Muy baja",
+    "low": "Baja",
+    "medium": "Media",
+    "belowNormal": "Por debajo de lo normal",
+    "normal": "Normal"
+  },
+  "menu": {
+    "endAll": {
+      "one": "Finalizar {count} proceso",
+      "many": "Finalizar los {count} procesos",
+      "other": "Finalizar los {count} procesos"
+    },
+    "setPriority": "Establecer prioridad",
+    "ioPriority": "Prioridad de I/O",
+    "memoryPriority": "Prioridad de memoria",
+    "suspend": "Suspender proceso",
+    "resume": "Reanudar proceso",
+    "addRule": "Añadir regla",
+    "copyPid": "Copiar PID",
+    "copyPidWhat": "PID",
+    "details": "Detalles"
+  },
+  "tree": {
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo"
+  },
+  "vitals": {
+    "open": "Ver {device} en Rendimiento",
+    "diskActive": "Activo {value} %",
+    "netTitle": "R: recibido, S: enviado",
+    "netRates": "R: {received} S: {sent}",
+    "acpiTemperature": "Temperatura de la zona térmica ACPI"
+  },
+  "memoryScope": {
+    "vital": "Memoria física en uso en todo el sistema: el total menos la disponible, incluidas las páginas en uso y modificadas. Las filas de procesos muestran su propio conjunto de trabajo privado, que suma menos. El desglose completo está en la guía del usuario, docs/guide/README.md.",
+    "header": "El porcentaje de arriba es la proporción de memoria física en uso en todo el sistema. Las filas muestran el conjunto de trabajo privado: la memoria física que usa solo ese proceso; los grupos de aplicaciones y las categorías lo suman. El desglose completo está en la guía del usuario, docs/guide/README.md.",
+    "section": "Suma de los conjuntos de trabajo privados de los procesos de esta categoría. El uso de todo el sistema también incluye páginas compartidas, el kernel y los controladores, las tablas de páginas, la caché del sistema en uso y las páginas modificadas, por lo que supera la suma de las categorías. El desglose completo está en la guía del usuario, docs/guide/README.md."
+  },
+  "columns": {
+    "choose": "Seleccionar columnas",
+    "autoWidth": "Ancho automático",
+    "fullWidth": "Ancho completo",
+    "fitWidth": "Ajustar automáticamente esta columna",
+    "edgeHint": "Arrastrar para cambiar el ancho; doble clic para ajustar automáticamente",
+    "yes": "Sí",
+    "no": "No",
+    "reset": "Restaurar columnas predeterminadas",
+    "apply": "Aceptar",
+    "chooseMore": "Seleccionar columnas…",
+    "sortAscending": "Orden ascendente",
+    "sortDescending": "Orden descendente",
+    "hide": "Ocultar columna {name}",
+    "description": "Marque las columnas que desea mostrar. Arrástrelas en la lista de la derecha o arrastre sus encabezados para cambiar el orden.",
+    "networkUnavailable": "Las columnas de red seleccionadas aparecen cuando los datos de tráfico están disponibles.",
+    "gpuUnavailable": "No se detectó ninguna GPU. Las columnas de GPU seleccionadas están ocultas.",
+    "category": {
+      "general": "General",
+      "cpu": "CPU",
+      "memory": "Memoria",
+      "io": "Disco y I/O",
+      "network": "Red",
+      "gpu": "GPU",
+      "all": "Todos"
+    },
+    "order": "Orden de columnas",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "remove": "Quitar",
+    "search": "Buscar columnas o descripciones",
+    "selectAll": "Seleccionar todo",
+    "clear": "Borrar",
+    "noMatch": "No hay columnas coincidentes",
+    "fixed": "Fija",
+    "selectionSummary": "Seleccionadas: {count}",
+    "virtualAliases": "memoria virtual bytes virtuales reserva de direcciones"
+  },
+  "basePriorityBetween": "No es una clase de prioridad. Windows asigna esta prioridad base directamente a algunos procesos del sistema; está entre {below} y {above}.",
+  "basePriorityCustom": "No es una clase de prioridad. Windows asigna esta prioridad base directamente a algunos procesos del sistema."
+}

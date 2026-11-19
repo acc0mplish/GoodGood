@@ -1,0 +1,58 @@
+{
+  "filter": {
+    "all": {
+      "label": "Alle"
+    },
+    "listen": {
+      "label": "Abhören"
+    },
+    "established": {
+      "label": "Hergestellt"
+    }
+  },
+  "protocolFilter": {
+    "tcp": "TCP",
+    "tcp6": "TCPv6",
+    "udp": "UDP",
+    "udp6": "UDPv6"
+  },
+  "state": {
+    "listen": "Abhören",
+    "established": "Hergestellt",
+    "synSent": "SYN gesendet",
+    "synReceived": "SYN empfangen",
+    "finWait1": "Wird geschlossen",
+    "finWait2": "Wird geschlossen",
+    "closeWait": "Wartet auf Schließen",
+    "closing": "Wird geschlossen",
+    "lastAck": "Wird geschlossen",
+    "timeWait": "Wartet auf Zeitablauf",
+    "closed": "Geschlossen"
+  },
+  "menu": {
+    "end": "{name} beenden",
+    "close": "Diese Verbindung schließen",
+    "copyLocal": "Lokale Adresse kopieren",
+    "copyRemote": "Remote-Adresse kopieren"
+  },
+  "copied": {
+    "local": "lokale Adresse",
+    "remote": "Remote-Adresse"
+  },
+  "search": "Port, Adresse oder Prozess, z. B. 8080",
+  "column": {
+    "process": "Prozess",
+    "protocol": "Protokoll",
+    "localAddress": "Lokale Adresse",
+    "localPort": "Lokaler Port",
+    "remoteAddress": "Remoteadresse",
+    "remotePort": "Remoteport"
+  },
+  "exited": "Beendet",
+  "unowned": "Kein zugehöriger Prozess",
+  "loading": "Verbindungen werden gelesen…",
+  "noMatch": "Keine passenden Verbindungen",
+  "noMatchPort": "Keine passenden Verbindungen: Kein Programm verwendet Port {port}",
+  "clearFilter": "Filter zurücksetzen",
+  "note": "Aktualisierungen alle 2 Sekunden. Doppelklicken Sie auf eine Zeile, um zu ihrem Prozess zu gelangen."
+}

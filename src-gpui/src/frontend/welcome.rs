@@ -1,0 +1,2496 @@
+//! Native onboarding, release notes and the update dialog.
+use super::*;
+use gpui_kit::component::dialog::Dialog;
+use release_notes::{Kind, Note};
+
+/// Figures that keep their width (`tnum`).
+fn tabular() -> FontFeatures {
+    FontFeatures(Arc::new(vec![("tnum".into(), 1)]))
+}
+use widgets::{ButtonExt, Handler, ToastKind, Tone};
+
+// The update reader keeps its own look but moves with the website's
+// changelog timing (`--ease`, `Disclosure.tsx` and the transitions of the
+// `.cl-*` rules in `website/src/styles/pages.css`).
+
+/// The website's curve: it leaves at once and settles gently, softer than
+/// Fluent's decelerate.
+fn ease(t: f32) -> f32 {
+    theme::bezier(0.2, 0.8, 0.2, 1., t)
+}
+/// A release folds or unfolds in 1.6 ms for each pixel of its notes, within
+/// these bounds (ms); notes not yet measured take `FOLD_UNMEASURED_MS`.
+const FOLD_MIN_MS: f32 = 240.;
+const FOLD_MAX_MS: f32 = 420.;
+const FOLD_MS_PER_PX: f32 = 1.6;
+const FOLD_UNMEASURED_MS: u64 = 360;
+/// How long the pointer's light takes to come and to go (ms), as long as
+/// the website's card and list transitions: a feature card takes its kind's
+/// colour, a change its highlight, a release row the hover fill.
+const CARD_HOVER_MS: u64 = 320;
+const ITEM_HOVER_MS: u64 = 220;
+const ROW_HOVER_MS: u64 = 200;
+/// The update dialog's parts come in one after another (`Desktop::rise`):
+/// each `RISE_STEP` seconds after the one before (the first `RISE_STEPS`
+/// only), over `RISE_LENGTH` seconds, from `RISE_DISTANCE` px below.
+const RISE_STEP: f32 = 0.06;
+const RISE_STEPS: usize = 8;
+const RISE_LENGTH: f32 = 0.56;
+const RISE_DISTANCE: f32 = 16.;
+
+pub(super) fn configuration() -> &'static Value {
+    static CONFIG: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+    CONFIG.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../resources/desktop.json"))
+            .expect("desktop configuration")
+    })
+}
+
+/// One release of the changelog: version, date and its notes.
+#[derive(Clone)]
+pub(super) struct Release {
+    pub version: String,
+    pub date: String,
+    pub notes: String,
+}
+
+/// The releases written into the app's changelog, newest first, in the
+/// interface language.
+pub(super) fn changelog() -> Vec<Release> {
+    let source = release_notes::source(goodgood_core::i18n::locale());
+    let mut releases: Vec<Release> = vec![];
+    for line in source.lines() {
+        if let Some(rest) = line.strip_prefix("## [") {
+            let version = rest.split(']').next().unwrap_or_default().to_owned();
+            let date = rest
+                .rsplit(" - ")
+                .next()
+                .filter(|d| d.len() == 10)
+                .unwrap_or_default()
+                .to_owned();
+            releases.push(Release {
+                version,
+                date,
+                notes: String::new(),
+            });
+        } else if let Some(release) = releases.last_mut() {
+            release.notes.push_str(line);
+            release.notes.push('\n');
+        }
+    }
+    for release in &mut releases {
+        release.notes = release.notes.trim().to_owned();
+    }
+    releases
+}
+
+fn version(text: &str) -> Option<semver::Version> {
+    semver::Version::parse(text.trim_start_matches('v')).ok()
+}
+
+/// Releases after `from` up to and including `to`, newest first.
+fn between(releases: Vec<Release>, from: Option<&str>, to: &str) -> Vec<Release> {
+    let to = version(to);
+    let from = from.and_then(version);
+    let mut list = releases
+        .into_iter()
+        .filter(|r| {
+            let Some(v) = version(&r.version) else {
+                return false;
+            };
+            to.as_ref().is_none_or(|to| v <= *to) && from.as_ref().is_none_or(|from| v > *from)
+        })
+        .collect::<Vec<_>>();
+    if from.is_none() {
+        list.truncate(1);
+    }
+    list
+}
+
+/// The releases the update status carries, in the reader's language.
+fn offered_releases(status: &Value) -> Vec<Release> {
+    let locale = goodgood_core::i18n::locale().tag();
+    values(&status["releases"])
+        .iter()
+        .map(|release| Release {
+            version: text(release, "version").to_owned(),
+            date: text(release, "date").to_owned(),
+            notes: notes_in(locale, release).to_owned(),
+        })
+        .collect()
+}
+
+fn notes_in<'a>(locale: &str, release: &'a Value) -> &'a str {
+    let translated = |locale: &str| {
+        release["translations"][locale]
+            .as_str()
+            .filter(|notes| !notes.trim().is_empty())
+    };
+    translated(locale)
+        .or_else(|| {
+            (!matches!(locale, "ko-KR"))
+                .then(|| translated("en-US"))
+                .flatten()
+        })
+        .unwrap_or_else(|| text(release, "notes"))
+}
+
+impl Desktop {
+    /// Started by the task manager replacement (Ctrl+Shift+Esc): the system
+    /// may be struggling, so this run shows nothing that can wait. What it
+    /// holds back (the welcome, the star card, the portable copy's notice)
+    /// comes at a later start of its own.
+    pub(in crate::frontend) fn holds_back(&self) -> bool {
+        boolean(&self.data["info"], "taskManager")
+    }
+
+    pub(in crate::frontend) fn check_welcome(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.welcome_checked
+            || self.options.test
+            || self.snapshot.is_null()
+            || self.modal.is_some()
+        {
+            return;
+        }
+        if !self
+            .host
+            .get_window("main")
+            .is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false))
+        {
+            return;
+        }
+        self.welcome_checked = true;
+        if self.holds_back() {
+            return;
+        }
+        if number(&self.data["settings"], "onboarding")
+            < number(configuration(), "onboardingVersion")
+        {
+            self.open_dialog("onboarding", json!({"step":0}), window, cx);
+            self.skip_star_this_run();
+            return;
+        }
+        if boolean(&self.data["info"], "updated")
+            && text(&self.data["settings"], "seenVersion") != env!("CARGO_PKG_VERSION")
+        {
+            let from = self.prefs.get::<Option<String>>("update.from", None);
+            self.prefs.set("update.from", Value::Null);
+            if boolean(&self.data["settings"], "whatsNew") {
+                self.open_dialog("whatsnew", json!({"from":from}), window, cx);
+            } else {
+                let args = json!({"from":from});
+                self.toast_with(
+                    ToastKind::Success,
+                    tr!("updates.updated", version = env!("CARGO_PKG_VERSION")),
+                    10000,
+                    vec![(
+                        label("updates.whatsNew"),
+                        Rc::new(
+                            move |this: &mut Desktop,
+                                  window: &mut Window,
+                                  cx: &mut Context<Desktop>| {
+                                this.open_dialog("whatsnew", args.clone(), window, cx)
+                            },
+                        ),
+                    )],
+                );
+            }
+            self.request("note_version_seen", json!({}), Some("settings"), window, cx);
+            self.ui.errors.insert("offerService".into(), "1".into());
+            self.request(
+                "privileged_service_status",
+                json!({}),
+                Some("privilege"),
+                window,
+                cx,
+            );
+        }
+    }
+
+    /// Says once per version that an update waits, with a way to its dialog;
+    /// after an update, offers to update an older privileged service.
+    pub(in crate::frontend) fn announce_update(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let onboarding = self
+            .modal
+            .iter()
+            .chain(&self.ui.below)
+            .any(|m| m.kind == "onboarding");
+        let visible = self
+            .host
+            .get_window("main")
+            .is_some_and(|w| w.is_visible().unwrap_or(false) && !w.is_minimized().unwrap_or(false));
+        if onboarding || !visible || self.options.test {
+            return;
+        }
+        if self.modal.is_none()
+            && self.ui.errors.contains_key("offerService")
+            && let Some(service) = self.data.get("privilege").cloned()
+        {
+            self.ui.errors.remove("offerService");
+            let app = env!("CARGO_PKG_VERSION");
+            if text(&service, "state") == "running"
+                && boolean(&service, "authorized")
+                && text(&service, "version") != app
+            {
+                let body = match service["version"].as_str() {
+                    Some(old) => tr!("updates.service.body", serviceVersion = old, version = app),
+                    None => tr!("updates.service.bodyOlder", version = app),
+                };
+                self.ask(
+                    label("updates.service.title"),
+                    body,
+                    label("updates.service.confirm"),
+                    false,
+                    |this, window, cx| this.service_action("update".into(), window, cx),
+                    window,
+                    cx,
+                );
+                return;
+            }
+        }
+        let Some(status) = self.data.get("updates") else {
+            return;
+        };
+        let state = text(status, "state").to_owned();
+        let version = text(status, "version").to_owned();
+        if version.is_empty() || !matches!(state.as_str(), "ready" | "available") {
+            return;
+        }
+        let announced = self.prefs.get::<Option<String>>("update.announced", None);
+        if announced.as_deref() == Some(version.as_str()) {
+            return;
+        }
+        self.prefs.set("update.announced", &version);
+        if self.modal.as_ref().is_some_and(|m| m.kind == "update") {
+            return;
+        }
+        self.show_update_notice(&state, &version);
+        cx.notify();
+    }
+
+    pub(in crate::frontend) fn show_update_notice(&mut self, state: &str, version: &str) {
+        let open: Handler =
+            Rc::new(|this, window, cx| this.open_dialog("update", json!({}), window, cx));
+        self.toast_with(
+            ToastKind::Info,
+            goodgood_core::i18n::format(
+                if state == "available" {
+                    "updates.availableToast"
+                } else {
+                    "updates.readyToast"
+                },
+                &[("version", &version)],
+            ),
+            10000,
+            vec![(label("updates.view"), open)],
+        );
+    }
+
+    /// Places `parts` where the catalog text names them (`{name}`): a
+    /// formatted text whose placeholders were filled with marker characters,
+    /// each part set in the text's lines where its marker is, as the
+    /// interface's inline keycaps.
+    pub(in crate::frontend) fn rich(
+        &self,
+        text: String,
+        parts: Vec<(char, AnyElement)>,
+    ) -> AnyElement {
+        inline::inline_text(
+            text,
+            parts
+                .into_iter()
+                .map(|(marker, element)| {
+                    inline::part(marker, element, px(0.), inline::Align::Middle)
+                })
+                .collect(),
+        )
+        .into_any_element()
+    }
+
+    // ---- Onboarding -------------------------------------------------------------
+
+    pub(in crate::frontend) fn onboarding_next(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let steps = values(&configuration()["onboardingSteps"]).len();
+        let step = self
+            .modal
+            .as_ref()
+            .and_then(|m| m.args["step"].as_u64())
+            .unwrap_or(0) as usize;
+        if step + 1 >= steps {
+            self.preference("finishOnboarding", Value::Null, window, cx);
+        } else {
+            self.onboarding_go(step + 1, window, cx);
+        }
+    }
+
+    /// Skip, finish or Escape: records the onboarding
+    /// as done, closes it once that is saved, then applies an administrator
+    /// choice it deferred. Not while that choice is being made.
+    pub(in crate::frontend) fn finish_onboarding(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.ui.busy.contains("administrator") || self.ui.busy.contains("onboarding") {
+            return;
+        }
+        if self.options.fixture.is_some() {
+            self.act(Action::CloseOverlay, window, cx);
+            return;
+        }
+        self.ui.busy.insert("onboarding".into());
+        // Not keyed to the settings cache: a settings change still under way
+        // must not swallow this request.
+        self.request(
+            "complete_onboarding",
+            json!({"version":configuration()["onboardingVersion"]}),
+            None,
+            window,
+            cx,
+        );
+    }
+
+    /// The onboarding was saved as done: it closes, then a deferred
+    /// administrator choice restarts GoodGood with those permissions.
+    pub(in crate::frontend) fn onboarding_saved(
+        &mut self,
+        value: &Value,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.welcome_checked = false;
+        if value.get("closeToTray").is_some() {
+            self.data.insert("settings".into(), value.clone());
+        }
+        if !self.ui.busy.remove("onboarding") {
+            return;
+        }
+        if self.modal.as_ref().is_some_and(|m| m.kind == "onboarding") {
+            self.act(Action::CloseOverlay, window, cx);
+        }
+        self.request("apply_administrator_mode", json!({}), None, window, cx);
+    }
+
+    /// Once the window shows after a start whose administrator relaunch fell
+    /// back to standard permissions, says so with the way to the setting; not
+    /// over the onboarding, the update dialog or a question.
+    pub(in crate::frontend) fn announce_administrator(&mut self) -> bool {
+        if self.ui.administrator_announced {
+            return false;
+        }
+        let Some(status) = self.data.get("administrator") else {
+            return false;
+        };
+        let Some(error) = status["error"]
+            .as_str()
+            .filter(|_| !boolean(status, "elevated"))
+            .map(str::to_owned)
+        else {
+            // Only the status at start counts.
+            self.ui.administrator_announced = true;
+            return false;
+        };
+        // After the start decided whether the onboarding opens.
+        let decided = self.welcome_checked || self.options.test;
+        let visible = self
+            .host
+            .get_window("main")
+            .is_some_and(|w| w.is_visible().unwrap_or(false));
+        let blocked = self.modal.iter().chain(&self.ui.below).any(|m| {
+            matches!(
+                m.kind.as_str(),
+                "onboarding" | "update" | "whatsnew" | "confirm"
+            )
+        });
+        if !decided || !visible || blocked {
+            return false;
+        }
+        self.ui.administrator_announced = true;
+        self.toast_with(
+            ToastKind::Error,
+            error,
+            15000,
+            vec![(
+                label("settings.administrator.title"),
+                Rc::new(
+                    |this: &mut Desktop, window: &mut Window, cx: &mut Context<Desktop>| {
+                        this.locate_setting("privilege", "administrator", window, cx)
+                    },
+                ),
+            )],
+        );
+        true
+    }
+
+    fn onboarding_go(&mut self, step: usize, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(modal) = &mut self.modal
+            && modal.kind == "onboarding"
+        {
+            let from = modal.args["step"].as_u64().unwrap_or(0) as i64;
+            modal.args["dir"] = json!((step as i64 - from).signum());
+            modal.args["step"] = json!(step);
+            let id = modal.id;
+            self.focus_for(&format!("modal-{id}-primary"), cx)
+                .focus(window, cx);
+        }
+        window.refresh();
+        cx.notify();
+    }
+
+    fn onboarding_row(
+        &self,
+        title: String,
+        hint: Option<String>,
+        control: impl IntoElement,
+    ) -> AnyElement {
+        let p = self.palette;
+        div()
+            .flex()
+            .items_center()
+            .gap(px(16.))
+            .min_h(px(56.))
+            .px(px(14.))
+            .py(px(10.))
+            .border_1()
+            .border_color(p.stroke)
+            .rounded(px(6.))
+            .bg(p.layer)
+            .flex_shrink_0()
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .flex()
+                    .flex_col()
+                    .child(title)
+                    .when_some(hint, |d, hint| {
+                        d.child(
+                            div()
+                                .mt(px(2.))
+                                .text_size(theme::font(12.))
+                                .text_color(p.muted)
+                                .child(hint),
+                        )
+                    }),
+            )
+            .child(div().flex_shrink_0().child(control))
+            .into_any_element()
+    }
+
+    fn onboarding_heading(&self, glyph: &str, step: &str) -> AnyElement {
+        self.onboarding_heading_text(
+            glyph,
+            label(&format!("onboarding.{step}.title")),
+            label(&format!("onboarding.{step}.body")),
+        )
+    }
+
+    /// A step's heading (Heading): icon, title and introduction.
+    fn onboarding_heading_text(&self, glyph: &str, title: String, body: String) -> AnyElement {
+        let p = self.palette;
+        div()
+            .flex()
+            .flex_col()
+            .flex_shrink_0()
+            .child(
+                div()
+                    .size(px(44.))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded(px(10.))
+                    .bg(p.accent.opacity(0.14))
+                    .child(icon(glyph, p.accent).size(px(22.))),
+            )
+            .child(self.dialog_title(title).mt(px(12.)).mb(px(6.)))
+            .child(div().text_color(p.muted).child(body))
+            .into_any_element()
+    }
+
+    fn onboarding_note(&self, text: String, warning: bool) -> AnyElement {
+        let p = self.palette;
+        if warning {
+            // `.onboarding-note.warning`: the step's line height, the icon
+            // centred on however many lines the text takes.
+            div()
+                .flex()
+                .items_center()
+                .gap(px(6.))
+                .flex_shrink_0()
+                .text_size(theme::font(12.))
+                .text_color(p.ink)
+                .child(icon("WarningIcon", p.io).size(px(14.)).flex_shrink_0())
+                .child(div().flex_1().min_w_0().child(text))
+                .into_any_element()
+        } else {
+            div()
+                .flex_shrink_0()
+                .text_size(theme::font(12.))
+                .line_height(relative(1.9))
+                .text_color(p.muted)
+                .child(text)
+                .into_any_element()
+        }
+    }
+
+    fn onboarding_list(&self, items: Vec<AnyElement>) -> AnyElement {
+        let p = self.palette;
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(6.))
+            .pl(px(6.))
+            .flex_shrink_0()
+            .children(items.into_iter().map(|item| {
+                div()
+                    .flex()
+                    .items_start()
+                    .gap(px(10.))
+                    .child(
+                        div()
+                            .mt(px(7.))
+                            .size(px(5.))
+                            .flex_shrink_0()
+                            .rounded_full()
+                            .bg(p.accent),
+                    )
+                    .child(div().flex_1().min_w_0().child(item))
+            }))
+            .into_any_element()
+    }
+
+    /// The first step's note on a portable copy: what it lacks beside the
+    /// installed version, and the two places to download the installer from.
+    fn onboarding_portable(&self, cx: &mut Context<Self>) -> AnyElement {
+        let p = self.palette;
+        let mut downloads = div().flex().flex_wrap().gap(px(8.)).mt(px(4.));
+        for (id, command) in [
+            ("website", "open_download_page"),
+            ("github", "open_latest_release"),
+        ] {
+            downloads = downloads.child(
+                self.btn(
+                    format!("onboarding-portable-{id}"),
+                    label(&format!("onboarding.portable.{id}")),
+                    Some("ExternalIcon"),
+                    Tone::Plain,
+                )
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.request(command, json!({}), None, window, cx)
+                })),
+            );
+        }
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(6.))
+            .px(px(14.))
+            .py(px(12.))
+            .border_1()
+            .border_color(p.accent.opacity(0.4))
+            .rounded(px(6.))
+            .bg(p.accent.opacity(0.08))
+            .flex_shrink_0()
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(8.))
+                    .child(icon("InfoIcon", p.accent).size(px(16.)).flex_shrink_0())
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .font_weight(theme::LABEL_WEIGHT)
+                            .child(label("onboarding.portable.title")),
+                    ),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(4.))
+                    .text_size(theme::font(12.))
+                    .text_color(p.muted)
+                    .children(["update", "shortcuts", "service"].into_iter().map(|item| {
+                        div()
+                            .flex()
+                            .items_start()
+                            .gap(px(8.))
+                            .pl(px(4.))
+                            .child(
+                                div()
+                                    .mt(px(7.))
+                                    .size(px(4.))
+                                    .flex_shrink_0()
+                                    .rounded_full()
+                                    .bg(p.accent),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .text_color(p.ink)
+                                    .child(label(&format!("onboarding.portable.{item}"))),
+                            )
+                    }))
+                    .child(label("onboarding.portable.advice")),
+            )
+            .child(downloads)
+            .into_any_element()
+    }
+
+    /// A step's state line: a spinner while busy, a check when done.
+    fn onboarding_state(&self, text: String, busy: bool, done: bool, hint: String) -> Div {
+        let p = self.palette;
+        div()
+            .flex_1()
+            .min_w_0()
+            .flex()
+            .flex_col()
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(8.))
+                    .when(busy, |d| d.child(self.spinner(14., p.accent)))
+                    .when(done && !busy, |d| {
+                        d.child(icon("CheckIcon", p.accent).size(px(14.)))
+                    })
+                    .child(div().flex_1().min_w_0().child(text)),
+            )
+            .child(
+                div()
+                    .mt(px(2.))
+                    .text_size(theme::font(12.))
+                    .text_color(p.muted)
+                    .child(hint),
+            )
+    }
+
+    fn state_row(&self, state: Div, control: Option<AnyElement>) -> AnyElement {
+        let p = self.palette;
+        div()
+            .flex()
+            .items_center()
+            .gap(px(16.))
+            .min_h(px(56.))
+            .px(px(14.))
+            .py(px(10.))
+            .border_1()
+            .border_color(p.stroke)
+            .rounded(px(6.))
+            .bg(p.layer)
+            .flex_shrink_0()
+            .child(state)
+            .children(control)
+            .into_any_element()
+    }
+
+    pub(in crate::frontend) fn onboarding_dialog(
+        &self,
+        dialog: Dialog,
+        modal: &dialogs::Modal,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Dialog {
+        let p = self.palette;
+        let id = modal.id;
+        let step = modal.args["step"].as_u64().unwrap_or(0) as usize;
+        let dir = modal.args["dir"].as_i64().unwrap_or(0) as f32;
+        let steps = values(&configuration()["onboardingSteps"]);
+        let section = steps.get(step).and_then(Value::as_str).unwrap_or("tips");
+        let last = step + 1 >= steps.len();
+        let settings = self.data["settings"].clone();
+        let mut body = div().flex().flex_col().gap(px(12.));
+        match section {
+            "welcome" => {
+                let portable = self.portable().then(|| self.onboarding_portable(cx));
+                // A portable copy's note takes its room from the mark, so that
+                // the step still shows whole in the languages with long texts.
+                let (mark, above, below) = if portable.is_some() {
+                    (56., 0., 0.)
+                } else {
+                    (72., 8., 4.)
+                };
+                // The hundred dots form the A, then chart the recent CPU loads.
+                let hundred = hundred::hundred("onboarding-hundred", mark, self, window, cx);
+                body = body
+                    .child(
+                        div()
+                            .flex()
+                            .justify_center()
+                            .pt(px(above))
+                            .pb(px(below))
+                            .child(hundred),
+                    )
+                    .child(
+                        self.dialog_title(label("onboarding.welcome.title"))
+                            .text_size(theme::font(24.))
+                            .flex()
+                            .justify_center(),
+                    )
+                    .child(
+                        div()
+                            .text_color(p.muted)
+                            .child(label("onboarding.welcome.body")),
+                    )
+                    .child(
+                        self.onboarding_row(
+                            label("onboarding.welcome.language"),
+                            None,
+                            div()
+                                .flex()
+                                .items_center()
+                                .gap(px(8.))
+                                .child(icon("GlobeIcon", p.muted))
+                                .child(self.language_select("onboarding-language", cx)),
+                        ),
+                    )
+                    .children(portable);
+            }
+            "display" => {
+                let positions = [("side", "NavSideIcon"), ("top", "NavTopIcon")];
+                let nav = self.segments(
+                    "onboarding-nav",
+                    positions
+                        .into_iter()
+                        .map(|(value, glyph)| {
+                            (
+                                label(&format!("settings.navigation.{value}")),
+                                Some(glyph),
+                                Action::Preference("navPosition".into(), json!(value)),
+                                (value == "top") == self.nav_top,
+                            )
+                        })
+                        .collect(),
+                    cx,
+                );
+                let intervals = [500u64, 1000, 2000, 5000];
+                let current = self.interval;
+                body = body
+                    .child(self.onboarding_heading("ThemeIcon", "display"))
+                    .child(self.onboarding_row(
+                        label("onboarding.display.nav"),
+                        Some(label("onboarding.display.navHint")),
+                        nav,
+                    ))
+                    .child(self.onboarding_row(
+                        label("onboarding.display.motion"),
+                        Some(label("onboarding.display.motionHint")),
+                        self.motion_toggle("onboarding-motion", window, cx),
+                    ))
+                    .child(self.onboarding_row(
+                        label("onboarding.display.chart"),
+                        Some(label("onboarding.display.chartHint")),
+                        self.chart_select("onboarding-chart", window, cx),
+                    ))
+                    .child(
+                        self.onboarding_row(
+                            label("onboarding.display.interval"),
+                            Some(label("onboarding.display.intervalHint")),
+                            self.select(
+                                "onboarding-interval",
+                                label("onboarding.display.interval"),
+                                intervals
+                                    .iter()
+                                    .map(|ms| {
+                                        tr!(
+                                            "shell.interval.option",
+                                            seconds = crate::regional::seconds(*ms)
+                                        )
+                                    })
+                                    .collect(),
+                                intervals.iter().position(|ms| *ms == current),
+                                false,
+                                move |this, index, window, cx| {
+                                    this.act(Action::Interval(intervals[index]), window, cx)
+                                },
+                                cx,
+                            ),
+                        ),
+                    );
+            }
+            "background" => {
+                let hotkey_error = &settings["hotkeyError"];
+                let problem = if text(hotkey_error, "kind") == "taken" {
+                    Some(tr!(
+                        "onboarding.background.hotkeyTaken",
+                        shortcut = recorder::shortcut_text(text(hotkey_error, "shortcut"))
+                    ))
+                } else {
+                    recorder::hotkey_error_text(hotkey_error).map(|problem| {
+                        if text(hotkey_error, "kind") == "saveFailed" {
+                            problem
+                        } else {
+                            tr!("onboarding.background.hotkeyProblem", problem = problem)
+                        }
+                    })
+                };
+                let keys = recorder::shortcut_keys(text(&settings, "hotkey"));
+                body = body
+                    .child(self.onboarding_heading("TrayIcon", "background"))
+                    .child(self.onboarding_row(
+                        label("onboarding.background.autostart"),
+                        Some(label("onboarding.background.autostartHint")),
+                        self.setting_toggle(
+                            "onboarding-autostart",
+                            boolean(&settings, "autostart"),
+                            "set_autostart",
+                            "enabled",
+                            window,
+                            cx,
+                        ),
+                    ))
+                    .child(self.onboarding_row(
+                        label("onboarding.background.closeToTray"),
+                        Some(label("onboarding.background.closeToTrayHint")),
+                        self.setting_toggle(
+                            "onboarding-tray",
+                            boolean(&settings, "closeToTray"),
+                            "set_close_to_tray",
+                            "value",
+                            window,
+                            cx,
+                        ),
+                    ))
+                    .child(self.onboarding_row(
+                        label("onboarding.background.minimizedInterval"),
+                        Some(label("onboarding.background.minimizedIntervalHint")),
+                        self.background_select("onboarding", "minimized", cx),
+                    ))
+                    .child(self.onboarding_row(
+                        label("onboarding.background.trayInterval"),
+                        Some(label("onboarding.background.trayIntervalHint")),
+                        self.background_select("onboarding", "tray", cx),
+                    ))
+                    .child(match problem {
+                        Some(problem) => self.onboarding_note(problem, true),
+                        None if boolean(&settings, "hotkeyEnabled") && !keys.is_empty() => div()
+                            .text_size(theme::font(12.))
+                            .text_color(p.muted)
+                            .child(self.rich(
+                                tr!("onboarding.background.hotkey", hotkey = ""),
+                                vec![('', self.keycaps(&keys, false, 0.))],
+                            ))
+                            .into_any_element(),
+                        None => {
+                            self.onboarding_note(label("onboarding.background.hotkeyOff"), false)
+                        }
+                    });
+            }
+            "update" => {
+                let save = |key: &'static str, value: Value| {
+                    move |this: &mut Desktop, window: &mut Window, cx: &mut Context<Desktop>| {
+                        this.preference(key, value.clone(), window, cx)
+                    }
+                };
+                let channel = text(&settings, "updateChannel").to_owned();
+                let routes = ["auto", "direct", "proxy"];
+                let route = text(&settings, "updateRoute").to_owned();
+                let disabled = self
+                    .data
+                    .get("updates")
+                    .is_some_and(|s| text(s, "state") == "disabled");
+                let save_check = save("updateCheck", Value::Null);
+                let _ = save_check;
+                body = body
+                    .child(self.onboarding_heading("UpdateIcon", "update"))
+                    .child(self.onboarding_row(
+                        label("onboarding.update.check"),
+                        Some(label("onboarding.update.checkHint")),
+                        self.toggle(
+                            "onboarding-check",
+                            label("onboarding.update.check"),
+                            boolean(&settings, "updateCheck"),
+                            false,
+                            |this, on, window, cx| {
+                                this.preference("updateCheck", json!(on), window, cx)
+                            },
+                            window,
+                            cx,
+                        ),
+                    ))
+                    .child(
+                        self.onboarding_row(
+                            label("onboarding.update.channel"),
+                            (channel == "beta").then(|| label("onboarding.update.betaHint")),
+                            self.segments(
+                                "onboarding-channel",
+                                ["stable", "beta"]
+                                    .into_iter()
+                                    .map(|value| {
+                                        (
+                                            label(&format!("onboarding.update.{value}")),
+                                            None,
+                                            Action::Preference(
+                                                "updateChannel".into(),
+                                                json!(value),
+                                            ),
+                                            channel == value,
+                                        )
+                                    })
+                                    .collect(),
+                                cx,
+                            ),
+                        ),
+                    )
+                    .child(self.onboarding_row(
+                        label("onboarding.update.route"),
+                        None,
+                        self.select(
+                            "onboarding-route",
+                            label("onboarding.update.route"),
+                            vec![
+                                label("onboarding.update.routeAuto"),
+                                label("onboarding.update.routeDirect"),
+                                label("onboarding.update.routeProxy"),
+                            ],
+                            routes.iter().position(|r| *r == route),
+                            false,
+                            move |this, index, window, cx| {
+                                this.preference("updateRoute", json!(routes[index]), window, cx)
+                            },
+                            cx,
+                        ),
+                    ))
+                    .child(self.onboarding_note(label("onboarding.update.proxyNotice"), false))
+                    .when(disabled, |d| {
+                        d.child(
+                            self.onboarding_note(
+                                self.data
+                                    .get("updates")
+                                    .and_then(|s| s["error"].as_str())
+                                    .map(str::to_owned)
+                                    .unwrap_or_else(|| label("onboarding.update.unavailable")),
+                                false,
+                            ),
+                        )
+                    });
+            }
+            "administrator" => {
+                body = body
+                    .child(self.onboarding_heading_text(
+                        "ShieldIcon",
+                        label("settings.administrator.title"),
+                        label("onboarding.administrator"),
+                    ))
+                    .child(
+                        div()
+                            .flex_shrink_0()
+                            .child(self.administrator_card(true, window, cx)),
+                    );
+            }
+            "privilege" => {
+                let status = self.data.get("privilege").cloned().unwrap_or(Value::Null);
+                let busy = self.ui.busy.contains("privilege");
+                let checking = !self.data.contains_key("privilege");
+                let connected = widgets::service_connected(&status);
+                let action = match text(&status, "state") {
+                    "notInstalled" => Some("install"),
+                    "stopped" if boolean(&status, "authorized") => Some("start"),
+                    _ => None,
+                };
+                let state = if busy {
+                    label("settings.privilege.state.busy")
+                } else if checking {
+                    label("settings.privilege.state.checking")
+                } else {
+                    widgets::service_state(&status)
+                };
+                let hint = if connected {
+                    label("onboarding.privilege.replace")
+                } else if action.is_some() || busy {
+                    label("onboarding.privilege.later")
+                } else {
+                    label("onboarding.privilege.manage")
+                };
+                let control = action.map(|action| {
+                    self.btn(
+                        format!("onboarding-service-{action}"),
+                        label(if action == "install" {
+                            "settings.privilege.install.action"
+                        } else {
+                            "settings.privilege.start"
+                        }),
+                        None,
+                        Tone::Plain,
+                    )
+                    .inert(busy || checking)
+                    .on_click(cx.listener(move |this, _, window, cx| {
+                        this.service_action(action.into(), window, cx)
+                    }))
+                    .into_any_element()
+                });
+                body = body
+                    .child(self.onboarding_heading("ShieldIcon", "privilege"))
+                    .child(
+                        self.onboarding_list(
+                            ["end", "tune", "inspect", "control", "sensors"]
+                                .into_iter()
+                                .map(|f| {
+                                    label(&format!("onboarding.privilege.features.{f}"))
+                                        .into_any_element()
+                                })
+                                .collect(),
+                        ),
+                    )
+                    .child(self.onboarding_note(label("onboarding.privilege.risk"), true))
+                    .when(boolean(&self.data["info"], "elevated"), |d| {
+                        d.child(self.onboarding_note(label("onboarding.privilege.elevated"), false))
+                    })
+                    .child(
+                        self.state_row(
+                            self.onboarding_state(state, busy, connected, hint),
+                            control,
+                        ),
+                    )
+                    .when_some(self.ui.errors.get("privilege").cloned(), |d, error| {
+                        d.child(self.onboarding_note(error, true))
+                    });
+            }
+            "sensors" => {
+                let status = self.data.get("privilege").cloned().unwrap_or(Value::Null);
+                let ready = widgets::service_connected(&status);
+                let enabled = boolean(&settings, "kernelSensors");
+                let busy = self.ui.busy.contains("sensors");
+                let checking =
+                    !self.data.contains_key("privilege") || self.ui.busy.contains("privilege");
+                let state = if busy {
+                    label("settings.sensors.preparing")
+                } else if checking {
+                    label("onboarding.sensors.checking")
+                } else if enabled {
+                    label("onboarding.sensors.enabled")
+                } else {
+                    label("onboarding.sensors.disabled")
+                };
+                let hint = if !ready {
+                    label("onboarding.sensors.needsService")
+                } else if enabled {
+                    label("onboarding.sensors.manage")
+                } else {
+                    label("onboarding.sensors.later")
+                };
+                let privilege_step = steps
+                    .iter()
+                    .position(|s| s.as_str() == Some("privilege"))
+                    .unwrap_or(0);
+                let control = if !ready {
+                    Some(
+                        self.btn(
+                            "onboarding-configure",
+                            label("onboarding.sensors.configureService"),
+                            None,
+                            Tone::Plain,
+                        )
+                        .inert(busy || checking)
+                        .on_click(cx.listener(move |this, _, window, cx| {
+                            this.onboarding_go(privilege_step, window, cx)
+                        }))
+                        .into_any_element(),
+                    )
+                } else if !enabled {
+                    Some(
+                        self.btn(
+                            "onboarding-sensors",
+                            label("onboarding.sensors.enable"),
+                            None,
+                            Tone::Plain,
+                        )
+                        .inert(busy || checking)
+                        .on_click(
+                            cx.listener(|this, _, window, cx| this.set_sensors(true, window, cx)),
+                        )
+                        .into_any_element(),
+                    )
+                } else {
+                    None
+                };
+                body = body
+                    .child(self.onboarding_heading("BoltIcon", "sensors"))
+                    .child(self.onboarding_note(label("onboarding.sensors.install"), false))
+                    .child(
+                        self.state_row(self.onboarding_state(state, busy, enabled, hint), control),
+                    )
+                    .when_some(self.ui.errors.get("sensors").cloned(), |d, error| {
+                        d.child(self.onboarding_note(error, true))
+                    });
+            }
+            "taskManager" => {
+                let service = self.data.get("privilege").cloned().unwrap_or(Value::Null);
+                let ready = widgets::service_connected(&service);
+                let status = self.data.get("taskmgr").cloned().unwrap_or(Value::Null);
+                let busy = self.ui.busy.contains("taskmgr");
+                let checking =
+                    !self.data.contains_key("taskmgr") || !self.data.contains_key("privilege");
+                let enabled = text(&status, "state") == "enabled";
+                let state = if busy {
+                    label("settings.taskManager.busy")
+                } else if checking {
+                    label("settings.taskManager.checking")
+                } else if !ready {
+                    label("settings.privilege.state.notInstalled")
+                } else if status.is_null() {
+                    label("settings.taskManager.unknown")
+                } else {
+                    label(&format!(
+                        "settings.taskManager.state.{}",
+                        text(&status, "state")
+                    ))
+                };
+                let detail = status["detail"].as_str().map(str::to_owned);
+                let hint = if !ready {
+                    label("onboarding.taskManager.needsService")
+                } else if enabled || text(&status, "state") == "revoked" {
+                    detail.clone().unwrap_or_default()
+                } else if boolean(&status, "canEnable") || busy {
+                    label("onboarding.taskManager.later")
+                } else {
+                    detail.unwrap_or_else(|| label("settings.taskManager.retry"))
+                };
+                let control = (ready && boolean(&status, "canEnable")).then(|| {
+                    self.btn(
+                        "onboarding-taskmgr",
+                        label("settings.taskManager.enable"),
+                        None,
+                        Tone::Plain,
+                    )
+                    .inert(busy || checking)
+                    .on_click(cx.listener(|this, _, window, cx| {
+                        this.task_manager_action("enable".into(), window, cx)
+                    }))
+                    .into_any_element()
+                });
+                body = body
+                    .child(self.onboarding_heading("KeyboardIcon", "taskManager"))
+                    .child(self.onboarding_note(label("onboarding.taskManager.scope"), false))
+                    .child(self.onboarding_note(label("onboarding.taskManager.undo"), false))
+                    .child(
+                        self.state_row(self.onboarding_state(state, busy, enabled, hint), control),
+                    )
+                    .when_some(self.ui.errors.get("taskmgr").cloned(), |d, error| {
+                        d.child(self.onboarding_note(error, true))
+                    });
+            }
+            _ => {
+                let ctrl_digits = div()
+                    .flex()
+                    .items_center()
+                    .gap(px(4.))
+                    .child(self.keycaps(&["Ctrl".into(), "1".into()], false, 0.))
+                    .child("–")
+                    .child(self.keycaps(&["7".into()], false, 0.))
+                    .into_any_element();
+                body = body
+                    .child(self.onboarding_heading("SparkleIcon", "tips"))
+                    .child(self.onboarding_list(vec![
+                        self.rich(
+                            tr!("onboarding.tips.pages", keys = "", search = ""),
+                            vec![
+                                ('', ctrl_digits),
+                                ('', self.keycaps(&["Ctrl".into(), "F".into()], false, 0.)),
+                            ],
+                        ),
+                        label("onboarding.tips.menu").into_any_element(),
+                        label("onboarding.tips.drop").into_any_element(),
+                        label("onboarding.tips.history").into_any_element(),
+                    ]))
+                    .child(self.onboarding_note(label("onboarding.tips.reopen"), false));
+            }
+        }
+        let height = px(540.)
+            .min(window.viewport_size().height - px(140.))
+            .max(px(200.));
+        let reduce = cx.reduce_motion();
+        let scroll = scrollbar::fresh_handle("onboarding-step", (id << 8) | step as u64);
+        let content = div()
+            .id(("onboarding-step", id))
+            .track_scroll(&scroll)
+            .h(height)
+            .overflow_y_scroll()
+            .pt(px(28.))
+            .pl(px(32.))
+            // The gutter is kept (`scrollbar-gutter: stable`).
+            .pr(px(32. + scrollbar::SIZE))
+            .pb(px(20.))
+            .child(
+                body.with_animation(
+                    ("onboarding-slide", step),
+                    Animation::new(Duration::from_millis(if reduce || dir == 0. {
+                        1
+                    } else {
+                        250
+                    }))
+                    .with_easing(theme::ease_out),
+                    move |body, delta| {
+                        body.relative()
+                            .left(px(dir * 24. * (1. - delta)))
+                            .opacity(if dir == 0. { 1. } else { delta })
+                    },
+                ),
+            )
+            .child(scrollbar::scrollbar(
+                "onboarding-scrollbar",
+                &scroll,
+                p.dark,
+            ));
+        let dots = div()
+            .flex()
+            .gap(px(6.))
+            .mr_auto()
+            .children((0..steps.len()).map(|index| {
+                let width = gpui_kit::base::motion::transition(
+                    format!("onboarding-dot-{index}"),
+                    if index == step { 18f32 } else { 6. },
+                    theme::fluent(167, theme::ease_move),
+                    window,
+                    cx,
+                );
+                div()
+                    .w(px(width))
+                    .h(px(6.))
+                    .rounded(px(3.))
+                    .bg(if index == step {
+                        p.accent
+                    } else {
+                        p.stroke_strong
+                    })
+            }));
+        dialog.child(self.dialog_body(id).child(content)).footer(
+            self.measure(id, 1).child(
+                self.dialog_footer()
+                    .child(dots)
+                    .when(!last, |d| {
+                        d.child(
+                            self.btn(
+                                format!("modal-{id}-skip"),
+                                label("onboarding.skip"),
+                                None,
+                                Tone::Ghost,
+                            )
+                            .on_click(cx.listener(
+                                |this, _, window, cx| {
+                                    this.preference("finishOnboarding", Value::Null, window, cx)
+                                },
+                            )),
+                        )
+                    })
+                    .when(step > 0, |d| {
+                        d.child(
+                            self.btn(
+                                format!("modal-{id}-back"),
+                                label("onboarding.back"),
+                                None,
+                                Tone::Plain,
+                            )
+                            .min_w(px(96.))
+                            .on_click(cx.listener(
+                                move |this, _, window, cx| this.onboarding_go(step - 1, window, cx),
+                            )),
+                        )
+                    })
+                    .child(
+                        self.btn(
+                            format!("modal-{id}-next"),
+                            label(if last {
+                                "onboarding.finish"
+                            } else {
+                                "onboarding.next"
+                            }),
+                            None,
+                            Tone::Accent,
+                        )
+                        .min_w(px(96.))
+                        .track_focus(&self.focus_for(&format!("modal-{id}-primary"), cx))
+                        .on_click(
+                            cx.listener(|this, _, window, cx| this.onboarding_next(window, cx)),
+                        ),
+                    ),
+            ),
+        )
+    }
+
+    // ---- Update dialog and release reader -----------------------------------
+
+    pub(in crate::frontend) fn update_head(&self, title: String, subtitle: String) -> AnyElement {
+        let p = self.palette;
+        div()
+            .flex()
+            .items_center()
+            .gap(px(14.))
+            .child(widgets::logo(40.))
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .flex()
+                    .flex_col()
+                    .gap(px(2.))
+                    .child(self.dialog_title(title))
+                    .when(!subtitle.is_empty(), |d| {
+                        d.child(
+                            div()
+                                .text_size(theme::font(12.))
+                                .text_color(p.muted)
+                                .child(subtitle),
+                        )
+                    }),
+            )
+            .into_any_element()
+    }
+
+    /// The channel and release date of `version` ("Stable · Released Oct 22").
+    pub(in crate::frontend) fn update_subtitle(
+        &self,
+        status: &Value,
+        target: &str,
+        offer: bool,
+    ) -> String {
+        let releases = if offer {
+            offered_releases(status)
+        } else {
+            changelog()
+        };
+        let wanted = version(target);
+        let date = releases
+            .iter()
+            .find(|r| wanted.is_some() && version(&r.version) == wanted)
+            .map(|r| r.date.clone())
+            .filter(|d| !d.is_empty());
+        let beta = wanted.is_some_and(|v| !v.pre.is_empty());
+        [
+            offer.then(|| {
+                label(if beta {
+                    "updates.dialog.beta"
+                } else {
+                    "updates.dialog.stable"
+                })
+            }),
+            date.map(|date| tr!("updates.dialog.released", date = date)),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join(" · ")
+    }
+
+    /// This version beside the next one.
+    pub(in crate::frontend) fn update_versions(
+        &self,
+        from: Option<&str>,
+        to: &str,
+        installed: bool,
+    ) -> AnyElement {
+        let p = self.palette;
+        let Some(from) = from.filter(|f| !f.is_empty() && !to.is_empty()) else {
+            return div().into_any_element();
+        };
+        let tile = |caption: &str, number: String, next: bool| {
+            div()
+                .flex_1()
+                .min_w_0()
+                .px(px(14.))
+                .py(px(10.))
+                .border_1()
+                .border_color(if next {
+                    p.accent.opacity(0.4)
+                } else {
+                    p.stroke
+                })
+                .rounded(px(6.))
+                .bg(if next {
+                    p.accent.opacity(0.08)
+                } else {
+                    p.layer
+                })
+                .flex()
+                .flex_col()
+                .gap(px(2.))
+                .child(
+                    div()
+                        .text_size(theme::font(12.))
+                        .text_color(p.muted)
+                        .child(label(caption)),
+                )
+                .child(
+                    div()
+                        .text_size(theme::font(16.))
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .text_color(if next { p.accent } else { p.ink })
+                        .child(number),
+                )
+        };
+        div()
+            .flex()
+            .items_center()
+            .gap(px(10.))
+            .child(tile(
+                if installed {
+                    "updates.dialog.previous"
+                } else {
+                    "updates.dialog.current"
+                },
+                from.to_owned(),
+                false,
+            ))
+            .child(icon("ArrowRightIcon", p.muted))
+            .child(tile(
+                if installed {
+                    "updates.dialog.current"
+                } else {
+                    "updates.dialog.next"
+                },
+                to.to_owned(),
+                true,
+            ))
+            .into_any_element()
+    }
+
+    /// The releases between two versions, read as the website's changelog:
+    /// each release's notice, introduction and changes grouped by kind
+    /// (`release_body`). A single release reads on its own (the title above
+    /// names it); several come in one list under their versions and dates,
+    /// after a count of their changes by kind, the newest open and the others
+    /// folded (all open with `open_all`). A release folds and unfolds by
+    /// easing its own height, the dialog following at once; the count's row
+    /// opens or folds them all. The parts come into the dialog `dialog` one
+    /// after another from step `first` (`rise`).
+    #[allow(clippy::too_many_arguments)]
+    pub(in crate::frontend) fn release_reader(
+        &self,
+        dialog: u64,
+        first: usize,
+        status: &Value,
+        from: Option<&str>,
+        to: &str,
+        open_all: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let p = self.palette;
+        let offer = !status.is_null();
+        let all = if offer {
+            offered_releases(status)
+        } else {
+            changelog()
+        };
+        let earlier = offer
+            && !all.is_empty()
+            && from.is_some_and(|from| all.iter().all(|r| version(&r.version) > version(from)));
+        let entries = between(all, from, to);
+        let reader = div().flex().flex_col().gap(px(12.));
+        if entries.is_empty() {
+            let notes = text(status, "notes");
+            let content = if notes.is_empty() {
+                div()
+                    .text_size(theme::font(12.))
+                    .text_color(p.muted)
+                    .child(label("updates.dialog.empty"))
+                    .into_any_element()
+            } else {
+                gpui_kit::component::text::TextView::markdown("update-notes", notes.to_owned())
+                    .into_any_element()
+            };
+            return reader
+                .child(self.rise("update-rise-notes", dialog, first, content, cx))
+                .into_any_element();
+        }
+        let notes = entries
+            .iter()
+            .map(|release| release_notes::parse(&release.notes))
+            .collect::<Vec<_>>();
+        let mut reader = reader;
+        if let [note] = notes.as_slice() {
+            reader = reader.child(div().pt(px(14.)).border_t_1().border_color(p.stroke).child(
+                self.release_body(
+                    &format!("release-notes-{}", entries[0].version),
+                    note,
+                    2,
+                    Some((dialog, first)),
+                    window,
+                    cx,
+                ),
+            ));
+        } else {
+            let folded = self
+                .ui
+                .errors
+                .get("releaseFolds")
+                .cloned()
+                .unwrap_or_default();
+            // Folds are kept as the releases turned from how they open.
+            let defaults = entries
+                .iter()
+                .enumerate()
+                .map(|(index, release)| (format!("|{}|", release.version), open_all || index == 0))
+                .collect::<Vec<_>>();
+            let all_open = defaults
+                .iter()
+                .all(|(key, default)| *default != folded.contains(key));
+            let fold_all = self
+                .btn_small_glyph(
+                    format!("release-fold-all-{dialog}"),
+                    label(if all_open {
+                        "updates.dialog.collapseAll"
+                    } else {
+                        "updates.dialog.expandAll"
+                    }),
+                    if all_open {
+                        "CollapseAllIcon"
+                    } else {
+                        "ExpandAllIcon"
+                    },
+                    14.,
+                    Tone::Ghost,
+                )
+                .text_color(p.muted)
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    // Turned: those that open otherwise than every one should.
+                    let folds = defaults
+                        .iter()
+                        .filter(|(_, default)| *default == all_open)
+                        .map(|(key, _)| key.as_str())
+                        .collect::<String>();
+                    this.ui.errors.insert("releaseFolds".into(), folds);
+                    this.follow_release_folds();
+                    window.refresh();
+                    cx.notify();
+                }));
+            let mut list = div()
+                .flex()
+                .flex_col()
+                .border_1()
+                .border_color(p.stroke)
+                .rounded(px(8.))
+                .bg(p.layer);
+            for (index, (release, note)) in entries.iter().zip(&notes).enumerate() {
+                let key = format!("|{}|", release.version);
+                let open = (open_all || index == 0) != folded.contains(&key);
+                let heights = self.ui.release_heights.clone();
+                let measured = SharedString::from(release.version.clone());
+                let natural = heights.borrow().get(&measured).copied();
+                // A release's first height is taken at once; a fold eases,
+                // longer for longer notes, as on the website.
+                let fold_ms = natural.map_or(FOLD_UNMEASURED_MS, |height| {
+                    (f32::from(height) * FOLD_MS_PER_PX).clamp(FOLD_MIN_MS, FOLD_MAX_MS) as u64
+                });
+                let shown = gpui_kit::base::motion::transition(
+                    format!("release-fold-{dialog}-{}", release.version),
+                    if open { 1f32 } else { 0. },
+                    theme::fluent(fold_ms, ease),
+                    window,
+                    cx,
+                );
+                let control = SharedString::from(format!("release-{}", release.version));
+                let row = SharedString::from(format!("release-row-{}", release.version));
+                let row_lit = self.release_lit(&row, ROW_HOVER_MS, window, cx);
+                let body = (open || shown > 0.).then(|| {
+                    let body = div()
+                        .relative()
+                        .flex_shrink_0()
+                        .px(px(16.))
+                        .pt(px(2.))
+                        .pb(px(16.))
+                        .child(self.release_body(
+                            &format!("release-notes-{}", release.version),
+                            note,
+                            2,
+                            None,
+                            window,
+                            cx,
+                        ))
+                        // Its natural height, taken while it is clipped too.
+                        .child(
+                            canvas(
+                                move |bounds, _, _| {
+                                    heights.borrow_mut().insert(measured, bounds.size.height);
+                                },
+                                |_, _, _, _| {},
+                            )
+                            .absolute()
+                            .inset_0(),
+                        );
+                    if shown >= 1. {
+                        // Laid out as it is: an open release is never measured first.
+                        return body.into_any_element();
+                    }
+                    // Clipped to its share of the height. Opening, it fades in
+                    // with the height from 6 px above; folding, it fades out
+                    // in place.
+                    let body = if open {
+                        body.top(px(-6. * (1. - shown)))
+                    } else {
+                        body
+                    };
+                    div()
+                        .flex()
+                        .flex_col()
+                        .overflow_hidden()
+                        .h(natural.unwrap_or(px(0.)) * shown)
+                        .child(body.opacity(shown))
+                        .into_any_element()
+                });
+                list = list.child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .when(index > 0, |d| d.border_t_1().border_color(p.stroke))
+                        .child(
+                            gpui_kit::base::Button::new(control.clone())
+                                .relative()
+                                .w_full()
+                                .h(px(44.))
+                                .px(px(14.))
+                                .gap(px(10.))
+                                .justify_start()
+                                .rounded(px(7.))
+                                // The hover light eases in and out
+                                // (`release_lit`); a press shows at once.
+                                .bg(p.hover.opacity(row_lit))
+                                .active(move |s| s.bg(p.press))
+                                .child(
+                                    div()
+                                        .id(ElementId::Name(format!("{row}-probe").into()))
+                                        .absolute()
+                                        .inset_0()
+                                        .on_hover(self.release_hovered(row.clone(), cx)),
+                                )
+                                .child(self.moving_icon(
+                                    &control,
+                                    if open { "ChevronDown" } else { "ChevronRight" },
+                                    Some(p.muted),
+                                    Some(px(12.)),
+                                ))
+                                .child(
+                                    div()
+                                        .text_size(theme::font(14.))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .child(format!("v{}", release.version)),
+                                )
+                                .when(offer && index == 0, |b| {
+                                    b.child(
+                                        self.release_badge(label("updates.dialog.next"), p.accent),
+                                    )
+                                })
+                                .child(
+                                    div()
+                                        .text_size(theme::font(12.))
+                                        .text_color(p.muted)
+                                        .child(release.date.clone()),
+                                )
+                                .child(
+                                    div()
+                                        .ml_auto()
+                                        .text_size(theme::font(12.))
+                                        .text_color(p.muted)
+                                        .child(tr!(
+                                            "updates.dialog.changes",
+                                            count = note.changes()
+                                        )),
+                                )
+                                .child(self.icon_probe(&control))
+                                .on_click(cx.listener(move |this, _, window, cx| {
+                                    let folds =
+                                        this.ui.errors.entry("releaseFolds".into()).or_default();
+                                    if folds.contains(&key) {
+                                        *folds = folds.replace(&key, "");
+                                    } else {
+                                        folds.push_str(&key);
+                                    }
+                                    this.follow_release_folds();
+                                    window.refresh();
+                                    cx.notify();
+                                })),
+                        )
+                        .children(body),
+                );
+            }
+            reader = reader
+                .child(
+                    self.rise(
+                        "update-rise-summary",
+                        dialog,
+                        first,
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(8.))
+                            .child(div().flex_1().min_w_0().child(self.change_summary(&notes)))
+                            .child(fold_all),
+                        cx,
+                    ),
+                )
+                .child(self.rise("update-rise-list", dialog, first + 1, list, cx));
+        }
+        if earlier {
+            reader = reader.child(
+                self.rise(
+                    "update-rise-earlier",
+                    dialog,
+                    first + 2,
+                    div()
+                        .text_size(theme::font(12.))
+                        .text_color(p.muted)
+                        .child(label("updates.dialog.earlier")),
+                    cx,
+                ),
+            );
+        }
+        reader.into_any_element()
+    }
+
+    /// While a release folds or unfolds, its dialog takes the height it
+    /// passes through at once rather than easing after it.
+    fn follow_release_folds(&mut self) {
+        self.ui.dialog_follow =
+            Some(Instant::now() + Duration::from_millis(FOLD_MAX_MS as u64 + 50));
+    }
+
+    /// How lit (0 to 1) the reader's card, change or release row `key` is
+    /// drawn: easing over `ms` toward lit while the pointer is on it, and as
+    /// gently back once it leaves, on the website's curve. Under reduced
+    /// motion it is either.
+    fn release_lit(
+        &self,
+        key: &SharedString,
+        ms: u64,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> f32 {
+        let hovered = self.ui.release_hover.borrow().as_ref() == Some(key);
+        gpui_kit::base::motion::transition(
+            (ElementId::Name(key.clone()), "lit"),
+            if hovered { 1f32 } else { 0. },
+            theme::fluent(ms, ease),
+            window,
+            cx,
+        )
+    }
+
+    /// Notes the pointer coming onto or leaving the reader's card, change or row
+    /// `key`, and draws again at once: the light starts on that frame.
+    fn release_hovered(
+        &self,
+        key: SharedString,
+        cx: &mut Context<Self>,
+    ) -> impl Fn(&bool, &mut Window, &mut App) + 'static {
+        cx.listener(move |this, hovered: &bool, _, cx| {
+            let mut current = this.ui.release_hover.borrow_mut();
+            let on = current.as_ref() == Some(&key);
+            if *hovered && !on {
+                *current = Some(key.clone());
+            } else if !*hovered && on {
+                *current = None;
+            } else {
+                return;
+            }
+            drop(current);
+            cx.notify();
+        })
+    }
+
+    /// `element` coming into the dialog `dialog` `order` steps after it
+    /// opened: a one-shot fade and rise that ends where the element is laid
+    /// out, so that at rest it is drawn on whole pixels as it is. Nothing
+    /// moves under reduced motion. `key` names it among the dialog's parts.
+    pub(in crate::frontend) fn rise(
+        &self,
+        key: impl Into<SharedString>,
+        dialog: u64,
+        order: usize,
+        element: impl IntoElement,
+        cx: &App,
+    ) -> AnyElement {
+        let element = div().child(element);
+        if cx.reduce_motion() {
+            return element.into_any_element();
+        }
+        // Later parts wait a little longer, up to a point: a long reader
+        // must not keep its last changes waiting.
+        let delay = RISE_STEP * order.min(RISE_STEPS) as f32;
+        let total = delay + RISE_LENGTH;
+        element
+            .with_animation(
+                ElementId::NamedInteger(key.into(), dialog),
+                Animation::new(Duration::from_secs_f32(total)),
+                move |element, delta| {
+                    let t = ((delta * total - delay) / RISE_LENGTH).clamp(0., 1.);
+                    if t >= 1. {
+                        return element;
+                    }
+                    let t = ease(t);
+                    element
+                        .relative()
+                        .top(px(RISE_DISTANCE * (1. - t)))
+                        .opacity(t)
+                },
+            )
+            .into_any_element()
+    }
+
+    /// How many changes of each kind several releases bring, in the
+    /// website's order of kinds, under the changelog's own headings.
+    fn change_summary(&self, notes: &[Note]) -> AnyElement {
+        const ORDER: [Kind; 7] = [
+            Kind::Feature,
+            Kind::Fix,
+            Kind::Performance,
+            Kind::Breaking,
+            Kind::Upgrade,
+            Kind::Known,
+            Kind::Other,
+        ];
+        let groups = notes.iter().flat_map(|note| &note.groups);
+        div()
+            .flex()
+            .flex_wrap()
+            .gap(px(6.))
+            .children(ORDER.into_iter().filter_map(|kind| {
+                let mut of_kind = groups.clone().filter(|group| group.kind == kind);
+                let first = of_kind.next()?;
+                let count = first.items.len() + of_kind.map(|g| g.items.len()).sum::<usize>();
+                Some(self.kind_tag(kind, &first.title, count))
+            }))
+            .into_any_element()
+    }
+
+    /// The update dialog's main action: install a ready update, or open the
+    /// release page for a portable copy.
+    pub(in crate::frontend) fn update_primary(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let status = self.data.get("updates").cloned().unwrap_or(Value::Null);
+        match text(&status, "state") {
+            "ready" => {
+                self.prefs
+                    .set("update.from", text(&self.data["info"], "version"));
+                self.install_update(window, cx);
+            }
+            "available" => {
+                self.request(
+                    "open_release_page",
+                    json!({"version":status["version"]}),
+                    None,
+                    window,
+                    cx,
+                );
+                self.close_overlay(window, cx);
+            }
+            _ => {}
+        }
+    }
+
+    pub(in crate::frontend) fn update_dialog(
+        &self,
+        dialog: Dialog,
+        modal: &dialogs::Modal,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Dialog {
+        let p = self.palette;
+        let id = modal.id;
+        let offer = modal.kind == "update";
+        let status = self.data.get("updates").cloned().unwrap_or(Value::Null);
+        let state = if offer {
+            text(&status, "state").to_owned()
+        } else {
+            String::new()
+        };
+        // The installed build: what the changelog inside it describes.
+        let current = text(&self.data["info"], "version").to_owned();
+        let current = if current.is_empty() || !offer {
+            env!("CARGO_PKG_VERSION").to_owned()
+        } else {
+            current
+        };
+        let target = if offer {
+            text(&status, "version").to_owned()
+        } else {
+            current.clone()
+        };
+        let from = if offer {
+            Some(current.clone())
+        } else {
+            modal.args["from"].as_str().map(str::to_owned)
+        };
+        let starting = self.ui.busy.contains("install");
+        let busy = starting || state == "installing";
+        let title = if !offer {
+            tr!("updates.dialog.installed", version = target)
+        } else {
+            match state.as_str() {
+                "available" => tr!("updates.dialog.available", version = target),
+                "checking" | "downloading" if !target.is_empty() => {
+                    tr!("updates.dialog.downloading", version = target)
+                }
+                "checking" | "downloading" => label("settings.update.status.checking"),
+                "installing" => label("updates.dialog.installing"),
+                "ready" => tr!("updates.dialog.ready", version = target),
+                other => label(&format!(
+                    "settings.update.status.{}",
+                    if other.is_empty() { "idle" } else { other }
+                )),
+            }
+        };
+        let subtitle = self.update_subtitle(&status, &target, offer);
+        let can_install = offer && matches!(state.as_str(), "ready" | "installing");
+        let can_download = offer && state == "available";
+        let total = number(&status, "total");
+        let received = number(&status, "received");
+        let fact = |glyph: &str, text: String, color: Hsla| {
+            div()
+                .flex()
+                .items_center()
+                .gap(px(6.))
+                .text_size(theme::font(12.))
+                .text_color(color)
+                .child(icon(glyph, color).size(px(14.)))
+                .child(text)
+        };
+        let mut facts = div().flex().flex_wrap().gap(px(16.));
+        if offer {
+            if total > 0. {
+                facts = facts.child(fact(
+                    "UpdateIcon",
+                    if state == "downloading" {
+                        tr!(
+                            "updates.dialog.progress",
+                            received = theme::bytes(received, false),
+                            total = theme::bytes(total, false)
+                        )
+                    } else {
+                        theme::bytes(total, false)
+                    },
+                    p.muted,
+                ));
+            }
+            if can_install {
+                facts = facts.child(fact(
+                    "ShieldIcon",
+                    label("updates.dialog.verified"),
+                    p.network,
+                ));
+            }
+            if let Some(source) = status["source"].as_str() {
+                facts = facts.child(fact(
+                    "GlobeIcon",
+                    tr!("updates.dialog.source", source = source),
+                    p.muted,
+                ));
+            }
+        }
+        let failure = self
+            .ui
+            .errors
+            .get("install")
+            .cloned()
+            .or_else(|| (state == "error").then(|| text(&status, "error").to_owned()))
+            .filter(|f| !f.is_empty());
+        let reader_status = if offer { status.clone() } else { Value::Null };
+        let target_open = target.clone();
+        let mut footer = self.dialog_footer().child(
+            self.btn(
+                format!("modal-{id}-github"),
+                label("updates.dialog.github"),
+                Some("ExternalIcon"),
+                Tone::Ghost,
+            )
+            .mr_auto()
+            .inert(target.is_empty())
+            .on_click(cx.listener(move |this, _, window, cx| {
+                this.request(
+                    "open_release_page",
+                    json!({"version":target_open}),
+                    None,
+                    window,
+                    cx,
+                );
+            })),
+        );
+        let primary = self.focus_for(&format!("modal-{id}-primary"), cx);
+        if can_install {
+            footer = footer.child(
+                self.btn(format!("modal-{id}-install"), "", None, Tone::Accent)
+                    .min_w(px(96.))
+                    .track_focus(&primary)
+                    .when(busy, |b| {
+                        b.child(self.spinner(14., p.on_accent))
+                            .child(label("updates.dialog.starting"))
+                    })
+                    .when(!busy, |b| b.child(label("updates.dialog.install")))
+                    .inert(busy)
+                    .on_click(cx.listener(|this, _, window, cx| this.update_primary(window, cx))),
+            );
+        }
+        if can_download {
+            footer = footer.child(
+                self.btn(
+                    format!("modal-{id}-download"),
+                    label("updates.dialog.download"),
+                    Some("ExternalIcon"),
+                    Tone::Accent,
+                )
+                .min_w(px(96.))
+                .track_focus(&primary)
+                .on_click(cx.listener(|this, _, window, cx| this.update_primary(window, cx))),
+            );
+        }
+        footer = if can_install || can_download {
+            footer.child(
+                self.btn(
+                    format!("modal-{id}-later"),
+                    label("updates.dialog.later"),
+                    None,
+                    Tone::Plain,
+                )
+                .min_w(px(96.))
+                .inert(busy)
+                .on_click(cx.listener(|this, _, window, cx| this.close_overlay(window, cx))),
+            )
+        } else {
+            footer.child(
+                self.btn(
+                    format!("modal-{id}-close"),
+                    label("updates.dialog.close"),
+                    None,
+                    Tone::Accent,
+                )
+                .min_w(px(96.))
+                .track_focus(&primary)
+                .on_click(cx.listener(|this, _, window, cx| this.close_overlay(window, cx))),
+            )
+        };
+        dialog
+            .child(
+                self.dialog_body(id).child(
+                    div()
+                        .pt(px(22.))
+                        .px(px(24.))
+                        .pb(px(20.))
+                        .flex()
+                        .flex_col()
+                        .gap(px(14.))
+                        .child(self.rise(
+                            "update-rise-head",
+                            id,
+                            0,
+                            self.update_head(title, subtitle),
+                            cx,
+                        ))
+                        .child(self.rise(
+                            "update-rise-versions",
+                            id,
+                            1,
+                            self.update_versions(from.as_deref(), &target, !offer),
+                            cx,
+                        ))
+                        .when(offer, |d| {
+                            let progress = matches!(state.as_str(), "downloading" | "checking")
+                                .then(|| {
+                                    self.progress_bar(
+                                        (total > 0.).then(|| (received / total).min(1.) as f32),
+                                        cx,
+                                    )
+                                });
+                            d.child(
+                                self.rise(
+                                    "update-rise-facts",
+                                    id,
+                                    2,
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap(px(14.))
+                                        .child(facts)
+                                        .children(progress),
+                                    cx,
+                                ),
+                            )
+                        })
+                        // An offer opens its newest release; the notes of an
+                        // update installed open every release it brought.
+                        .child(self.release_reader(
+                            id,
+                            3,
+                            &reader_status,
+                            from.as_deref(),
+                            &target,
+                            !offer,
+                            window,
+                            cx,
+                        ))
+                        .when(can_install, |d| {
+                            d.child(
+                                self.rise(
+                                    "update-rise-hint",
+                                    id,
+                                    6,
+                                    div()
+                                        .text_size(theme::font(12.))
+                                        .text_color(p.muted)
+                                        .child(label("updates.dialog.hint")),
+                                    cx,
+                                ),
+                            )
+                        })
+                        .when(can_download, |d| {
+                            d.child(
+                                self.rise(
+                                    "update-rise-portable",
+                                    id,
+                                    6,
+                                    div()
+                                        .text_size(theme::font(12.))
+                                        .text_color(p.muted)
+                                        .child(label("updates.dialog.portable")),
+                                    cx,
+                                ),
+                            )
+                        })
+                        .when_some(failure, |d, failure| {
+                            d.child(
+                                div()
+                                    .text_size(theme::font(12.))
+                                    .text_color(p.danger)
+                                    .child(failure),
+                            )
+                        }),
+                ),
+            )
+            .footer(self.measure(id, 1).child(footer))
+    }
+}
+
+impl Desktop {
+    /// A small tag beside a release's version.
+    fn release_badge(&self, text: String, color: Hsla) -> AnyElement {
+        div()
+            .flex_shrink_0()
+            .h(px(20.))
+            .px(px(7.))
+            .flex()
+            .items_center()
+            .rounded(px(10.))
+            .bg(color.opacity(0.14))
+            .text_size(theme::font(11.))
+            .font_weight(FontWeight::SEMIBOLD)
+            .text_color(theme::mix(color, self.palette.ink, 0.3))
+            .child(text)
+            .into_any_element()
+    }
+
+    /// A kind's tag: its colour's dot, the heading and the number of changes.
+    fn kind_tag(&self, kind: Kind, title: &str, count: usize) -> AnyElement {
+        let p = self.palette;
+        let color = self.kind_color(kind);
+        div()
+            .h(px(22.))
+            .px(px(8.))
+            .flex()
+            .items_center()
+            .gap(px(6.))
+            .rounded(px(11.))
+            .bg(color.opacity(0.13))
+            .text_size(theme::font(12.))
+            .child(div().size(px(6.)).rounded_full().bg(color))
+            .when(!title.is_empty(), |d| {
+                d.child(
+                    div()
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .text_color(theme::mix(color, p.ink, 0.3))
+                        .child(title.to_owned()),
+                )
+            })
+            .child(
+                div()
+                    .text_color(p.muted)
+                    .font_features(tabular())
+                    .child(count.to_string()),
+            )
+            .into_any_element()
+    }
+
+    /// The colour a kind of change is marked with, as on the website.
+    fn kind_color(&self, kind: Kind) -> Hsla {
+        let p = self.palette;
+        match kind {
+            Kind::Feature => p.network,
+            Kind::Fix => p.cpu,
+            Kind::Performance => p.io,
+            Kind::Breaking => p.gpu,
+            Kind::Upgrade => p.memory,
+            Kind::Known | Kind::Other => p.muted,
+        }
+    }
+
+    /// A release's notice, introduction and groups of changes: each group
+    /// under its kind's tag with the number of changes, new features as
+    /// cards (in `columns`), other changes as a list. `id` keeps the text
+    /// views of one place apart from another's. With `rise`, the parts come
+    /// into that dialog one after another from that step (`Desktop::rise`).
+    /// Under the pointer a feature card takes its kind's colour, the line on
+    /// its top edge growing, and a change is highlighted, its bullet haloed
+    /// and its text brought to full contrast, to keep one's place while
+    /// reading; both ease in and out on the website's timing (`release_lit`).
+    pub(in crate::frontend) fn release_body(
+        &self,
+        id: &str,
+        note: &Note,
+        columns: usize,
+        rise: Option<(u64, usize)>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let p = self.palette;
+        let markdown = |key: String, text: &str| {
+            gpui_kit::component::text::TextView::markdown(
+                SharedString::from(key),
+                SharedString::from(text.to_owned()),
+            )
+        };
+        let mut parts: Vec<AnyElement> = Vec::new();
+        if let Some(notice) = &note.notice {
+            parts.push(
+                div()
+                    .flex()
+                    .items_start()
+                    .gap(px(8.))
+                    .px(px(12.))
+                    .py(px(8.))
+                    .rounded(px(6.))
+                    .border_1()
+                    .border_color(p.io.opacity(0.35))
+                    .bg(p.io.opacity(0.08))
+                    .child(
+                        div()
+                            .mt(px(3.))
+                            .child(icon("WarningIcon", p.io).size(px(14.))),
+                    )
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .font_weight(theme::LABEL_WEIGHT)
+                            .child(notice.clone()),
+                    )
+                    .into_any_element(),
+            );
+        }
+        for (index, intro) in note.intro.iter().enumerate() {
+            parts.push(
+                div()
+                    .text_size(theme::font(14.))
+                    .font_weight(theme::LABEL_WEIGHT)
+                    .child(markdown(format!("{id}-intro-{index}"), intro))
+                    .into_any_element(),
+            );
+        }
+        for (g, group) in note.groups.iter().enumerate() {
+            let color = self.kind_color(group.kind);
+            let tag =
+                div()
+                    .flex()
+                    .child(self.kind_tag(group.kind, &group.title, group.items.len()));
+            let cards =
+                group.kind == Kind::Feature && group.items.iter().all(|item| item.label.is_some());
+            let mut cells = Vec::with_capacity(group.items.len());
+            for (i, item) in group.items.iter().enumerate() {
+                let key = SharedString::from(format!("{id}-{g}-{i}"));
+                let hover = self.release_hovered(key.clone(), cx);
+                cells.push(if cards {
+                    let lit = self.release_lit(&key, CARD_HOVER_MS, window, cx);
+                    div()
+                        .id(ElementId::Name(format!("{key}-card").into()))
+                        .on_hover(hover)
+                        .relative()
+                        .flex()
+                        .flex_col()
+                        .gap(px(2.))
+                        .px(px(12.))
+                        .py(px(10.))
+                        .rounded(px(6.))
+                        .border_1()
+                        .border_color(theme::mix(p.stroke, color, 0.5 * lit))
+                        .bg(theme::mix(p.layer_strong, color, 0.07 * lit))
+                        // A line of the kind's colour along the top edge,
+                        // growing out of its corner under the pointer.
+                        .when(lit > 0., |d| {
+                            d.child(
+                                div()
+                                    .absolute()
+                                    .top(px(-1.))
+                                    .left(px(12.))
+                                    .w(px(12. + 28. * lit))
+                                    .h(px(2.))
+                                    .rounded(px(1.))
+                                    .bg(color.opacity(lit)),
+                            )
+                        })
+                        .child(
+                            div()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .when(lit > 0., |d| {
+                                    d.text_color(theme::mix(
+                                        p.ink,
+                                        theme::mix(color, p.ink, 0.35),
+                                        lit,
+                                    ))
+                                })
+                                .child(item.label.clone().unwrap_or_default()),
+                        )
+                        .child(
+                            div()
+                                .text_size(theme::font(12.5))
+                                .line_height(relative(1.55))
+                                .text_color(theme::mix(p.muted, p.ink, 0.45 * lit))
+                                .child(markdown(key.to_string(), &item.body)),
+                        )
+                        .into_any_element()
+                } else {
+                    let lit = self.release_lit(&key, ITEM_HOVER_MS, window, cx);
+                    let text = match &item.label {
+                        Some(label) => format!("**{label}** {}", item.body),
+                        None => item.body.clone(),
+                    };
+                    // The row reaches past the text into the gutter, so the
+                    // highlight under the pointer leaves the text in place.
+                    let halo = 6. * lit;
+                    div()
+                        .id(ElementId::Name(format!("{key}-row").into()))
+                        .on_hover(hover)
+                        .flex()
+                        .gap(px(10.))
+                        .mx(px(-8.))
+                        .px(px(8.))
+                        .rounded(px(5.))
+                        .when(lit > 0., |d| d.bg(p.hover.opacity(lit)))
+                        .child(
+                            div()
+                                .relative()
+                                .mt(px(8.))
+                                .size(px(5.))
+                                .flex_shrink_0()
+                                .rounded_full()
+                                .bg(color)
+                                // A halo spreading from the bullet.
+                                .when(lit > 0., |d| {
+                                    d.child(
+                                        div()
+                                            .absolute()
+                                            .top(px(-halo / 2.))
+                                            .left(px(-halo / 2.))
+                                            .size(px(5. + halo))
+                                            .rounded_full()
+                                            .bg(color.opacity(0.3 * lit)),
+                                    )
+                                }),
+                        )
+                        .child(
+                            div()
+                                .flex_1()
+                                .min_w_0()
+                                // Softer than the headings: the labels stand
+                                // out by weight.
+                                .text_color(theme::mix(
+                                    theme::mix(p.ink, p.muted, 0.35),
+                                    p.ink,
+                                    lit,
+                                ))
+                                .child(markdown(key.to_string(), &text)),
+                        )
+                        .into_any_element()
+                });
+            }
+            let items = if cards {
+                div()
+                    .grid()
+                    .grid_cols(columns.max(1) as u16)
+                    .gap(px(8.))
+                    .children(cells)
+                    .into_any_element()
+            } else {
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(6.))
+                    .children(cells)
+                    .into_any_element()
+            };
+            parts.push(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(8.))
+                    .child(tag)
+                    .child(items)
+                    .into_any_element(),
+            );
+        }
+        let parts = parts
+            .into_iter()
+            .enumerate()
+            .map(|(index, part)| match rise {
+                Some((dialog, first)) => self.rise(
+                    format!("{id}-rise-{index}"),
+                    dialog,
+                    first + index,
+                    part,
+                    cx,
+                ),
+                None => part,
+            });
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(14.))
+            .text_size(theme::font(13.))
+            // `.update-entry-body`
+            .line_height(relative(1.6))
+            .children(parts)
+            .into_any_element()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::notes_in;
+    use serde_json::json;
+    #[test]
+    fn missing_and_blank_release_translations_follow_the_same_fallback() {
+        let release = json!({"notes":"source", "translations":{"en-US":"english","fr-FR":" \n","ja-JP":"japanese"}});
+        assert_eq!(notes_in("ja-JP", &release), "japanese");
+        for locale in ["fr-FR", "de-DE", "ru-RU", "es-ES"] {
+            assert_eq!(notes_in(locale, &release), "english");
+        }
+        assert_eq!(notes_in("ko-KR", &release), "source");
+        assert_eq!(
+            notes_in(
+                "ko-KR",
+                &json!({"notes":"source","translations":{"ko-KR":"korean"}})
+            ),
+            "korean"
+        );
+        assert_eq!(
+            notes_in(
+                "fr-FR",
+                &json!({"notes":"source","translations":{"en-US":""}})
+            ),
+            "source"
+        );
+    }
+}

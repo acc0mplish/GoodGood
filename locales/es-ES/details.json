@@ -1,0 +1,99 @@
+{
+  "deselect": "Deseleccionar",
+  "resize": "Cambiar el tamaño del panel de detalles",
+  "overview": {
+    "title": "Este PC",
+    "hide": "Ocultar especificaciones de PC",
+    "show": "Mostrar especificaciones de PC",
+    "copy": "Copiar las especificaciones del PC como texto",
+    "copyWhat": "especificaciones del equipo",
+    "copyPart": "{kind}: {name}",
+    "selectTip": "Haga clic en una aplicación o proceso en la lista para ver sus detalles aquí; haga clic en él nuevamente para anular su selección.",
+    "closeTip": "El panel de detalles permanece abierto de forma predeterminada. Haga clic en {icon}, en la esquina superior derecha de la ventana, para contraerlo.",
+    "tips": "Sugerencias",
+    "tipsCollapse": "Contraer sugerencias",
+    "tipsExpand": "Expandir sugerencias",
+    "cpu": "Procesador",
+    "cores": {
+      "one": "{count} núcleo",
+      "many": "{count} núcleos",
+      "other": "{count} núcleos"
+    },
+    "hybrid": " ({performance} núcleos P + {efficiency} núcleos E)",
+    "hybridLp": " ({performance} núcleos P + {efficiency} núcleos E + {lowPower} núcleos LP E)",
+    "hybridLpOnly": " ({performance} núcleos P + {lowPower} núcleos LP E)",
+    "threads": {
+      "one": "{count} subproceso",
+      "many": "{count} subprocesos",
+      "other": "{count} subprocesos"
+    },
+    "base": "Base {speed}",
+    "slots": "Ranuras usadas: {used} de {total}",
+    "disk": "Almacenamiento",
+    "gpu": "Gráficos",
+    "vram": "{size} de memoria gráfica dedicada",
+    "sharedMemory": "Utiliza memoria compartida",
+    "battery": "Batería",
+    "designed": "Capacidad de diseño: {capacity}",
+    "health": "Estado: {percent} %"
+  },
+  "exited": {
+    "title": "El proceso ha finalizado",
+    "hint": "Seleccione otro proceso en la lista para ver sus detalles."
+  },
+  "group": {
+    "count": {
+      "one": "{count} proceso",
+      "many": "{count} procesos",
+      "other": "{count} procesos"
+    },
+    "earliest": "Primer inicio",
+    "members": "Procesos ({count})",
+    "open": "Mostrar los detalles de PID {pid}"
+  },
+  "services": "Servicios en ejecución ({count})",
+  "section": {
+    "process": "Proceso",
+    "resources": "Recursos",
+    "location": "Ubicación del archivo",
+    "commandLine": "Línea de comandos",
+    "version": "Versión del archivo"
+  },
+  "parent": "Proceso padre",
+  "parentLink": "{name} ({pid})",
+  "noParent": "Ninguno (PID {pid})",
+  "started": "Iniciado",
+  "cpuTime": "Tiempo de CPU",
+  "user": "Nombre de usuario",
+  "integrity": "Integridad",
+  "integrityLevel": {
+    "untrusted": "No confiable",
+    "low": "Bajo",
+    "medium": "Medio",
+    "mediumPlus": "Medio más",
+    "high": "Alto (elevado)",
+    "system": "Sistema",
+    "protected": "Protegido"
+  },
+  "architecture": "Arquitectura",
+  "arch": {
+    "x64": "64 bits (x64)",
+    "x86": "32 bits (x86)",
+    "arm64": "ARM64",
+    "arm": "ARM"
+  },
+  "priority": "Prioridad",
+  "session": "Sesión",
+  "privateWs": "Conjunto de trabajo privado",
+  "workingSet": "Conjunto de trabajo",
+  "commit": "Tamaño de confirmación",
+  "gpuEngine": "({engine})",
+  "gpuDedicated": "Memoria dedicada de GPU",
+  "gpuShared": "Memoria compartida de GPU",
+  "netNeedsAdmin": "Ejecute GoodGood como administrador para ver",
+  "threads": "Subprocesos",
+  "handles": "Identificadores",
+  "noAccess": "No se pudo abrir este proceso para leer su línea de comandos y la información del usuario. Ejecute GoodGood como administrador para consultarlas.",
+  "product": "Producto",
+  "version": "Versión"
+}

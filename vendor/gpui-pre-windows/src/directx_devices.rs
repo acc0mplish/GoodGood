@@ -1,0 +1,266 @@
+use anyhow::{Context, Result};
+#[cfg(debug_assertions)]
+use gpui_util::ResultExt;
+use itertools::Itertools;
+use windows::Win32::{
+    Foundation::HMODULE,
+    Graphics::{
+        Direct3D::{
+            D3D_DRIVER_TYPE_UNKNOWN, D3D_FEATURE_LEVEL, D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_11_1,
+        },
+        Direct3D11::{
+            D3D11_CREATE_DEVICE_BGRA_SUPPORT, D3D11_CREATE_DEVICE_DEBUG,
+            D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS, D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS,
+            D3D11_SDK_VERSION, D3D11CreateDevice, ID3D11Device, ID3D11DeviceContext,
+        },
+        Dxgi::{
+            CreateDXGIFactory2, DXGI_ADAPTER_FLAG_SOFTWARE, DXGI_CREATE_FACTORY_DEBUG,
+            DXGI_CREATE_FACTORY_FLAGS, IDXGIAdapter1, IDXGIFactory6,
+        },
+    },
+};
+use windows::core::Interface;
+
+pub(crate) fn try_to_recover_from_device_lost<T>(mut f: impl FnMut() -> Result<T>) -> Result<T> {
+    (0..5)
+        .map(|i| {
+            if i > 0 {
+                // Add a small delay before retrying
+                std::thread::sleep(std::time::Duration::from_millis(100 + i * 10));
+            }
+            f()
+        })
+        .find_or_last(Result::is_ok)
+        .unwrap()
+        .context("DirectXRenderer failed to recover from lost device after multiple attempts")
+}
+
+#[derive(Clone)]
+pub(crate) struct DirectXDevices {
+    pub(crate) adapter: IDXGIAdapter1,
+    pub(crate) dxgi_factory: IDXGIFactory6,
+    pub(crate) device: ID3D11Device,
+    pub(crate) device_context: ID3D11DeviceContext,
+    /// Whether the software rasterizer was asked for when this was created.
+    /// It is what the request is compared with, not what was found: a system
+    /// without that adapter keeps its hardware device instead of looking again
+    /// on every frame.
+    pub(crate) software: bool,
+}
+
+impl DirectXDevices {
+    pub(crate) fn new() -> Result<Self> {
+        Self::create(gpui::windows_software_rendering_requested())
+    }
+
+    /// Devices on the software rasterizer when `software` is set and the
+    /// system lists it, on the first usable adapter otherwise.
+    pub(crate) fn create(software: bool) -> Result<Self> {
+        let debug_layer_available = check_debug_layer_available();
+        let dxgi_factory =
+            get_dxgi_factory(debug_layer_available).context("Creating DXGI factory")?;
+        let selected = if software {
+            get_adapter(&dxgi_factory, debug_layer_available, true).or_else(|_| {
+                log::warn!(
+                    target: "goodgood::graphics",
+                    "DirectX software adapter unavailable; using the hardware adapters",
+                );
+                get_adapter(&dxgi_factory, debug_layer_available, false)
+            })
+        } else {
+            get_adapter(&dxgi_factory, debug_layer_available, false)
+        };
+        let (adapter, device, device_context, feature_level) =
+            selected.context("Getting DXGI adapter")?;
+        match feature_level {
+            D3D_FEATURE_LEVEL_11_1 => {
+                log::info!("Created device with Direct3D 11.1 feature level.")
+            }
+            D3D_FEATURE_LEVEL_11_0 => {
+                log::info!("Created device with Direct3D 11.0 feature level.")
+            }
+            D3D_FEATURE_LEVEL_10_1 => {
+                log::info!("Created device with Direct3D 10.1 feature level.")
+            }
+            _ => unreachable!(),
+        }
+
+        Ok(Self {
+            adapter,
+            dxgi_factory,
+            device,
+            device_context,
+            software,
+        })
+    }
+}
+
+#[inline]
+fn check_debug_layer_available() -> bool {
+    #[cfg(debug_assertions)]
+    {
+        use windows::Win32::Graphics::Dxgi::{DXGIGetDebugInterface1, IDXGIInfoQueue};
+
+        unsafe { DXGIGetDebugInterface1::<IDXGIInfoQueue>(0) }
+            .log_err()
+            .is_some()
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        false
+    }
+}
+
+#[inline]
+fn get_dxgi_factory(debug_layer_available: bool) -> Result<IDXGIFactory6> {
+    let factory_flag = if debug_layer_available {
+        DXGI_CREATE_FACTORY_DEBUG
+    } else {
+        #[cfg(debug_assertions)]
+        log::warn!(
+            "Failed to get DXGI debug interface. DirectX debugging features will be disabled."
+        );
+        DXGI_CREATE_FACTORY_FLAGS::default()
+    };
+    unsafe { Ok(CreateDXGIFactory2(factory_flag)?) }
+}
+
+#[inline]
+fn get_adapter(
+    dxgi_factory: &IDXGIFactory6,
+    debug_layer_available: bool,
+    software_only: bool,
+) -> Result<(
+    IDXGIAdapter1,
+    ID3D11Device,
+    ID3D11DeviceContext,
+    D3D_FEATURE_LEVEL,
+)> {
+    for adapter_index in 0.. {
+        let adapter: IDXGIAdapter1 = unsafe { dxgi_factory.EnumAdapters(adapter_index)?.cast()? };
+        let desc = unsafe { adapter.GetDesc1() };
+        let software = desc
+            .as_ref()
+            .is_ok_and(|desc| desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE.0 as u32 != 0);
+        // The software rasterizer is listed after the hardware adapters.
+        if software_only && !software {
+            continue;
+        }
+        if let Ok(desc) = desc {
+            log::info!(
+                target: "goodgood::graphics",
+                "DirectX adapter initialization; index={adapter_index}; vendor_id=0x{:04X}; device_id=0x{:04X}; software={software}",
+                desc.VendorId,
+                desc.DeviceId,
+            );
+        }
+        // Check to see whether the adapter supports Direct3D 11 and create
+        // the device if it does.
+        let mut context: Option<ID3D11DeviceContext> = None;
+        let mut feature_level = D3D_FEATURE_LEVEL::default();
+        log::info!(target: "goodgood_startup", "phase=graphics.device; instance={adapter_index}; begin");
+        let result = get_device(
+            &adapter,
+            Some(&mut context),
+            Some(&mut feature_level),
+            debug_layer_available,
+        );
+        log::info!(target: "goodgood_startup", "phase=graphics.device; instance={adapter_index}; end; success={}", result.is_ok());
+        match result {
+            Ok(device) => {
+                log::info!(
+                    target: "goodgood::graphics",
+                    "DirectX adapter selected; index={adapter_index}; feature_level=0x{:04X}",
+                    feature_level.0 as u32,
+                );
+                return Ok((adapter, device, context.unwrap(), feature_level));
+            }
+            Err(error) => {
+                if let Some(error) = error.downcast_ref::<windows::core::Error>() {
+                    log::warn!(
+                        target: "goodgood::graphics",
+                        "DirectX adapter initialization failed; index={adapter_index}; code=0x{:08X}",
+                        error.code().0 as u32,
+                    );
+                } else {
+                    log::warn!(
+                        target: "goodgood::graphics",
+                        "DirectX adapter initialization failed; index={adapter_index}; required feature unavailable",
+                    );
+                }
+            }
+        }
+    }
+
+    unreachable!()
+}
+
+#[inline]
+fn get_device(
+    adapter: &IDXGIAdapter1,
+    context: Option<*mut Option<ID3D11DeviceContext>>,
+    feature_level: Option<*mut D3D_FEATURE_LEVEL>,
+    debug_layer_available: bool,
+) -> Result<ID3D11Device> {
+    let mut device: Option<ID3D11Device> = None;
+    let device_flags = if debug_layer_available {
+        D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG
+    } else {
+        D3D11_CREATE_DEVICE_BGRA_SUPPORT
+    };
+    unsafe {
+        D3D11CreateDevice(
+            adapter,
+            D3D_DRIVER_TYPE_UNKNOWN,
+            HMODULE::default(),
+            device_flags,
+            // 4x MSAA is required for Direct3D Feature Level 10.1 or better
+            Some(&[
+                D3D_FEATURE_LEVEL_11_1,
+                D3D_FEATURE_LEVEL_11_0,
+                D3D_FEATURE_LEVEL_10_1,
+            ]),
+            D3D11_SDK_VERSION,
+            Some(&mut device),
+            feature_level,
+            context,
+        )?;
+    }
+    let device = device.unwrap();
+    let mut data = D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS::default();
+    unsafe {
+        device
+            .CheckFeatureSupport(
+                D3D11_FEATURE_D3D10_X_HARDWARE_OPTIONS,
+                &mut data as *mut _ as _,
+                std::mem::size_of::<D3D11_FEATURE_DATA_D3D10_X_HARDWARE_OPTIONS>() as u32,
+            )
+            .context("Checking GPU device feature support")?;
+    }
+    if data
+        .ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x
+        .as_bool()
+    {
+        Ok(device)
+    } else {
+        Err(anyhow::anyhow!(
+            "Required feature StructuredBuffer is not supported by GPU/driver"
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DXGI_ADAPTER_FLAG_SOFTWARE, DirectXDevices};
+
+    #[test]
+    fn a_software_request_takes_the_software_adapter() {
+        let devices = DirectXDevices::create(true).expect("software devices");
+        assert!(devices.software);
+        let desc = unsafe { devices.adapter.GetDesc1() }.expect("adapter description");
+        assert_ne!(desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE.0 as u32, 0);
+        // The request is kept as made, whatever adapter the system offers first.
+        assert!(!DirectXDevices::create(false).expect("devices").software);
+    }
+}

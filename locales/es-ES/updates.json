@@ -1,0 +1,61 @@
+{
+  "updated": "GoodGood se ha actualizado a {version}.",
+  "whatsNew": "Novedades",
+  "readyToast": "GoodGood {version} está listo para instalar",
+  "availableToast": "GoodGood {version} está disponible",
+  "view": "Ver",
+  "openDialog": "Ver novedades",
+  "button": {
+    "title": "GoodGood {version} está listo. Haga clic para ver las novedades e instalarlo.",
+    "availableTitle": "GoodGood {version} está disponible. Haga clic para ver las novedades",
+    "downloadingTitle": "Descargando GoodGood {version}. Podrá instalarse al terminar. Haga clic para ver las novedades"
+  },
+  "badge": {
+    "ready": "Instalar {version}",
+    "available": "Nueva versión {version}"
+  },
+  "menu": {
+    "view": "Ver novedades",
+    "dismiss": "No volver a avisar de esta versión"
+  },
+  "dialog": {
+    "ready": "GoodGood {version} está listo",
+    "available": "GoodGood {version} está disponible",
+    "downloading": "Descargando GoodGood {version}",
+    "installing": "Iniciando el instalador",
+    "installed": "Novedades de GoodGood {version}",
+    "current": "Versión actual",
+    "previous": "Antes de la actualización",
+    "next": "Nueva versión",
+    "stable": "Estable",
+    "beta": "Beta",
+    "released": "Lanzado {date}",
+    "verified": "Firma verificada",
+    "source": "De {source}",
+    "progress": "{received} de {total} descargado",
+    "changes": {
+      "one": "{count} cambio",
+      "many": "{count} cambios",
+      "other": "{count} cambios"
+    },
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "earlier": "Las notas de versiones anteriores están en GitHub.",
+    "empty": "No hay notas de la versión para mostrar aquí; consulte los lanzamientos en GitHub.",
+    "language": "Algunas de estas notas de la versión solo están disponibles en inglés.",
+    "hint": "La instalación requiere permiso de administrador. GoodGood se cierra brevemente y se vuelve a abrir en la misma página cuando finaliza la instalación.",
+    "portable": "La versión portátil no se actualiza automáticamente. Descargue la nueva versión desde la página de lanzamiento.",
+    "github": "Ver en GitHub",
+    "install": "Reiniciar y actualizar",
+    "starting": "Iniciando…",
+    "download": "Descargar",
+    "later": "Más tarde",
+    "close": "Cerrar"
+  },
+  "service": {
+    "title": "¿Actualizar el servicio privilegiado?",
+    "body": "El servicio privilegiado es la versión {serviceVersion}, que no coincide con GoodGood {version}. Es posible que algunas funciones no funcionen. La actualización requiere permiso de administrador.",
+    "bodyOlder": "El servicio privilegiado es una versión anterior que no es compatible con GoodGood {version}. Hasta que se actualice, las acciones que necesitan derechos de administrador (finalizar procesos de administradores u otras cuentas, administrar servicios del sistema, cerrar conexiones de red, etc.) no se pueden completar y los datos que proporciona el servicio, como el tráfico de red por proceso, no se muestran. La actualización requiere permiso de administrador.",
+    "confirm": "Actualizar servicio"
+  }
+}

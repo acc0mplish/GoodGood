@@ -1,0 +1,60 @@
+{
+  "updated": "GoodGood has been updated to {version}.",
+  "whatsNew": "What's new",
+  "readyToast": "GoodGood {version} is ready to install",
+  "availableToast": "GoodGood {version} is available",
+  "view": "View",
+  "openDialog": "See what's new",
+  "button": {
+    "title": "GoodGood {version} is ready. Click to see what's new and install it",
+    "availableTitle": "GoodGood {version} is available. Click to see what's new",
+    "downloadingTitle": "Downloading GoodGood {version}. It can be installed when done. Click to see what’s new"
+  },
+  "badge": {
+    "ready": "Install {version}",
+    "available": "New version {version}"
+  },
+  "menu": {
+    "view": "See what's new",
+    "dismiss": "Don't remind me about this version"
+  },
+  "dialog": {
+    "ready": "GoodGood {version} is ready",
+    "available": "GoodGood {version} is available",
+    "downloading": "Downloading GoodGood {version}",
+    "installing": "Starting the installer",
+    "installed": "What's new in GoodGood {version}",
+    "current": "Current version",
+    "previous": "Before the update",
+    "next": "New version",
+    "stable": "Stable",
+    "beta": "Beta",
+    "released": "Released {date}",
+    "verified": "Signature verified",
+    "source": "From {source}",
+    "progress": "{received} of {total} downloaded",
+    "changes": {
+      "one": "{count} change",
+      "other": "{count} changes"
+    },
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "earlier": "Notes for earlier versions are on GitHub.",
+    "empty": "No release notes to show here; see the releases on GitHub.",
+    "language": "Some of these release notes are only available in English.",
+    "hint": "Installing requires administrator permission. GoodGood closes briefly and reopens on the same page when the installation finishes.",
+    "portable": "The portable version doesn't update automatically. Download the new version from the release page.",
+    "github": "View on GitHub",
+    "install": "Restart and update",
+    "starting": "Starting…",
+    "download": "Download",
+    "later": "Later",
+    "close": "Close"
+  },
+  "service": {
+    "title": "Update the privileged service?",
+    "body": "The privileged service is version {serviceVersion}, which doesn't match GoodGood {version}. Some features may not work. Updating requires administrator permission.",
+    "bodyOlder": "The privileged service is an older version that isn't compatible with GoodGood {version}. Until it's updated, actions that need administrator rights (ending processes of administrators or other accounts, managing system services, closing network connections and so on) can't be completed, and data the service provides, such as per-process network traffic, isn't shown. Updating requires administrator permission.",
+    "confirm": "Update service"
+  }
+}

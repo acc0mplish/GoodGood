@@ -1,0 +1,112 @@
+{
+  "loadingProcesses": "Reading processes…",
+  "nav": {
+    "expand": "Expand navigation",
+    "collapse": "Collapse navigation",
+    "resize": "Resize the navigation"
+  },
+  "page": {
+    "processes": "Processes",
+    "performance": "Performance",
+    "services": "Services",
+    "startup": "Startup",
+    "network": "Connections",
+    "history": "History",
+    "components": "Components",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "pageTitle": "{page} (Ctrl+{key})",
+  "elevation": {
+    "admin": "Administrator",
+    "adminHint": "GoodGood is running as administrator and can view and end almost every process",
+    "service": "Privileged service",
+    "serviceHint": "GoodGood runs as a standard user; the privileged service carries out what needs administrator rights",
+    "standard": "Standard user",
+    "standardHint": "Some system processes need administrator rights to read or end"
+  },
+  "interval": {
+    "label": "Refresh rate",
+    "option": "Every {seconds} s"
+  },
+  "background": {
+    "confirm": {
+      "minimized": {
+        "title": "Refresh more often while minimized?",
+        "body": "While its window is minimized, GoodGood will sample every process and sensor every {seconds} s. Intervals under 5 seconds noticeably increase CPU use and power draw, especially on battery. History and rules work fine at the default 5 seconds."
+      },
+      "tray": {
+        "title": "Refresh more often in the tray?",
+        "body": "While hidden in the tray, GoodGood will sample every process and sensor every {seconds} s. Intervals under 5 seconds noticeably increase CPU use and power draw, especially on battery. History and rules work fine at the default 5 seconds."
+      },
+      "accept": "Use {seconds} s anyway"
+    },
+    "notice": {
+      "minimized": "While the window was minimized, GoodGood refreshed every {to} s instead of every {from} s to save resources.",
+      "tray": "While GoodGood was in the tray, it refreshed every {to} s instead of every {from} s to save resources.",
+      "adjust": "Adjust",
+      "quiet": "Don't remind me"
+    }
+  },
+  "pause": "Pause updates",
+  "resume": "Resume updates",
+  "more": {
+    "label": "More actions",
+    "runTask": "Run new task…",
+    "fileLock": "Find processes using a file…",
+    "fileLockDetail": "Or drop files"
+  },
+  "details": {
+    "label": "Details pane",
+    "mode": {
+      "open": "Always show",
+      "auto": "Show when a process is selected",
+      "closed": "Hide"
+    },
+    "current": "Details pane: {mode}",
+    "next": "Click for “{mode}”; right-click to choose"
+  },
+  "search": {
+    "processes": "Search name, PID, path or service",
+    "clear": "Clear search"
+  },
+  "viewMode": {
+    "apps": {
+      "label": "Apps"
+    },
+    "tree": {
+      "label": "Tree"
+    },
+    "list": {
+      "label": "List"
+    }
+  },
+  "status": {
+    "threads": "Threads",
+    "handles": "Handles",
+    "cached": "Cached",
+    "pagedPool": "Paged pool",
+    "uptime": "Up time",
+    "orderHeld": "Sorting paused",
+    "orderHeldHint": "The pointer is over the process list: rows keep their places while readings update, and re-sort once the pointer leaves the list.",
+    "paused": "Updates paused",
+    "holdHint": "Hold Ctrl on the Processes or Performance page to pause briefly",
+    "interval": "Updates every {seconds} s",
+    "version": "v{version}",
+    "versionHint": "GoodGood {version} · {build}\nClick to see what’s new in this version; right-click to copy the version number"
+  },
+  "star": {
+    "title": "Star GoodGood on GitHub",
+    "body": "GoodGood is free and open source. A star on GitHub helps more people find it and keeps development going.",
+    "open": "Star on GitHub",
+    "quiet": "Don't remind me",
+    "off": "Star reminder turned off. It can be turned on again in Settings.",
+    "settings": "Open Settings"
+  },
+  "portable": {
+    "title": "This is the portable version",
+    "body": "It has no in-app updates, no Start menu shortcut or uninstall entry, and doesn't update the privileged service or Task Manager replacement along with GoodGood. The installed version is recommended for everyday use; current settings and history are kept.",
+    "website": "Download from the website",
+    "github": "Download from GitHub"
+  }
+}

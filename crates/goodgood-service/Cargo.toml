@@ -1,0 +1,18 @@
+[package]
+name = "goodgood-service"
+description = "GoodGood opt-in privileged Windows service and local IPC"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+goodgood-core = { path = "../goodgood-core" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+reqwest = { version = "0.13.5", default-features = false, features = ["blocking", "native-tls", "system-proxy"] }
+sha2 = "0.11.1"
+windows = { workspace = true }

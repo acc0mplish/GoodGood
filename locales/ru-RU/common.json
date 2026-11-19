@@ -1,0 +1,73 @@
+{
+  "cancel": "Отмена",
+  "close": "Закрыть",
+  "enable": "Включить",
+  "disable": "Отключить",
+  "enabled": "Включено",
+  "disabled": "Отключено",
+  "on": "Вкл.",
+  "off": "Выкл.",
+  "start": "Запустить",
+  "stop": "Остановить",
+  "restart": "Перезапустить",
+  "expand": "Развернуть",
+  "collapse": "Свернуть",
+  "none": "Нет",
+  "name": "Имя",
+  "status": "Состояние",
+  "filterColumn": "Фильтр по столбцу «{column}»",
+  "command": "Команда",
+  "copyName": "Копировать имя",
+  "copyPath": "Копировать путь",
+  "openFileLocation": "Открыть папку с файлом",
+  "goToProcess": "Перейти к процессу",
+  "endProcess": "Снять задачу",
+  "endProcessTree": "Завершить дерево процессов",
+  "efficiencyMode": "Режим эффективности",
+  "privilegedService": "Привилегированная служба",
+  "listSeparator": ", ",
+  "resource": {
+    "cpu": "CPU",
+    "memory": "Память",
+    "disk": "Диск",
+    "network": "Сеть",
+    "gpu": "GPU",
+    "battery": "Батарея",
+    "temperature": "Температура"
+  },
+  "languageSystem": "Как в Windows",
+  "keys": {
+    "space": "Пробел"
+  },
+  "edit": {
+    "cut": "Вырезать",
+    "copy": "Копировать",
+    "paste": "Вставить",
+    "selectAll": "Выделить всё"
+  },
+  "marks": {
+    "pin": "Закрепить вверху",
+    "unpin": "Открепить",
+    "pinned": "Закреплено",
+    "addNote": "Добавить заметку",
+    "editNote": "Изменить заметку",
+    "deleteNote": "Удалить заметку",
+    "note": "Заметка",
+    "placeholder": "Краткое описание назначения",
+    "save": "Сохранить"
+  },
+  "languageName": {
+    "koKR": "한국어",
+    "enUS": "English",
+    "esES": "Español",
+    "deDE": "Deutsch",
+    "jaJP": "日本語",
+    "frFR": "Français",
+    "ruRU": "Русский"
+  },
+  "build": {
+    "development": "Версия для разработки",
+    "test": "Бета",
+    "stable": "Стабильная"
+  }
+}

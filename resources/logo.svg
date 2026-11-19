@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="t">
+  <title id="t">GoodGood</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2d3137"/>
+      <stop offset="1" stop-color="#16181d"/>
+    </linearGradient>
+  </defs>
+  <g transform="scale(4)">
+    <!-- The window: one tile, a light inner edge that holds it on dark taskbars. -->
+    <path d="M157.6 12c30.24 0 45.36 0 56.92 5.89a54 54 0 0 1 23.6 23.6c5.89 11.55 5.89 26.67 5.89 56.92L244 157.6c0 30.24 0 45.36 -5.89 56.92a54 54 0 0 1 -23.6 23.6c-11.55 5.89 -26.67 5.89 -56.92 5.89L98.4 244c-30.24 0 -45.36 0 -56.92 -5.89a54 54 0 0 1 -23.6 -23.6c-5.89 -11.55 -5.89 -26.67 -5.89 -56.92L12 98.4c0 -30.24 0 -45.36 5.89 -56.92a54 54 0 0 1 23.6 -23.6c11.55 -5.89 26.67 -5.89 56.92 -5.89Z" fill="url(#tile)"/>
+    <path d="M158.5 13.5c29.4 0 44.1 0 55.33 5.72a52.5 52.5 0 0 1 22.94 22.94c5.72 11.23 5.72 25.93 5.72 55.33L242.5 158.5c0 29.4 0 44.1 -5.72 55.33a52.5 52.5 0 0 1 -22.94 22.94c-11.23 5.72 -25.93 5.72 -55.33 5.72L97.5 242.5c-29.4 0 -44.1 0 -55.33 -5.72a52.5 52.5 0 0 1 -22.94 -22.94c-5.72 -11.23 -5.72 -25.93 -5.72 -55.33L13.5 97.5c0 -29.4 0 -44.1 5.72 -55.33a52.5 52.5 0 0 1 22.94 -22.94c11.23 -5.72 25.93 -5.72 55.33 -5.72Z" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="3"/>
+    <!-- Window controls; the first carries the accent. -->
+    <g fill="#cfd1d5" fill-opacity=".7">
+      <circle cx="71.36" cy="39.56" r="7.5"/>
+      <circle cx="95.36" cy="39.56" r="7.5"/>
+    </g>
+    <g fill="#4cc2ff">
+      <circle cx="47.36" cy="39.56" r="7.5"/>
+    </g>
+    <!-- The graph: columns of dots lit up to each sample, the newest on the right. -->
+    <g fill="#cfd1d5" fill-opacity="0.13">
+      <circle cx="47.36" cy="78.49" r="11.36"/>
+      <circle cx="47.36" cy="110.74" r="11.36"/>
+      <circle cx="47.36" cy="143" r="11.36"/>
+      <circle cx="47.36" cy="175.26" r="11.36"/>
+      <circle cx="79.61" cy="78.49" r="11.36"/>
+      <circle cx="79.61" cy="110.74" r="11.36"/>
+      <circle cx="79.61" cy="143" r="11.36"/>
+      <circle cx="111.87" cy="78.49" r="11.36"/>
+      <circle cx="111.87" cy="110.74" r="11.36"/>
+      <circle cx="111.87" cy="143" r="11.36"/>
+      <circle cx="111.87" cy="175.26" r="11.36"/>
+      <circle cx="144.13" cy="78.49" r="11.36"/>
+      <circle cx="144.13" cy="110.74" r="11.36"/>
+      <circle cx="176.39" cy="78.49" r="11.36"/>
+      <circle cx="176.39" cy="110.74" r="11.36"/>
+      <circle cx="176.39" cy="143" r="11.36"/>
+      <circle cx="208.64" cy="78.49" r="11.36"/>
+    </g>
+    <g fill="#cfd1d5">
+      <circle cx="47.36" cy="207.51" r="11.36"/>
+      <circle cx="79.61" cy="175.26" r="11.36"/>
+      <circle cx="79.61" cy="207.51" r="11.36"/>
+      <circle cx="111.87" cy="207.51" r="11.36"/>
+      <circle cx="144.13" cy="143" r="11.36"/>
+      <circle cx="144.13" cy="175.26" r="11.36"/>
+      <circle cx="144.13" cy="207.51" r="11.36"/>
+      <circle cx="176.39" cy="175.26" r="11.36"/>
+      <circle cx="176.39" cy="207.51" r="11.36"/>
+    </g>
+    <g fill="#4cc2ff">
+      <circle cx="208.64" cy="110.74" r="11.36"/>
+      <circle cx="208.64" cy="143" r="11.36"/>
+      <circle cx="208.64" cy="175.26" r="11.36"/>
+      <circle cx="208.64" cy="207.51" r="11.36"/>
+    </g>
+  </g>
+</svg>

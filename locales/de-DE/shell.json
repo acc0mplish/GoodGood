@@ -1,0 +1,112 @@
+{
+  "loadingProcesses": "Prozesse werden gelesen…",
+  "nav": {
+    "expand": "Navigation erweitern",
+    "collapse": "Navigation einklappen",
+    "resize": "Größe der Navigation ändern"
+  },
+  "page": {
+    "processes": "Prozesse",
+    "performance": "Leistung",
+    "services": "Dienste",
+    "startup": "Autostart",
+    "network": "Verbindungen",
+    "history": "Verlauf",
+    "components": "Komponenten",
+    "settings": "Einstellungen",
+    "about": "Info"
+  },
+  "pageTitle": "{page} (Strg+{key})",
+  "elevation": {
+    "admin": "Administrator",
+    "adminHint": "GoodGood wird als Administrator ausgeführt und kann fast alle Prozesse anzeigen und beenden",
+    "service": "Privilegierter Dienst",
+    "serviceHint": "GoodGood läuft mit Standardrechten; der privilegierte Dienst übernimmt Vorgänge, die Administratorrechte erfordern",
+    "standard": "Standardbenutzer",
+    "standardHint": "Zum Lesen oder Beenden einiger Systemprozesse sind Administratorrechte erforderlich"
+  },
+  "interval": {
+    "label": "Aktualisierungsintervall",
+    "option": "Alle {seconds} s"
+  },
+  "background": {
+    "confirm": {
+      "minimized": {
+        "title": "Im minimierten Zustand häufiger aktualisieren?",
+        "body": "Bei minimiertem Fenster erfasst GoodGood alle Prozesse und Sensoren alle {seconds} s. Intervalle unter 5 Sekunden erhöhen CPU-Auslastung und Energieverbrauch spürbar, besonders im Akkubetrieb. Verlauf und Regeln funktionieren mit dem Standardintervall von 5 Sekunden."
+      },
+      "tray": {
+        "title": "Öfter im Infobereich aktualisieren?",
+        "body": "Bei ausgeblendetem Fenster erfasst GoodGood alle Prozesse und Sensoren alle {seconds} s. Intervalle unter 5 Sekunden erhöhen CPU-Auslastung und Energieverbrauch spürbar, besonders im Akkubetrieb. Verlauf und Regeln funktionieren mit dem Standardintervall von 5 Sekunden."
+      },
+      "accept": "Trotzdem {seconds} s verwenden"
+    },
+    "notice": {
+      "minimized": "Bei minimiertem Fenster hat GoodGood alle {to} s statt alle {from} s aktualisiert, um Ressourcen zu sparen.",
+      "tray": "Während GoodGood im Infobereich ausgeblendet war, wurde alle {to} s statt alle {from} s aktualisiert, um Ressourcen zu sparen.",
+      "adjust": "Anpassen",
+      "quiet": "Nicht erneut erinnern"
+    }
+  },
+  "pause": "Aktualisierung anhalten",
+  "resume": "Aktualisierung fortsetzen",
+  "more": {
+    "label": "Weitere Aktionen",
+    "runTask": "Neue Aufgabe ausführen…",
+    "fileLock": "Prozesse suchen, die eine Datei verwenden…",
+    "fileLockDetail": "Auch per Ablegen"
+  },
+  "details": {
+    "label": "Detailbereich",
+    "mode": {
+      "open": "Immer anzeigen",
+      "auto": "Wird angezeigt, wenn ein Prozess ausgewählt ist",
+      "closed": "Ausblenden"
+    },
+    "current": "Detailbereich: {mode}",
+    "next": "Klicken Sie für „{mode}“; Klicken Sie mit der rechten Maustaste, um auszuwählen"
+  },
+  "search": {
+    "processes": "Nach Name, PID, Pfad oder Dienst suchen",
+    "clear": "Suche löschen"
+  },
+  "viewMode": {
+    "apps": {
+      "label": "Apps"
+    },
+    "tree": {
+      "label": "Baum"
+    },
+    "list": {
+      "label": "Liste"
+    }
+  },
+  "status": {
+    "threads": "Threads",
+    "handles": "Handles",
+    "cached": "Im Cache",
+    "pagedPool": "Ausgelagerter Pool",
+    "uptime": "Betriebszeit",
+    "orderHeld": "Sortierung angehalten",
+    "orderHeldHint": "Der Zeiger befindet sich über der Prozessliste: Die Zeilen bleiben an ihrem Platz, die Werte werden weiter aktualisiert. Sobald der Zeiger die Liste verlässt, werden die Zeilen neu sortiert.",
+    "paused": "Aktualisierung angehalten",
+    "holdHint": "Auf den Seiten „Prozesse“ und „Leistung“ Strg gedrückt halten, um kurz anzuhalten",
+    "interval": "Aktualisiert alle {seconds} s",
+    "version": "v{version}",
+    "versionHint": "GoodGood {version} · {build}\nKlicken, um die Neuerungen dieser Version anzuzeigen; rechtsklicken, um die Versionsnummer zu kopieren"
+  },
+  "star": {
+    "title": "GoodGood auf GitHub einen Stern geben",
+    "body": "GoodGood ist kostenlos und quelloffen. Ein Stern auf GitHub hilft anderen, GoodGood zu finden, und motiviert die Weiterentwicklung.",
+    "open": "Stern auf GitHub vergeben",
+    "quiet": "Nicht erneut erinnern",
+    "off": "Die Stern-Erinnerung wurde deaktiviert. Sie lässt sich in den Einstellungen wieder aktivieren.",
+    "settings": "Einstellungen öffnen"
+  },
+  "portable": {
+    "title": "Dies ist die portable Version",
+    "body": "Sie bietet keine Updates in der Anwendung, keine Startmenüverknüpfung und keinen Deinstallationseintrag; der privilegierte Dienst und die Task-Manager-Ersetzung werden nicht zusammen mit GoodGood aktualisiert. Für den täglichen Gebrauch wird die installierte Version empfohlen; Einstellungen und Verlauf bleiben erhalten.",
+    "website": "Von der Website herunterladen",
+    "github": "Von GitHub herunterladen"
+  }
+}

@@ -1,0 +1,1645 @@
+//! Only the owned process tree is controlled; shared DWM counters are reported separately.
+
+use anyhow::{Context, Result};
+use std::{
+    collections::HashSet,
+    io::{self, BufRead, Write},
+    mem::size_of,
+    os::windows::process::CommandExt,
+    process::{Command, Stdio},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
+    time::{Duration, Instant},
+};
+use windows::Win32::System::JobObjects::*;
+use windows::{
+    Win32::{
+        Foundation::{CloseHandle, FILETIME, HWND, LPARAM, RECT},
+        System::{
+            Diagnostics::ToolHelp::*,
+            Performance::*,
+            ProcessStatus::{
+                GetPerformanceInfo, GetProcessMemoryInfo, PERFORMANCE_INFORMATION,
+                PROCESS_MEMORY_COUNTERS_EX, PROCESS_MEMORY_COUNTERS_EX2,
+            },
+            Threading::*,
+            WindowsProgramming::QueryProcessCycleTime,
+        },
+        UI::{
+            HiDpi::{DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext},
+            Input::KeyboardAndMouse::{EnableWindow, IsWindowEnabled},
+            WindowsAndMessaging::*,
+        },
+    },
+    core::{BOOL, PCWSTR},
+};
+
+fn wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(Some(0)).collect()
+}
+
+const TEST_JOB_COMMIT_LIMIT: usize = 2 * 1024 * 1024 * 1024;
+
+/// The child was created suspended. Its only thread can start user code once
+/// the kernel has assigned the process to the limited job.
+fn resume_owned_child(pid: u32) -> Result<()> {
+    use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
+    use windows::Win32::Foundation::HANDLE;
+    unsafe {
+        let snapshot =
+            OwnedHandle::from_raw_handle(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)?.0);
+        let handle = HANDLE(snapshot.as_raw_handle());
+        let mut entry = THREADENTRY32 {
+            dwSize: size_of::<THREADENTRY32>() as u32,
+            ..Default::default()
+        };
+        Thread32First(handle, &mut entry)?;
+        while entry.th32OwnerProcessID != pid {
+            Thread32Next(handle, &mut entry)?;
+        }
+        let thread = OwnedHandle::from_raw_handle(
+            OpenThread(THREAD_SUSPEND_RESUME, false, entry.th32ThreadID)?.0,
+        );
+        anyhow::ensure!(
+            ResumeThread(HANDLE(thread.as_raw_handle())) != u32::MAX,
+            "resume owned test thread"
+        );
+    }
+    Ok(())
+}
+/// Read-only inspection includes hidden windows; it never changes focus or visibility.
+pub fn inspect(pid: u32) -> Result<()> {
+    struct Inspection {
+        pid: u32,
+        windows: Vec<serde_json::Value>,
+    }
+    unsafe extern "system" fn enumerate(hwnd: HWND, data: LPARAM) -> BOOL {
+        let inspection = unsafe { &mut *(data.0 as *mut Inspection) };
+        let mut pid = 0;
+        let thread = unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+        if pid != inspection.pid {
+            return true.into();
+        }
+        let mut title = [0u16; 256];
+        let mut class = [0u16; 128];
+        let nt = unsafe { GetWindowTextW(hwnd, &mut title) } as usize;
+        let nc = unsafe { GetClassNameW(hwnd, &mut class) } as usize;
+        let mut rect = RECT::default();
+        let mut placement = WINDOWPLACEMENT {
+            length: size_of::<WINDOWPLACEMENT>() as u32,
+            ..Default::default()
+        };
+        unsafe {
+            let _ = GetWindowRect(hwnd, &mut rect);
+            let _ = GetWindowPlacement(hwnd, &mut placement);
+        }
+        let responsive = unsafe {
+            SendMessageTimeoutW(
+                hwnd,
+                WM_NULL,
+                Default::default(),
+                Default::default(),
+                SMTO_ABORTIFHUNG | SMTO_BLOCK,
+                100,
+                None,
+            )
+        }
+        .0 != 0;
+        inspection.windows.push(serde_json::json!({"hwnd":hwnd.0 as usize,"thread":thread,"title":String::from_utf16_lossy(&title[..nt]),"class":String::from_utf16_lossy(&class[..nc]),"visible":unsafe{IsWindowVisible(hwnd).as_bool()},"minimized":unsafe{IsIconic(hwnd).as_bool()},"responsive":responsive,"showCommand":placement.showCmd,"rect":[rect.left,rect.top,rect.right,rect.bottom]}));
+        true.into()
+    }
+    let mut inspection = Inspection {
+        pid,
+        windows: vec![],
+    };
+    unsafe {
+        EnumWindows(
+            Some(enumerate),
+            LPARAM((&mut inspection as *mut Inspection) as isize),
+        )?;
+    }
+    println!("{}", serde_json::to_string_pretty(&inspection.windows)?);
+    Ok(())
+}
+fn ticks(t: FILETIME) -> u64 {
+    (u64::from(t.dwHighDateTime) << 32) | u64::from(t.dwLowDateTime)
+}
+
+/// Test normal startup on an inactive desktop, without forcing a window to show.
+pub fn startup(args: &[String]) -> Result<()> {
+    use windows::Win32::System::StationsAndDesktops::*;
+    use windows::core::PWSTR;
+    anyhow::ensure!(!args.is_empty(), "startup requires an executable");
+    struct Desktop(HDESK);
+    impl Drop for Desktop {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = CloseDesktop(self.0);
+            }
+        }
+    }
+    struct ThreadDesktop(HDESK);
+    impl Drop for ThreadDesktop {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = SetThreadDesktop(self.0);
+            }
+        }
+    }
+    struct Process(PROCESS_INFORMATION);
+    impl Drop for Process {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = CloseHandle(self.0.hThread);
+                let _ = CloseHandle(self.0.hProcess);
+            }
+        }
+    }
+    let name = format!(
+        "GoodGoodStartup-{}-{}",
+        std::process::id(),
+        crate::unix_ms()
+    );
+    let desktop = Desktop(unsafe {
+        CreateDesktopW(
+            PCWSTR(wide(&name).as_ptr()),
+            PCWSTR::null(),
+            None,
+            Default::default(),
+            DESKTOP_CREATEWINDOW.0
+                | DESKTOP_ENUMERATE.0
+                | DESKTOP_READOBJECTS.0
+                | DESKTOP_WRITEOBJECTS.0
+                | DESKTOP_HOOKCONTROL.0,
+            None,
+        )?
+    });
+    let original = unsafe { GetThreadDesktop(GetCurrentThreadId())? };
+    let mut desktop_name = wide(&format!("WinSta0\\{name}"));
+    let quote = |value: &str| {
+        let mut out = String::from("\"");
+        let mut slashes = 0;
+        for ch in value.chars() {
+            if ch == '\\' {
+                slashes += 1;
+                continue;
+            }
+            out.extend(std::iter::repeat_n(
+                '\\',
+                if ch == '"' { slashes * 2 + 1 } else { slashes },
+            ));
+            slashes = 0;
+            out.push(ch);
+        }
+        out.extend(std::iter::repeat_n('\\', slashes * 2));
+        out.push('"');
+        out
+    };
+    let mut command = wide(
+        &args
+            .iter()
+            .map(|arg| quote(arg))
+            .collect::<Vec<_>>()
+            .join(" "),
+    );
+    let startup = STARTUPINFOW {
+        cb: size_of::<STARTUPINFOW>() as u32,
+        lpDesktop: PWSTR(desktop_name.as_mut_ptr()),
+        ..Default::default()
+    };
+    let mut information = PROCESS_INFORMATION::default();
+    let job = Arc::new(Job::limited()?);
+    unsafe {
+        CreateProcessW(
+            PCWSTR(wide(&args[0]).as_ptr()),
+            Some(PWSTR(command.as_mut_ptr())),
+            None,
+            None,
+            false,
+            CREATE_NO_WINDOW | CREATE_SUSPENDED,
+            None,
+            PCWSTR::null(),
+            &startup,
+            &mut information,
+        )?;
+    }
+    let process = Process(information);
+    unsafe {
+        if let Err(error) = AssignProcessToJobObject(job.0, process.0.hProcess) {
+            let _ = TerminateProcess(process.0.hProcess, 1);
+            return Err(error.into());
+        }
+    }
+    let monitor = ForegroundMonitor::start(process.0.dwProcessId, job.clone());
+    let restore = ThreadDesktop(original);
+    unsafe {
+        SetThreadDesktop(desktop.0)?;
+        ResumeThread(process.0.hThread);
+    }
+    let started = Instant::now();
+    let mut last = None;
+    let mut windows = Vec::new();
+    loop {
+        if unsafe { WaitForSingleObject(process.0.hProcess, 50) }
+            == windows::Win32::Foundation::WAIT_OBJECT_0
+        {
+            break;
+        }
+        anyhow::ensure!(
+            started.elapsed() < Duration::from_secs(120),
+            "isolated startup timeout"
+        );
+        anyhow::ensure!(
+            !monitor.violated.load(Ordering::Relaxed),
+            "test took foreground"
+        );
+        for pid in job.pids()? {
+            let mut search = Search {
+                pid,
+                hwnd: HWND::default(),
+                flyout: false,
+                window: None,
+            };
+            unsafe {
+                let _ = EnumWindows(Some(find), LPARAM((&mut search as *mut Search) as isize));
+            }
+            if search.hwnd.0.is_null() {
+                continue;
+            }
+            let visible = unsafe { IsWindowVisible(search.hwnd).as_bool() };
+            let state = (pid, visible);
+            if last != Some(state) {
+                let event = serde_json::json!({"pid":pid,"visible":visible,"atMs":started.elapsed().as_millis()});
+                println!("{event}");
+                windows.push(event);
+                last = Some(state);
+            }
+        }
+    }
+    let mut code = 0;
+    unsafe {
+        GetExitCodeProcess(process.0.hProcess, &mut code)?;
+    }
+    let violated = monitor.violated.load(Ordering::Relaxed);
+    drop(restore);
+    drop(monitor);
+    println!(
+        "{}",
+        serde_json::json!({"event":"startup-result","exitCode":code,"foregroundViolations":usize::from(violated),"windows":windows})
+    );
+    anyhow::ensure!(
+        code == 0 && !violated,
+        "isolated startup did not exit cleanly"
+    );
+    Ok(())
+}
+
+struct Job(windows::Win32::Foundation::HANDLE);
+// Kernel job handles support concurrent calls; Arc keeps the handle alive.
+unsafe impl Send for Job {}
+unsafe impl Sync for Job {}
+impl Job {
+    fn limited() -> Result<Self> {
+        let job = Self(unsafe { CreateJobObjectW(None, None)? });
+        let limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+            BasicLimitInformation: JOBOBJECT_BASIC_LIMIT_INFORMATION {
+                LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_JOB_MEMORY,
+                ..Default::default()
+            },
+            JobMemoryLimit: TEST_JOB_COMMIT_LIMIT,
+            ..Default::default()
+        };
+        unsafe {
+            SetInformationJobObject(
+                job.0,
+                JobObjectExtendedLimitInformation,
+                (&limits as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION).cast(),
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )?;
+        }
+        Ok(job)
+    }
+    fn peak_commit(&self) -> Result<usize> {
+        let mut limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+        unsafe {
+            QueryInformationJobObject(
+                Some(self.0),
+                JobObjectExtendedLimitInformation,
+                (&mut limits as *mut JOBOBJECT_EXTENDED_LIMIT_INFORMATION).cast(),
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+                None,
+            )?;
+        }
+        Ok(limits.PeakJobMemoryUsed)
+    }
+
+    fn memory_limit(&self, bytes: usize) -> Result<()> {
+        anyhow::ensure!(
+            (128 << 20..=TEST_JOB_COMMIT_LIMIT).contains(&bytes),
+            "owned job limit outside test bounds"
+        );
+        let limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+            BasicLimitInformation: JOBOBJECT_BASIC_LIMIT_INFORMATION {
+                LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_JOB_MEMORY,
+                ..Default::default()
+            },
+            JobMemoryLimit: bytes,
+            ..Default::default()
+        };
+        unsafe {
+            SetInformationJobObject(
+                self.0,
+                JobObjectExtendedLimitInformation,
+                (&limits as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION).cast(),
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )?;
+        }
+        Ok(())
+    }
+    fn pids(&self) -> Result<HashSet<u32>> {
+        let mut buffer = vec![0usize; 1025];
+        unsafe {
+            QueryInformationJobObject(
+                Some(self.0),
+                JobObjectBasicProcessIdList,
+                buffer.as_mut_ptr().cast(),
+                (buffer.len() * size_of::<usize>()) as u32,
+                None,
+            )?;
+        }
+        let count = unsafe {
+            (&*buffer.as_ptr().cast::<JOBOBJECT_BASIC_PROCESS_ID_LIST>()).NumberOfProcessIdsInList
+                as usize
+        };
+        anyhow::ensure!(count < buffer.len(), "job process list overflow");
+        Ok(buffer[1..=count].iter().map(|pid| *pid as u32).collect())
+    }
+}
+impl Drop for Job {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = CloseHandle(self.0);
+        }
+    }
+}
+
+struct ForegroundMonitor {
+    stop: Arc<AtomicBool>,
+    violated: Arc<AtomicBool>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+impl ForegroundMonitor {
+    fn start(root: u32, job: Arc<Job>) -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
+        let violated = Arc::new(AtomicBool::new(false));
+        let stop_thread = stop.clone();
+        let failed = violated.clone();
+        let thread = std::thread::spawn(move || {
+            let mut previous = HWND::default();
+            while !stop_thread.load(Ordering::Relaxed) {
+                let tick = Instant::now();
+                let hwnd = unsafe { GetForegroundWindow() };
+                if hwnd != previous {
+                    let mut pid = 0;
+                    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+                    if pid == root || job.pids().is_ok_and(|pids| pids.contains(&pid)) {
+                        failed.store(true, Ordering::Relaxed);
+                        println!(
+                            "{}",
+                            serde_json::json!({"event":"focusViolation","pid":pid})
+                        );
+                        unsafe {
+                            let _ = TerminateJobObject(job.0, 1);
+                        }
+                        break;
+                    }
+                    previous = hwnd;
+                }
+                std::thread::sleep(Duration::from_millis(50).saturating_sub(tick.elapsed()));
+            }
+        });
+        Self {
+            stop,
+            violated,
+            thread: Some(thread),
+        }
+    }
+}
+impl Drop for ForegroundMonitor {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+    }
+}
+
+struct Search {
+    pid: u32,
+    hwnd: HWND,
+    /// Look for a tray flyout (a visible tool window) instead of the main window.
+    flyout: bool,
+    /// Look for a visible window of this class instead, whose title holds
+    /// the given text (any title when empty): the desktop monitor, the
+    /// taskbar stand-in.
+    window: Option<(String, String)>,
+}
+unsafe extern "system" fn find(hwnd: HWND, data: LPARAM) -> BOOL {
+    let search = unsafe { &mut *(data.0 as *mut Search) };
+    let mut pid = 0;
+    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+    if pid != search.pid {
+        return true.into();
+    }
+    let mut title = [0u16; 128];
+    let mut class = [0u16; 64];
+    let nt = unsafe { GetWindowTextW(hwnd, &mut title) } as usize;
+    let nc = unsafe { GetClassNameW(hwnd, &mut class) } as usize;
+    static METADATA: std::sync::OnceLock<serde_json::Value> = std::sync::OnceLock::new();
+    let metadata = METADATA.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../resources/app.json"))
+            .expect("application metadata")
+    });
+    let class = String::from_utf16_lossy(&class[..nc]);
+    // The tray's flyouts are topmost tool windows of the same class, listed
+    // before the main window while they show.
+    let tool = unsafe { GetWindowLongPtrW(hwnd, GWL_EXSTYLE) } & WS_EX_TOOLWINDOW.0 as isize != 0;
+    let found = if let Some((wanted, part)) = &search.window {
+        class == *wanted
+            && String::from_utf16_lossy(&title[..nt]).contains(part.as_str())
+            && unsafe { IsWindowVisible(hwnd).as_bool() }
+    } else if search.flyout {
+        class == "Zed::Window" && tool && unsafe { IsWindowVisible(hwnd).as_bool() }
+    } else {
+        String::from_utf16_lossy(&title[..nt])
+            .contains(metadata["productName"].as_str().expect("product name"))
+            && class == "Zed::Window"
+            && !tool
+    };
+    if found {
+        search.hwnd = hwnd;
+        return false.into();
+    }
+    true.into()
+}
+
+struct Gpu {
+    query: PDH_HQUERY,
+    counters: Vec<(&'static str, PDH_HCOUNTER)>,
+    dwm: HashSet<u32>,
+}
+impl Gpu {
+    fn new() -> Result<Self> {
+        let mut query = Default::default();
+        let rc = unsafe { PdhOpenQueryW(None, 0, &mut query) };
+        anyhow::ensure!(rc == 0, "PDH open failed: {rc:#x}");
+        let mut counters = Vec::new();
+        for (name, path) in [
+            ("gpuTime100ns", r"\GPU Engine(*)\Running Time"),
+            ("gpuPercent", r"\GPU Engine(*)\Utilization Percentage"),
+            ("gpuDedicated", r"\GPU Process Memory(*)\Local Usage"),
+            ("gpuShared", r"\GPU Process Memory(*)\Non Local Usage"),
+            ("cpuMhz", r"\Processor Information(*)\Actual Frequency"),
+        ] {
+            let mut counter = Default::default();
+            let path = wide(path);
+            let rc =
+                unsafe { PdhAddEnglishCounterW(query, PCWSTR(path.as_ptr()), 0, &mut counter) };
+            if name == "cpuMhz" && rc != 0 {
+                continue;
+            }
+            anyhow::ensure!(rc == 0, "PDH counter {name} failed: {rc:#x}");
+            counters.push((name, counter));
+        }
+        unsafe { PdhCollectQueryData(query) };
+        let mut dwm = HashSet::new();
+        unsafe {
+            if let Ok(snapshot) = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) {
+                let mut entry = PROCESSENTRY32W {
+                    dwSize: size_of::<PROCESSENTRY32W>() as u32,
+                    ..Default::default()
+                };
+                if Process32FirstW(snapshot, &mut entry).is_ok() {
+                    loop {
+                        let length = entry
+                            .szExeFile
+                            .iter()
+                            .position(|c| *c == 0)
+                            .unwrap_or(entry.szExeFile.len());
+                        if String::from_utf16_lossy(&entry.szExeFile[..length])
+                            .eq_ignore_ascii_case("dwm.exe")
+                        {
+                            dwm.insert(entry.th32ProcessID);
+                        }
+                        if Process32NextW(snapshot, &mut entry).is_err() {
+                            break;
+                        }
+                    }
+                }
+                let _ = CloseHandle(snapshot);
+            }
+        }
+        Ok(Self {
+            query,
+            counters,
+            dwm,
+        })
+    }
+    fn sample(&self, pids: &HashSet<u32>) -> serde_json::Value {
+        let tracked: HashSet<_> = pids.union(&self.dwm).copied().collect();
+        let pids = &tracked;
+        let rc = unsafe { PdhCollectQueryData(self.query) };
+        let mut result = serde_json::Map::new();
+        result.insert("status".into(), rc.into());
+        for (name, counter) in &self.counters {
+            if matches!(*name, "gpuPercent" | "cpuMhz") {
+                let (mut bytes, mut count) = (0, 0);
+                unsafe {
+                    PdhGetFormattedCounterArrayW(
+                        *counter,
+                        PDH_FMT_DOUBLE,
+                        &mut bytes,
+                        &mut count,
+                        None,
+                    )
+                };
+                let mut buffer = vec![0u64; (bytes as usize).div_ceil(8)];
+                let rc = unsafe {
+                    PdhGetFormattedCounterArrayW(
+                        *counter,
+                        PDH_FMT_DOUBLE,
+                        &mut bytes,
+                        &mut count,
+                        Some(buffer.as_mut_ptr().cast()),
+                    )
+                };
+                let mut entries = serde_json::Map::new();
+                if rc == 0 {
+                    for item in unsafe {
+                        std::slice::from_raw_parts(
+                            buffer.as_ptr().cast::<PDH_FMT_COUNTERVALUE_ITEM_W>(),
+                            count as usize,
+                        )
+                    } {
+                        let key = unsafe { item.szName.to_string() }.unwrap_or_default();
+                        let pid = key
+                            .strip_prefix("pid_")
+                            .and_then(|s| s.split('_').next())
+                            .and_then(|s| s.parse::<u32>().ok());
+                        if (*name == "cpuMhz" || pid.is_some_and(|p| pids.contains(&p)))
+                            && item.FmtValue.CStatus <= 1
+                        {
+                            entries.insert(
+                                key,
+                                serde_json::json!(unsafe { item.FmtValue.Anonymous.doubleValue }),
+                            );
+                        }
+                    }
+                }
+                result.insert((*name).into(), entries.into());
+                continue;
+            }
+            let (mut bytes, mut count) = (0, 0);
+            unsafe { PdhGetRawCounterArrayW(*counter, &mut bytes, &mut count, None) };
+            if bytes == 0 {
+                result.insert((*name).into(), serde_json::Value::Null);
+                continue;
+            }
+            let mut buffer = vec![0u64; (bytes as usize).div_ceil(8)];
+            let rc = unsafe {
+                PdhGetRawCounterArrayW(
+                    *counter,
+                    &mut bytes,
+                    &mut count,
+                    Some(buffer.as_mut_ptr().cast()),
+                )
+            };
+            if rc != 0 {
+                result.insert((*name).into(), serde_json::json!({"error":rc}));
+                continue;
+            }
+            let mut entries = serde_json::Map::new();
+            for item in unsafe {
+                std::slice::from_raw_parts(
+                    buffer.as_ptr().cast::<PDH_RAW_COUNTER_ITEM_W>(),
+                    count as usize,
+                )
+            } {
+                let key = unsafe { item.szName.to_string() }.unwrap_or_default();
+                let pid = key
+                    .strip_prefix("pid_")
+                    .and_then(|s| s.split('_').next())
+                    .and_then(|s| s.parse::<u32>().ok());
+                if pid.is_some_and(|p| pids.contains(&p)) && item.RawValue.CStatus <= 1 {
+                    entries.insert(key, item.RawValue.FirstValue.into());
+                }
+            }
+            result.insert((*name).into(), entries.into());
+        }
+        let mut compositor = serde_json::Map::new();
+        compositor.insert("pids".into(), serde_json::json!(self.dwm));
+        for (name, _) in &self.counters {
+            if *name == "cpuMhz" {
+                continue;
+            }
+            if let Some(entries) = result
+                .get_mut(*name)
+                .and_then(|value| value.as_object_mut())
+            {
+                let mut separate = serde_json::Map::new();
+                entries.retain(|key, value| {
+                    let pid = key
+                        .strip_prefix("pid_")
+                        .and_then(|s| s.split('_').next())
+                        .and_then(|s| s.parse::<u32>().ok());
+                    if pid.is_some_and(|pid| self.dwm.contains(&pid)) {
+                        separate.insert(key.clone(), value.clone());
+                        false
+                    } else {
+                        true
+                    }
+                });
+                compositor.insert((*name).into(), separate.into());
+            }
+        }
+        result.insert("dwm".into(), compositor.into());
+        result.into()
+    }
+}
+impl Drop for Gpu {
+    fn drop(&mut self) {
+        unsafe { PdhCloseQuery(self.query) };
+    }
+}
+
+fn thread_times(pids: &HashSet<u32>) -> Result<Vec<serde_json::Value>> {
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0)? };
+    let mut entry = THREADENTRY32 {
+        dwSize: size_of::<THREADENTRY32>() as u32,
+        ..Default::default()
+    };
+    let mut out = Vec::new();
+    unsafe {
+        if Thread32First(snapshot, &mut entry).is_ok() {
+            loop {
+                if pids.contains(&entry.th32OwnerProcessID)
+                    && let Ok(handle) =
+                        OpenThread(THREAD_QUERY_LIMITED_INFORMATION, false, entry.th32ThreadID)
+                {
+                    let (mut created, mut exited, mut kernel, mut user) = (
+                        FILETIME::default(),
+                        FILETIME::default(),
+                        FILETIME::default(),
+                        FILETIME::default(),
+                    );
+                    if GetThreadTimes(handle, &mut created, &mut exited, &mut kernel, &mut user)
+                        .is_ok()
+                    {
+                        let name = GetThreadDescription(handle)
+                            .ok()
+                            .map(|description| {
+                                let name = description.to_string().unwrap_or_default();
+                                let _ = windows::Win32::Foundation::LocalFree(Some(
+                                    windows::Win32::Foundation::HLOCAL(description.0.cast()),
+                                ));
+                                name
+                            })
+                            .unwrap_or_default();
+                        out.push(serde_json::json!({"pid":entry.th32OwnerProcessID,"tid":entry.th32ThreadID,"name":name,"created":ticks(created),"cpuMs":(ticks(kernel)+ticks(user)) as f64/10000.}));
+                    }
+                    let _ = CloseHandle(handle);
+                }
+                if Thread32Next(snapshot, &mut entry).is_err() {
+                    break;
+                }
+            }
+        }
+        let _ = CloseHandle(snapshot);
+    }
+    Ok(out)
+}
+
+fn sample(job: &Job, gpu: Option<&Gpu>, observed: &HashSet<u32>) -> Result<serde_json::Value> {
+    let pids = job.pids()?;
+    // Additional processes are observed only; never attach them to the owned job.
+    let (mut idle, mut kernel, mut user) = (
+        FILETIME::default(),
+        FILETIME::default(),
+        FILETIME::default(),
+    );
+    unsafe { GetSystemTimes(Some(&mut idle), Some(&mut kernel), Some(&mut user))? };
+    let mut performance = PERFORMANCE_INFORMATION::default();
+    unsafe {
+        GetPerformanceInfo(
+            &mut performance,
+            size_of::<PERFORMANCE_INFORMATION>() as u32,
+        )?
+    };
+    let tracked = pids.union(observed).copied().collect();
+    Ok(serde_json::json!({
+        "processes": process_resources(&pids),
+        "observedProcesses": process_resources(observed),
+        "peakJobCommit": job.peak_commit()?,
+        "system": {"idle":ticks(idle),"kernel":ticks(kernel),"user":ticks(user),
+            "handles":performance.HandleCount,"processes":performance.ProcessCount,
+            "threads":performance.ThreadCount,"commitBytes":performance.CommitTotal * performance.PageSize,
+            "commitLimitBytes":performance.CommitLimit * performance.PageSize,
+            "physicalTotalBytes":performance.PhysicalTotal * performance.PageSize,
+            "physicalAvailableBytes":performance.PhysicalAvailable * performance.PageSize},
+        "gpu":gpu.map(|gpu|gpu.sample(&tracked)),
+        "threads":gpu.map(|_|thread_times(&pids)).transpose()?
+    }))
+}
+
+fn process_resources(pids: &HashSet<u32>) -> Vec<serde_json::Value> {
+    let mut processes = Vec::new();
+    for &pid in pids {
+        unsafe {
+            let Ok(handle) = OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ,
+                false,
+                pid,
+            )
+            .or_else(|_| OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid)) else {
+                processes.push(serde_json::json!({"pid":pid,"error":"process query denied"}));
+                continue;
+            };
+            let mut memory = PROCESS_MEMORY_COUNTERS_EX2 {
+                cb: size_of::<PROCESS_MEMORY_COUNTERS_EX2>() as u32,
+                ..Default::default()
+            };
+            let mut created = FILETIME::default();
+            let mut exited = FILETIME::default();
+            let mut kernel = FILETIME::default();
+            let mut user = FILETIME::default();
+            let time_ok =
+                GetProcessTimes(handle, &mut created, &mut exited, &mut kernel, &mut user).is_ok();
+            let mut cycles = 0;
+            let cycles = QueryProcessCycleTime(handle, &mut cycles)
+                .is_ok()
+                .then_some(cycles);
+            let extended = GetProcessMemoryInfo(
+                handle,
+                (&mut memory as *mut PROCESS_MEMORY_COUNTERS_EX2).cast(),
+                size_of::<PROCESS_MEMORY_COUNTERS_EX2>() as u32,
+            )
+            .is_ok();
+            let mem_ok = extended || {
+                memory.cb = size_of::<PROCESS_MEMORY_COUNTERS_EX>() as u32;
+                GetProcessMemoryInfo(
+                    handle,
+                    (&mut memory as *mut PROCESS_MEMORY_COUNTERS_EX2).cast(),
+                    memory.cb,
+                )
+                .is_ok()
+            };
+            let mut handles = 0;
+            let handles = GetProcessHandleCount(handle, &mut handles)
+                .is_ok()
+                .then_some(handles);
+            let gdi = GetGuiResources(handle, GR_GDIOBJECTS);
+            let user_objects = GetGuiResources(handle, GR_USEROBJECTS);
+            let _ = CloseHandle(handle);
+            if time_ok && mem_ok {
+                processes.push(serde_json::json!({"pid":pid,"created":ticks(created),"cpuMs":(ticks(kernel)+ticks(user)) as f64/10000.,"cpuCycles":cycles,"privateBytes":memory.PrivateUsage,"peakPrivateBytes":memory.PeakPagefileUsage,"privateWorkingSet":extended.then_some(memory.PrivateWorkingSetSize),"workingSet":memory.WorkingSetSize,"handles":handles,"gdiObjects":gdi,"userObjects":user_objects}));
+            }
+        }
+    }
+    processes
+}
+
+fn qpc_time_100ns() -> Result<i64> {
+    let (mut counter, mut frequency) = (0, 0);
+    unsafe {
+        QueryPerformanceFrequency(&mut frequency)?;
+        QueryPerformanceCounter(&mut counter)?;
+    }
+    Ok((counter as i128 * 10_000_000 / frequency as i128) as i64)
+}
+
+/// Optional scheduling control for repeated tests on a busy hybrid CPU.
+fn performance_core_mask() -> Result<usize> {
+    use windows::Win32::System::SystemInformation::{
+        GetLogicalProcessorInformationEx, PROCESSOR_RELATIONSHIP, RelationProcessorCore,
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
+    };
+    let mut length = 0;
+    let _ = unsafe { GetLogicalProcessorInformationEx(RelationProcessorCore, None, &mut length) };
+    anyhow::ensure!(length > 0, "processor topology unavailable");
+    let mut buffer = vec![0usize; (length as usize).div_ceil(size_of::<usize>())];
+    unsafe {
+        GetLogicalProcessorInformationEx(
+            RelationProcessorCore,
+            Some(buffer.as_mut_ptr().cast()),
+            &mut length,
+        )?;
+    }
+    let mut offset = 0;
+    let mut cores = Vec::new();
+    let header = std::mem::offset_of!(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, Anonymous);
+    while offset < length as usize {
+        anyhow::ensure!(
+            length as usize - offset >= header + size_of::<PROCESSOR_RELATIONSHIP>(),
+            "invalid processor topology record"
+        );
+        let pointer = unsafe { buffer.as_ptr().cast::<u8>().add(offset) };
+        let record_size = unsafe { pointer.add(4).cast::<u32>().read_unaligned() } as usize;
+        anyhow::ensure!(
+            record_size >= header + size_of::<PROCESSOR_RELATIONSHIP>()
+                && record_size <= length as usize - offset,
+            "invalid processor topology length"
+        );
+        let processor = unsafe {
+            pointer
+                .add(header)
+                .cast::<PROCESSOR_RELATIONSHIP>()
+                .read_unaligned()
+        };
+        anyhow::ensure!(
+            processor.GroupCount == 1 && processor.GroupMask[0].Group == 0,
+            "performance-core tests require a single processor group"
+        );
+        cores.push((processor.EfficiencyClass, processor.GroupMask[0].Mask));
+        offset += record_size;
+    }
+    let highest = cores
+        .iter()
+        .map(|(class, _)| *class)
+        .max()
+        .context("empty processor topology")?;
+    Ok(cores
+        .into_iter()
+        .filter(|(class, _)| *class == highest)
+        .fold(0, |mask, (_, core)| mask | core))
+}
+
+pub fn run(args: &[String]) -> Result<()> {
+    let timeout = if let Some(option) = args.windows(2).find(|pair| pair[0] == "--stop-after") {
+        let seconds: f64 = option[1].parse().context("invalid owned test duration")?;
+        anyhow::ensure!(
+            seconds.is_finite() && seconds > 0. && seconds <= 3570.,
+            "owned test duration must fit within one hour"
+        );
+        Duration::from_secs_f64(seconds + 30.)
+    } else {
+        Duration::from_secs(600)
+    };
+    // Keep the MTA alive for the whole probe. WinRT caches agile factories;
+    // ending the only initialized worker apartment can unload their DLL while
+    // cached factory pointers or native callbacks still refer to it.
+    #[cfg(feature = "capture")]
+    unsafe {
+        windows::Win32::System::WinRT::RoInitialize(
+            windows::Win32::System::WinRT::RO_INIT_MULTITHREADED,
+        )?;
+    }
+    anyhow::ensure!(
+        args.len() >= 2 && args.iter().any(|a| a == "--hidden"),
+        "owned test must start hidden"
+    );
+    unsafe {
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+    let gpu = Gpu::new()?;
+    let job = Arc::new(Job::limited()?);
+    let mut child = Command::new(&args[0])
+        .args(&args[1..])
+        .creation_flags((CREATE_NO_WINDOW | CREATE_SUSPENDED).0)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .context("launch owned test")?;
+    let root = child.id();
+    let app_output = child.stdout.take().context("owned test stdout")?;
+    std::thread::spawn(move || {
+        // One process owns the output pipe. Forward complete application lines
+        // under the same stdout lock used for frame samples and phase markers.
+        for line in std::io::BufReader::new(app_output)
+            .lines()
+            .map_while(std::result::Result::ok)
+        {
+            println!("{line}");
+        }
+    });
+    let start = Instant::now();
+    use std::os::windows::io::AsRawHandle;
+    if let Err(error) = unsafe {
+        AssignProcessToJobObject(
+            job.0,
+            windows::Win32::Foundation::HANDLE(child.as_raw_handle()),
+        )
+    } {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err(error.into());
+    }
+    let monitor = ForegroundMonitor::start(root, job.clone());
+    if std::env::var_os("GOODGOOD_PROBE_HIGH_PRIORITY").is_some() {
+        unsafe {
+            SetPriorityClass(
+                windows::Win32::Foundation::HANDLE(child.as_raw_handle()),
+                HIGH_PRIORITY_CLASS,
+            )?;
+        }
+    }
+    resume_owned_child(root)?;
+    // Keep the owned background test comparable to a foreground application.
+    // An explicit control bit prevents Windows from automatically selecting EcoQoS.
+    let power = PROCESS_POWER_THROTTLING_STATE {
+        Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+        ControlMask: PROCESS_POWER_THROTTLING_EXECUTION_SPEED,
+        StateMask: 0,
+    };
+    unsafe {
+        SetProcessInformation(
+            windows::Win32::Foundation::HANDLE(child.as_raw_handle()),
+            ProcessPowerThrottling,
+            (&power as *const PROCESS_POWER_THROTTLING_STATE).cast(),
+            size_of::<PROCESS_POWER_THROTTLING_STATE>() as u32,
+        )?;
+    }
+    let mut actual = PROCESS_POWER_THROTTLING_STATE {
+        Version: PROCESS_POWER_THROTTLING_CURRENT_VERSION,
+        ..Default::default()
+    };
+    unsafe {
+        GetProcessInformation(
+            windows::Win32::Foundation::HANDLE(child.as_raw_handle()),
+            ProcessPowerThrottling,
+            (&mut actual as *mut PROCESS_POWER_THROTTLING_STATE).cast(),
+            size_of::<PROCESS_POWER_THROTTLING_STATE>() as u32,
+        )?;
+    }
+    anyhow::ensure!(
+        actual.ControlMask & PROCESS_POWER_THROTTLING_EXECUTION_SPEED != 0
+            && actual.StateMask & PROCESS_POWER_THROTTLING_EXECUTION_SPEED == 0,
+        "owned process power throttling remains enabled"
+    );
+    let affinity = if std::env::var_os("GOODGOOD_PROBE_PERFORMANCE_CORES").is_some() {
+        let handle = windows::Win32::Foundation::HANDLE(child.as_raw_handle());
+        let (mut allowed, mut system) = (0, 0);
+        unsafe { GetProcessAffinityMask(handle, &mut allowed, &mut system)? };
+        let mask = performance_core_mask()? & allowed;
+        anyhow::ensure!(mask != 0, "no available performance core");
+        unsafe {
+            SetProcessAffinityMask(handle, mask)?;
+            GetProcessAffinityMask(handle, &mut allowed, &mut system)?;
+        }
+        anyhow::ensure!(allowed == mask, "owned affinity was not applied");
+        Some(format!("0x{mask:x}"))
+    } else {
+        None
+    };
+    println!(
+        "{}",
+        serde_json::json!({"event":"started","pid":root,"unixMs":crate::unix_ms(),"powerThrottling":false,"priorityClass":unsafe { GetPriorityClass(windows::Win32::Foundation::HANDLE(child.as_raw_handle())) },"performanceCoreAffinity":affinity,"jobCommitLimit":TEST_JOB_COMMIT_LIMIT})
+    );
+    #[cfg(feature = "capture")]
+    {
+        use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory1, IDXGIFactory1};
+        let factory: IDXGIFactory1 = unsafe { CreateDXGIFactory1()? };
+        let mut adapters = Vec::new();
+        let mut index = 0;
+        while let Ok(adapter) = unsafe { factory.EnumAdapters1(index) } {
+            let desc = unsafe { adapter.GetDesc1()? };
+            let len = desc
+                .Description
+                .iter()
+                .position(|c| *c == 0)
+                .unwrap_or(desc.Description.len());
+            adapters.push(serde_json::json!({"name":String::from_utf16_lossy(&desc.Description[..len]),"luid":format!("0x{:08X}_0x{:08X}",desc.AdapterLuid.HighPart as u32,desc.AdapterLuid.LowPart),"dedicatedBytes":desc.DedicatedVideoMemory}));
+            index += 1;
+        }
+        println!(
+            "{}",
+            serde_json::json!({"event":"hardware","adapters":adapters})
+        );
+    }
+    io::stdout().flush()?;
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        for line in io::stdin()
+            .lock()
+            .lines()
+            .map_while(std::result::Result::ok)
+        {
+            if tx.send(line).is_err() {
+                break;
+            }
+        }
+        let _ = tx.send("stop".to_owned());
+    });
+    let mut search = Search {
+        pid: root,
+        hwnd: HWND::default(),
+        flyout: false,
+        window: None,
+    };
+    let mut measured = Instant::now();
+    let mut closing = None;
+    let mut clock_installed = false;
+    let mut observed: HashSet<u32> = std::env::var("GOODGOOD_PROBE_OBSERVE_PIDS")
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|pid| pid.parse().ok())
+        .collect();
+    #[cfg(target_arch = "x86_64")]
+    let mut stack_sampler = None;
+    #[cfg(feature = "capture")]
+    let mut observer: Option<crate::frames::Observer> = None;
+    #[cfg(feature = "capture")]
+    let mut recorder: Option<crate::record::Recorder> = None;
+    // Recordings told to stop that are still writing their frames: reported
+    // once written, while commands keep flowing to the app.
+    #[cfg(feature = "capture")]
+    let mut finishing: Vec<crate::record::Recorder> = Vec::new();
+    loop {
+        #[cfg(feature = "capture")]
+        if recorder.as_ref().is_some_and(|r| r.finished()) {
+            println!("{}", recorder.take().unwrap().finish());
+            io::stdout().flush()?;
+        }
+        #[cfg(feature = "capture")]
+        while let Some(done) = finishing.iter().position(|r| r.finished()) {
+            println!("{}", finishing.swap_remove(done).finish());
+            io::stdout().flush()?;
+        }
+        anyhow::ensure!(
+            !monitor.violated.load(Ordering::Relaxed),
+            "owned test became foreground; result rejected"
+        );
+        if let Some(status) = child.try_wait()? {
+            anyhow::ensure!(
+                status.success() && !monitor.violated.load(Ordering::Relaxed),
+                "owned test exited unsuccessfully: {status}"
+            );
+            println!(
+                "{}",
+                serde_json::json!({"event":"exited","code":status.code(),"focusViolations":0})
+            );
+            break;
+        }
+        unsafe {
+            if search.hwnd.0.is_null() {
+                let _ = EnumWindows(Some(find), LPARAM((&mut search as *mut Search) as isize));
+                if search.hwnd.0.is_null() {
+                    for pid in job.pids()? {
+                        search.pid = pid;
+                        let _ =
+                            EnumWindows(Some(find), LPARAM((&mut search as *mut Search) as isize));
+                        if !search.hwnd.0.is_null() {
+                            break;
+                        }
+                    }
+                }
+                if !search.hwnd.0.is_null() {
+                    #[cfg(target_arch = "x86_64")]
+                    if let Ok(path) = std::env::var("GOODGOOD_PROBE_STACK_FILE") {
+                        let thread = GetWindowThreadProcessId(search.hwnd, None);
+                        stack_sampler =
+                            Some(crate::stacks::Sampler::start(search.pid, thread, path));
+                    }
+                    // Display-only runs must not consume clicks on the user's desktop.
+                    let style = GetWindowLongPtrW(search.hwnd, GWL_EXSTYLE);
+                    SetWindowLongPtrW(
+                        search.hwnd,
+                        GWL_EXSTYLE,
+                        (style | WS_EX_NOACTIVATE.0 as isize) & !(WS_EX_APPWINDOW.0 as isize),
+                    );
+                    let _ = EnableWindow(search.hwnd, false);
+                    anyhow::ensure!(
+                        GetWindowLongPtrW(search.hwnd, GWL_EXSTYLE) & WS_EX_NOACTIVATE.0 as isize
+                            != 0
+                            && !IsWindowEnabled(search.hwnd).as_bool(),
+                        "test window input isolation failed"
+                    );
+                    SetWindowPos(
+                        search.hwnd,
+                        Some(HWND_BOTTOM),
+                        0,
+                        0,
+                        0,
+                        0,
+                        SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE,
+                    )?;
+                    let mut rect = RECT::default();
+                    GetClientRect(search.hwnd, &mut rect)?;
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"shown","pid":search.pid,"uiThread":GetWindowThreadProcessId(search.hwnd,None),"hwnd":search.hwnd.0 as usize,"width":rect.right,"height":rect.bottom,"atMs":start.elapsed().as_millis()})
+                    );
+                }
+            }
+            while let Ok(command) = rx.try_recv() {
+                if let Some(pids) = command.strip_prefix("observe ") {
+                    observed = pids.split(',').filter_map(|pid| pid.parse().ok()).collect();
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"observing","pids":observed})
+                    );
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if let Some(mib) = command.strip_prefix("commit-limit ") {
+                    let mib: usize = mib.parse()?;
+                    let bytes = mib
+                        .checked_mul(1 << 20)
+                        .context("owned memory limit overflow")?;
+                    job.memory_limit(bytes)?;
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"commit-limit","bytes":bytes})
+                    );
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if command == "clock" {
+                    anyhow::ensure!(!clock_installed, "clock hook already installed");
+                    let hooks = crate::clock_hook::install(
+                        windows::Win32::Foundation::HANDLE(child.as_raw_handle()),
+                        root,
+                        args,
+                    )?;
+                    clock_installed = true;
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"clock-hook","pid":root,"imports":hooks})
+                    );
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if let Some(tag) = command.strip_prefix("mark ") {
+                    let at_ms = start.elapsed().as_secs_f64() * 1000.;
+                    let qpc = qpc_time_100ns()?;
+                    let mut value = sample(&job, Some(&gpu), &observed)?;
+                    value["event"] = "mark".into();
+                    value["tag"] = tag.into();
+                    value["atMs"] = at_ms.into();
+                    value["qpc100ns"] = qpc.into();
+                    #[cfg(feature = "capture")]
+                    if let Some(observer) = &observer {
+                        // Drain the last partial batch as well. WGC timestamps use
+                        // the same QPC-based 100 ns clock as the measurement marks.
+                        value["capture"] = observer.sample();
+                    }
+                    println!("{value}");
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if let Some(json) = command.strip_prefix("app ") {
+                    if let Some(input) = child.stdin.as_mut() {
+                        writeln!(input, "{json}")?;
+                        input.flush()?;
+                    }
+                    continue;
+                }
+                if search.hwnd.0.is_null() {
+                    continue;
+                }
+                if let Some(milliseconds) = command.strip_prefix("stall-ui ") {
+                    use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
+                    let milliseconds: u32 = milliseconds.parse()?;
+                    anyhow::ensure!(
+                        (1..=10_000).contains(&milliseconds),
+                        "owned UI stall outside test bounds"
+                    );
+                    let tid = GetWindowThreadProcessId(search.hwnd, None);
+                    let thread = OwnedHandle::from_raw_handle(
+                        OpenThread(
+                            THREAD_SUSPEND_RESUME | THREAD_QUERY_LIMITED_INFORMATION,
+                            false,
+                            tid,
+                        )?
+                        .0,
+                    );
+                    let handle = windows::Win32::Foundation::HANDLE(thread.as_raw_handle());
+                    anyhow::ensure!(
+                        GetProcessIdOfThread(handle) == search.pid
+                            && job.pids()?.contains(&search.pid),
+                        "UI stall requires an owned thread"
+                    );
+                    anyhow::ensure!(
+                        SuspendThread(handle) != u32::MAX,
+                        "owned UI thread suspend failed"
+                    );
+                    struct Resume(windows::Win32::Foundation::HANDLE);
+                    impl Drop for Resume {
+                        fn drop(&mut self) {
+                            unsafe {
+                                ResumeThread(self.0);
+                            }
+                        }
+                    }
+                    let resume = Resume(handle);
+                    let began = Instant::now();
+                    std::thread::sleep(Duration::from_millis(u64::from(milliseconds)));
+                    drop(resume);
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"ui-stall","elapsedMs":began.elapsed().as_millis(),"requestedMs":milliseconds})
+                    );
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if command == "stop" {
+                    #[cfg(feature = "capture")]
+                    drop(observer.take());
+                    #[cfg(feature = "capture")]
+                    for recorder in recorder.take().into_iter().chain(finishing.drain(..)) {
+                        println!("{}", recorder.finish());
+                    }
+                    let _ = PostMessageW(
+                        Some(search.hwnd),
+                        WM_CLOSE,
+                        Default::default(),
+                        Default::default(),
+                    );
+                    closing = Some(Instant::now());
+                }
+                #[cfg(feature = "capture")]
+                if command == "watch" {
+                    observer = Some(crate::frames::Observer::start(search.hwnd));
+                }
+                // record DIR MS [X Y W H]: every presented frame (cropped) for MS milliseconds.
+                #[cfg(feature = "capture")]
+                if let Some(rest) = command.strip_prefix("record ") {
+                    let parts = rest.split_whitespace().collect::<Vec<_>>();
+                    anyhow::ensure!(
+                        parts.len() == 2 || parts.len() == 6,
+                        "record DIR MS [X Y W H]"
+                    );
+                    let numbers = parts[1..]
+                        .iter()
+                        .map(|p| p.parse::<u32>())
+                        .collect::<std::result::Result<Vec<_>, _>>()?;
+                    let crop = (numbers.len() == 5).then(|| crate::record::Crop {
+                        x: numbers[1],
+                        y: numbers[2],
+                        width: numbers[3],
+                        height: numbers[4],
+                    });
+                    // The last recording stops and writes in the background
+                    // instead of holding up the commands after this one.
+                    if let Some(previous) = recorder.take() {
+                        previous.stop();
+                        finishing.push(previous);
+                    }
+                    recorder = Some(crate::record::Recorder::start(
+                        search.hwnd,
+                        parts[0].into(),
+                        Duration::from_millis(u64::from(numbers[0])),
+                        crop,
+                    ));
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"recording","qpc100ns":qpc_time_100ns()?})
+                    );
+                    io::stdout().flush()?;
+                }
+                #[cfg(feature = "capture")]
+                if command == "unwatch" {
+                    drop(observer.take());
+                    println!("{}", serde_json::json!({"event":"unwatched"}));
+                    io::stdout().flush()?;
+                }
+                if command == "preview-active" || command == "preview-inactive" {
+                    use windows::Win32::Graphics::Dwm::{
+                        DWMSBT_MAINWINDOW, DWMWA_SYSTEMBACKDROP_TYPE, DwmGetWindowAttribute,
+                    };
+                    let mut backdrop = 0i32;
+                    DwmGetWindowAttribute(
+                        search.hwnd,
+                        DWMWA_SYSTEMBACKDROP_TYPE,
+                        (&raw mut backdrop).cast(),
+                        size_of::<i32>() as u32,
+                    )?;
+                    anyhow::ensure!(backdrop == DWMSBT_MAINWINDOW.0, "Mica backdrop required");
+                    // Paint the native active frame without transferring input to the window.
+                    let active = command == "preview-active";
+                    let sent = SendMessageTimeoutW(
+                        search.hwnd,
+                        WM_NCACTIVATE,
+                        windows::Win32::Foundation::WPARAM(usize::from(active)),
+                        LPARAM(0),
+                        SMTO_ABORTIFHUNG | SMTO_BLOCK,
+                        1000,
+                        None,
+                    );
+                    anyhow::ensure!(sent.0 != 0, "preview frame message failed");
+                    println!("{}", serde_json::json!({"event":command}));
+                    io::stdout().flush()?;
+                    continue;
+                }
+                if command == "begin-move" || command == "end-move" {
+                    let message = if command == "begin-move" {
+                        WM_ENTERSIZEMOVE
+                    } else {
+                        WM_EXITSIZEMOVE
+                    };
+                    let _ = SendMessageTimeoutW(
+                        search.hwnd,
+                        message,
+                        windows::Win32::Foundation::WPARAM(0),
+                        LPARAM(0),
+                        SMTO_ABORTIFHUNG,
+                        1000,
+                        None,
+                    );
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":command,"atMs":start.elapsed().as_secs_f64()*1000.})
+                    );
+                }
+                if command == "hide" {
+                    let _ = ShowWindow(search.hwnd, SW_HIDE);
+                }
+                // The close button: the application hides to the tray when
+                // its settings say so, and exits otherwise.
+                if command == "close" {
+                    let _ = PostMessageW(
+                        Some(search.hwnd),
+                        WM_CLOSE,
+                        Default::default(),
+                        Default::default(),
+                    );
+                }
+                // To the taskbar, without activating the next window as
+                // SW_MINIMIZE would.
+                if command == "minimize" {
+                    let _ = ShowWindow(search.hwnd, SW_SHOWMINNOACTIVE);
+                }
+                if command == "show" {
+                    // The request, on the capture clock, to time the first frame back.
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"restoring","qpc100ns":qpc_time_100ns()?})
+                    );
+                    io::stdout().flush()?;
+                    if IsIconic(search.hwnd).as_bool() {
+                        let _ = ShowWindow(search.hwnd, SW_SHOWNOACTIVATE);
+                    }
+                    SetWindowPos(
+                        search.hwnd,
+                        Some(HWND_BOTTOM),
+                        0,
+                        0,
+                        0,
+                        0,
+                        SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE,
+                    )?;
+                }
+                if let Some(value) = command.strip_prefix("size ") {
+                    let size: Vec<i32> = value
+                        .split_whitespace()
+                        .map(str::parse)
+                        .collect::<std::result::Result<_, _>>()?;
+                    let mut client = RECT::default();
+                    let mut outer = RECT::default();
+                    // When the window took its new size (SetWindowPos returns
+                    // once the window has handled it), on the capture clock.
+                    let mut set_at = None;
+                    // Custom caption implementations can change non-client
+                    // insets on the first resize. Reconcile against the actual
+                    // client rectangle instead of assuming the old insets hold.
+                    for _ in 0..4 {
+                        GetClientRect(search.hwnd, &mut client)?;
+                        if client.right == size[0] && client.bottom == size[1] {
+                            break;
+                        }
+                        GetWindowRect(search.hwnd, &mut outer)?;
+                        let width = size[0] + outer.right - outer.left - client.right;
+                        let height = size[1] + outer.bottom - outer.top - client.bottom;
+                        let mut flags = SWP_NOACTIVATE | SWP_NOMOVE;
+                        // Allow an explicitly requested off-screen client size on the owned
+                        // test window. Default tracking limits otherwise clamp it to the desktop.
+                        if width > GetSystemMetrics(SM_CXMAXTRACK)
+                            || height > GetSystemMetrics(SM_CYMAXTRACK)
+                        {
+                            flags |= SWP_NOSENDCHANGING;
+                        }
+                        SetWindowPos(search.hwnd, Some(HWND_BOTTOM), 0, 0, width, height, flags)?;
+                        set_at.get_or_insert(qpc_time_100ns()?);
+                        std::thread::sleep(Duration::from_millis(50));
+                    }
+                    GetClientRect(search.hwnd, &mut client)?;
+                    anyhow::ensure!(
+                        client.right == size[0] && client.bottom == size[1],
+                        "owned client size did not settle at the requested dimensions"
+                    );
+                    println!(
+                        "{}",
+                        serde_json::json!({"event":"resized","width":client.right,"height":client.bottom,"qpc100ns":set_at})
+                    );
+                }
+                if let Some(value) = command.strip_prefix("move ") {
+                    let delta: Vec<i32> = value
+                        .split_whitespace()
+                        .map(str::parse)
+                        .collect::<std::result::Result<_, _>>()?;
+                    anyhow::ensure!(
+                        delta.len() == 2 && delta.iter().all(|d| d.abs() <= 32),
+                        "bounded owned-window movement required"
+                    );
+                    let mut rect = RECT::default();
+                    GetWindowRect(search.hwnd, &mut rect)?;
+                    SetWindowPos(
+                        search.hwnd,
+                        Some(HWND_BOTTOM),
+                        rect.left + delta[0],
+                        rect.top + delta[1],
+                        0,
+                        0,
+                        SWP_NOACTIVATE | SWP_NOSIZE,
+                    )?;
+                }
+            }
+        }
+        if measured.elapsed() >= Duration::from_millis(500) {
+            let mut value = sample(&job, None, &observed)?;
+            #[cfg(feature = "capture")]
+            if let Some(observer) = &observer {
+                value["capture"] = observer.sample();
+            }
+            value["atMs"] = serde_json::json!(start.elapsed().as_secs_f64() * 1000.);
+            value["event"] = "sample".into();
+            println!("{value}");
+            io::stdout().flush()?;
+            measured = Instant::now();
+        }
+        if closing.is_some_and(|at: Instant| at.elapsed() > Duration::from_secs(8)) {
+            #[cfg(feature = "capture")]
+            drop(observer.take());
+            child.kill()?;
+            child.wait()?;
+            break;
+        }
+        if start.elapsed() > timeout {
+            #[cfg(feature = "capture")]
+            drop(observer.take());
+            child.kill()?;
+            child.wait()?;
+            anyhow::bail!("owned test timeout");
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    #[cfg(target_arch = "x86_64")]
+    drop(stack_sampler);
+    Ok(())
+}
+
+#[cfg(feature = "capture")]
+pub fn capture(pid: u32, path: &str, preview: Option<(&str, &str)>, flyout: bool) -> Result<()> {
+    capture_window(pid, path, preview, flyout, None)
+}
+
+/// Captures a visible window of the process with class `class` whose title
+/// holds `title`.
+#[cfg(feature = "capture")]
+pub fn capture_class(pid: u32, path: &str, class: &str, title: &str) -> Result<()> {
+    capture_window(
+        pid,
+        path,
+        None,
+        false,
+        Some((class.to_owned(), title.to_owned())),
+    )
+}
+
+#[cfg(feature = "capture")]
+fn capture_window(
+    pid: u32,
+    path: &str,
+    preview: Option<(&str, &str)>,
+    flyout: bool,
+    window: Option<(String, String)>,
+) -> Result<()> {
+    use windows::{
+        Graphics::{
+            Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem},
+            DirectX::{Direct3D11::IDirect3DDevice, DirectXPixelFormat},
+        },
+        Win32::{
+            Graphics::{
+                Direct3D::{D3D_DRIVER_TYPE_WARP, D3D_FEATURE_LEVEL_11_0},
+                Direct3D11::*,
+                Dxgi::IDXGIDevice,
+            },
+            System::WinRT::{
+                Direct3D11::{CreateDirect3D11DeviceFromDXGIDevice, IDirect3DDxgiInterfaceAccess},
+                Graphics::Capture::IGraphicsCaptureItemInterop,
+                RO_INIT_MULTITHREADED, RoInitialize,
+            },
+        },
+        core::Interface,
+    };
+    let mut search = Search {
+        pid,
+        hwnd: HWND::default(),
+        flyout,
+        window,
+    };
+    unsafe {
+        let _ = EnumWindows(Some(find), LPARAM((&mut search as *mut Search) as isize));
+    }
+    anyhow::ensure!(!search.hwnd.0.is_null(), "owned GoodGood window missing");
+    unsafe {
+        RoInitialize(RO_INIT_MULTITHREADED)?;
+    }
+    let (mut device, mut context) = (None, None);
+    unsafe {
+        D3D11CreateDevice(
+            None,
+            D3D_DRIVER_TYPE_WARP,
+            Default::default(),
+            D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+            Some(&[D3D_FEATURE_LEVEL_11_0]),
+            D3D11_SDK_VERSION,
+            Some(&mut device),
+            None,
+            Some(&mut context),
+        )?;
+    }
+    let device = device.unwrap();
+    let context = context.unwrap();
+    let dxgi: IDXGIDevice = device.cast()?;
+    let runtime: IDirect3DDevice =
+        unsafe { CreateDirect3D11DeviceFromDXGIDevice(&dxgi)? }.cast()?;
+    let factory: IGraphicsCaptureItemInterop =
+        windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+    let item: GraphicsCaptureItem = unsafe { factory.CreateForWindow(search.hwnd)? };
+    let size = item.Size()?;
+    let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+        &runtime,
+        if preview.is_some() {
+            DirectXPixelFormat::R16G16B16A16Float
+        } else {
+            DirectXPixelFormat::B8G8R8A8UIntNormalized
+        },
+        2,
+        size,
+    )?;
+    let session = pool.CreateCaptureSession(&item)?;
+    session.SetIsCursorCaptureEnabled(false)?;
+    session.StartCapture()?;
+    let start = Instant::now();
+    let mut image = None;
+    while start.elapsed() < Duration::from_secs(5) {
+        if let Ok(frame) = pool.TryGetNextFrame() {
+            let size = frame.ContentSize()?;
+            let access: IDirect3DDxgiInterfaceAccess = frame.Surface()?.cast()?;
+            let texture: ID3D11Texture2D = unsafe { access.GetInterface()? };
+            let mut desc = D3D11_TEXTURE2D_DESC::default();
+            unsafe { texture.GetDesc(&mut desc) };
+            desc.Usage = D3D11_USAGE_STAGING;
+            desc.BindFlags = 0;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
+            desc.MiscFlags = 0;
+            let mut staging = None;
+            unsafe { device.CreateTexture2D(&desc, None, Some(&mut staging))? };
+            let staging = staging.unwrap();
+            unsafe { context.CopyResource(&staging, &texture) };
+            let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+            unsafe { context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))? };
+            let (w, h) = (size.Width as usize, size.Height as usize);
+            let stride = mapped.RowPitch as usize;
+            let bytes =
+                unsafe { std::slice::from_raw_parts(mapped.pData as *const u8, stride * h) };
+            let mut pixels = Vec::with_capacity(w * h * if preview.is_some() { 8 } else { 3 });
+            for row in bytes.chunks_exact(stride) {
+                if preview.is_some() {
+                    pixels.extend_from_slice(&row[..w * 8]);
+                } else {
+                    for &[b, g, r, _] in row[..w * 4].as_chunks::<4>().0 {
+                        pixels.extend_from_slice(&[r, g, b]);
+                    }
+                }
+            }
+            unsafe { context.Unmap(&staging, 0) };
+            frame.Close()?;
+            image = Some((w, h, pixels));
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    session.Close()?;
+    pool.Close()?;
+    let (w, h, data) = image.context("window capture timed out")?;
+    let data = if let Some((inactive, active)) = preview {
+        crate::preview::background(w, h, &data, inactive, active)?
+    } else {
+        data
+    };
+    let mut encoder = png::Encoder::new(std::fs::File::create(path)?, w as u32, h as u32);
+    encoder.set_color(png::ColorType::Rgb);
+    encoder.set_depth(png::BitDepth::Eight);
+    if preview.is_some() {
+        encoder.set_source_srgb(png::SrgbRenderingIntent::RelativeColorimetric);
+    }
+    encoder.write_header()?.write_image_data(&data)?;
+    println!("{}", serde_json::json!({"width":w,"height":h,"path":path}));
+    Ok(())
+}

@@ -1,0 +1,367 @@
+{
+  "visibility": {
+    "toggle": "Hide system processes",
+    "show": "Show system processes",
+    "processHint": "Hide Windows components and processes on the additional hide list, keeping the always-show list. Only changes the displayed list.",
+    "networkHint": "Hide connections owned by system processes and entries with no owning process (PID 0). Only changes the displayed list.",
+    "edit": "Edit hiding rules",
+    "description": "System processes are identified from Windows component information. Both pages share these rules and save their hiding switches separately.",
+    "keep": "Always show",
+    "keepHint": "Keep these programs visible, including system processes. This list takes priority over additional hiding.",
+    "hide": "Also hide",
+    "hideHint": "Hide these programs when hiding is enabled. Leave empty to hide system processes only.",
+    "namesHint": "Enter executable names separated by commas or semicolons, up to 128 per list. Names are case-insensitive.",
+    "invalid": "Enter valid executable names without paths or wildcards, up to 128 per list.",
+    "reset": "Restore default rules",
+    "empty": "No items match the current filters.",
+    "clear": "Show all and clear filters"
+  },
+  "identityPending": "Confirming the process identity. Try again shortly.",
+  "countersPending": "Collecting resource counters for this process.",
+  "refreshPending": "Updating process data. Showing the last successfully collected reading.",
+  "diskUnavailable": {
+    "pending": "No disk reading yet. A process that has only just appeared gets one at the next refresh.",
+    "enable": "No disk reading. Windows doesn't provide these counters directly, so they come from the privileged service, which can be enabled in Settings.",
+    "update": "No disk reading. The privileged service version doesn't match GoodGood; update the service in Settings.",
+    "start": "No disk reading. The privileged service is stopped; it can be started in Settings.",
+    "service": "No disk reading. Couldn't read it from the privileged service; check the service status in Settings.",
+    "unavailable": "No disk reading. Per-process disk counters can't be read right now."
+  },
+  "serviceHost": "Service host: {names}",
+  "webView": {
+    "host": "WebView2: {name}",
+    "role": {
+      "browser": "Browser process",
+      "renderer": "Renderer process",
+      "gpu": "GPU process",
+      "network": "Network service",
+      "storage": "Storage service",
+      "audio": "Audio service",
+      "utility": "Utility process",
+      "crashpad": "Crash handler"
+    }
+  },
+  "total": {
+    "one": "{count} process",
+    "other": "{count} processes"
+  },
+  "totalHidden": {
+    "one": "{total} ({count} hidden)",
+    "other": "{total} ({count} hidden)"
+  },
+  "filtered": "The list is filtered by the search",
+  "orderHeld": "Sorting paused: rows keep their places while readings update. They re-sort once the pointer leaves the list or the menu or dialog closes.",
+  "groupIn": "{user} · {group}",
+  "groupPlace": "{index} / {total}",
+  "column": {
+    "name": {
+      "label": "Name",
+      "title": "App name or file description; secondary text shows the executable name."
+    },
+    "pid": {
+      "label": "PID",
+      "title": "Process ID"
+    },
+    "cpu": {
+      "label": "CPU",
+      "title": "Share of total processor capacity"
+    },
+    "mem": {
+      "label": "Memory",
+      "title": "Private working set: physical memory used by this process alone"
+    },
+    "diskRead": {
+      "label": "Disk read",
+      "title": "Disk bytes read per second; excludes network and other device I/O"
+    },
+    "diskWrite": {
+      "label": "Disk write",
+      "title": "Disk bytes written per second; excludes network and other device I/O"
+    },
+    "io": {
+      "label": "I/O",
+      "title": "All read, write and other I/O, including files, network and devices"
+    },
+    "gpu": {
+      "label": "GPU",
+      "title": "Share of time the process uses its busiest GPU engine"
+    },
+    "net": {
+      "label": "Network",
+      "title": "Bytes sent and received per second"
+    },
+    "threads": {
+      "label": "Threads",
+      "title": "Number of threads"
+    },
+    "handles": {
+      "label": "Handles",
+      "title": "Number of handles"
+    },
+    "imageName": {
+      "label": "Image name",
+      "title": "Name of the executable file."
+    },
+    "ppid": {
+      "label": "Parent PID",
+      "title": "Parent process ID recorded at creation."
+    },
+    "path": {
+      "label": "Image path",
+      "title": "Full path of the process executable."
+    },
+    "description": {
+      "label": "Description",
+      "title": "Executable file description or packaged app name."
+    },
+    "company": {
+      "label": "Company",
+      "title": "Company name from the executable version information."
+    },
+    "version": {
+      "label": "File version",
+      "title": "File version from the executable version information."
+    },
+    "architecture": {
+      "label": "Architecture",
+      "title": "Processor architecture the process runs as."
+    },
+    "elevated": {
+      "label": "Elevated",
+      "title": "Whether the process runs with administrator rights (an elevated token)."
+    },
+    "commandLine": {
+      "label": "Command line",
+      "title": "Full command line the process was started with, including arguments."
+    },
+    "sessionId": {
+      "label": "Session ID",
+      "title": "Windows session that contains the process."
+    },
+    "createTime": {
+      "label": "Start time",
+      "title": "Process creation time in the local time zone."
+    },
+    "suspended": {
+      "label": "Suspended",
+      "title": "All threads of the process are waiting in the suspended state."
+    },
+    "efficiency": {
+      "label": "Efficiency mode",
+      "title": "EcoQoS power efficiency state of the process."
+    },
+    "cpuTime": {
+      "label": "CPU time",
+      "title": "Accumulated user and kernel CPU time; groups show the member total."
+    },
+    "cpuUserTime": {
+      "label": "User CPU time",
+      "title": "Accumulated CPU time spent in user mode."
+    },
+    "cpuKernelTime": {
+      "label": "Kernel CPU time",
+      "title": "Accumulated CPU time spent in kernel mode."
+    },
+    "basePriority": {
+      "label": "Base priority",
+      "title": "Process base priority reported by Windows, shown as its priority class. A value between the classes, which Windows gives some system processes, shows as a number."
+    },
+    "workingSet": {
+      "label": "Working set",
+      "title": "Resident physical memory, including shared pages. Groups sum member working sets."
+    },
+    "peakWorkingSet": {
+      "label": "Peak working set",
+      "title": "Peak working set of one process since startup. Expand an app group to view its processes."
+    },
+    "commit": {
+      "label": "Commit size",
+      "title": "Private committed memory of the process."
+    },
+    "virtualSize": {
+      "label": "Virtual address space",
+      "title": "Reserved and committed address ranges of one process. Commit size shows committed private memory."
+    },
+    "pageFaults": {
+      "label": "Page faults",
+      "title": "Accumulated page faults, including soft and hard faults."
+    },
+    "memoryPriority": {
+      "label": "Memory priority",
+      "title": "How soon Windows reclaims the process's memory pages under pressure; lower goes first."
+    },
+    "ioRead": {
+      "label": "I/O read",
+      "title": "I/O bytes read per second, including files, network and devices."
+    },
+    "ioWrite": {
+      "label": "I/O write",
+      "title": "I/O bytes written per second, including files, network and devices."
+    },
+    "ioOther": {
+      "label": "Other I/O",
+      "title": "Bytes transferred per second by other I/O operations."
+    },
+    "ioReadTotal": {
+      "label": "Total I/O read",
+      "title": "Total I/O bytes read over the process lifetime."
+    },
+    "ioWriteTotal": {
+      "label": "Total I/O write",
+      "title": "Total I/O bytes written over the process lifetime."
+    },
+    "ioOtherTotal": {
+      "label": "Total other I/O",
+      "title": "Total bytes transferred by other I/O over the process lifetime."
+    },
+    "ioPriority": {
+      "label": "I/O priority",
+      "title": "Priority hint for the process's disk and other I/O requests."
+    },
+    "netReceived": {
+      "label": "Network receive",
+      "title": "Network traffic received by the process per second."
+    },
+    "netSent": {
+      "label": "Network send",
+      "title": "Network traffic sent by the process per second."
+    },
+    "gpuEngine": {
+      "label": "GPU engine",
+      "title": "The busiest GPU engine of the process."
+    },
+    "gpuDedicated": {
+      "label": "Dedicated GPU memory",
+      "title": "Current resident dedicated GPU memory attributed to the process. Groups sum member counters."
+    },
+    "gpuShared": {
+      "label": "Shared GPU memory",
+      "title": "Current resident shared GPU memory attributed to the process. Groups sum member counters."
+    }
+  },
+  "noMatch": "No processes match “{query}”",
+  "efficiencyCount": {
+    "one": "{count} process in Efficiency mode",
+    "other": "{count} processes in Efficiency mode"
+  },
+  "suspended": "Suspended",
+  "netRates": "Send {sent}, receive {received}",
+  "section": {
+    "apps": "Apps",
+    "background": "Background processes",
+    "windows": "Windows processes"
+  },
+  "user": {
+    "system": "System",
+    "disconnected": "Disconnected",
+    "manage": "Manage user accounts",
+    "manageFailed": "Couldn't open User Accounts in Control Panel.",
+    "signOut": {
+      "action": "Sign out",
+      "title": "Sign out {name}?",
+      "body": "All programs this user is running will be closed. Unsaved data may be lost.",
+      "bodyCurrent": "All programs running in the current account will be closed, including GoodGood. Unsaved data may be lost.",
+      "needsAdmin": "Administrator rights required",
+      "done": "Signed out {name}",
+      "denied": "Couldn't sign out {name}: access denied. Run GoodGood as administrator and try again.",
+      "gone": "{name} is no longer signed in.",
+      "failed": "Couldn't sign out {name}: {error}"
+    }
+  },
+  "sectionSearching": "While searching, every match shows; clear the search to collapse groups",
+  "servicesSummary": "{names} and others ({count} services)",
+  "pidExited": "PID {pid} has already exited.",
+  "priority": {
+    "realtime": "Realtime",
+    "high": "High",
+    "aboveNormal": "Above normal",
+    "normal": "Normal",
+    "belowNormal": "Below normal",
+    "idle": "Low"
+  },
+  "ioPriority": {
+    "veryLow": "Very low",
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "memoryPriority": {
+    "veryLow": "Very low",
+    "low": "Low",
+    "medium": "Medium",
+    "belowNormal": "Below normal",
+    "normal": "Normal"
+  },
+  "menu": {
+    "endAll": {
+      "one": "End {count} process",
+      "other": "End all {count} processes"
+    },
+    "setPriority": "Set priority",
+    "ioPriority": "I/O priority",
+    "memoryPriority": "Memory priority",
+    "suspend": "Suspend process",
+    "resume": "Resume process",
+    "addRule": "Add rule",
+    "copyPid": "Copy PID",
+    "copyPidWhat": "PID",
+    "details": "Details"
+  },
+  "tree": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
+  },
+  "vitals": {
+    "open": "View {device} in Performance",
+    "diskActive": "Active {value}%",
+    "netTitle": "R: received, S: sent",
+    "netRates": "R: {received} S: {sent}",
+    "acpiTemperature": "ACPI thermal-zone temperature"
+  },
+  "memoryScope": {
+    "vital": "Physical memory in use across the whole system: total minus available, including in-use and modified pages. Process rows show their own private working sets, which add up to less. The full breakdown is in the user guide, docs/guide/README.md.",
+    "header": "The percentage above is the share of physical memory in use across the whole system. Rows show the private working set: physical memory used by the process alone; app groups and categories add these up. The full breakdown is in the user guide, docs/guide/README.md.",
+    "section": "Sum of the private working sets of the processes in this category. Whole-system usage also counts shared pages, the kernel and drivers, page tables, the in-use system cache and modified pages, so it is higher than the categories combined. The full breakdown is in the user guide, docs/guide/README.md."
+  },
+  "columns": {
+    "choose": "Select columns",
+    "autoWidth": "Automatic widths",
+    "fullWidth": "Full width",
+    "fitWidth": "Auto-fit this column",
+    "edgeHint": "Drag to resize, double-click to auto-fit",
+    "yes": "Yes",
+    "no": "No",
+    "reset": "Restore default columns",
+    "apply": "OK",
+    "chooseMore": "Select columns…",
+    "sortAscending": "Sort ascending",
+    "sortDescending": "Sort descending",
+    "hide": "Hide {name} column",
+    "description": "Check the columns to show. Drag them in the list on the right, or drag column headers, to change their order.",
+    "networkUnavailable": "Selected network columns appear when traffic data is available.",
+    "gpuUnavailable": "No GPU detected. Selected GPU columns are hidden.",
+    "category": {
+      "general": "General",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "io": "Disk and I/O",
+      "network": "Network",
+      "gpu": "GPU",
+      "all": "All"
+    },
+    "order": "Column order",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove",
+    "search": "Search columns or descriptions",
+    "selectAll": "Select all",
+    "clear": "Clear",
+    "noMatch": "No matching columns",
+    "fixed": "Fixed",
+    "selectionSummary": "{count} selected",
+    "virtualAliases": "virtual memory virtual bytes address reservation"
+  },
+  "basePriorityBetween": "Not a priority class. Windows gives this base priority to some system processes directly; it lies between {below} and {above}.",
+  "basePriorityCustom": "Not a priority class. Windows gives this base priority to some system processes directly."
+}

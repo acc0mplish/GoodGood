@@ -1,0 +1,17 @@
+{
+  "productName": "GoodGood",
+  "version": "0.5.0",
+  "identifier": "dev.goodgood.taskmanager",
+  "publisher": "GoodGood contributors",
+  "copyright": "© 2026 GoodGood contributors",
+  "homepage": "https://goodgoodtask.com",
+  "window": {
+    "width": 1000,
+    "height": 680,
+    "minWidth": 640,
+    "minHeight": 480
+  },
+  "updater": {
+    "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM2N0Q4MkYyQjFFRDQyMEUKUldRT1F1Mng4b0o5TmdmeHV5eWRHdGV6ek1UUXVuY0xRcmlxcDhTejlaODNRWGsvQi8zK2JHWDYK"
+  }
+}

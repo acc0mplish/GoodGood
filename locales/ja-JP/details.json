@@ -1,0 +1,93 @@
+{
+  "deselect": "選択を解除",
+  "resize": "詳細ペインの幅を変更",
+  "overview": {
+    "title": "この PC",
+    "hide": "PC の仕様を非表示",
+    "show": "PC の仕様を表示",
+    "copy": "PC の仕様をテキストとしてコピー",
+    "copyWhat": "PC の仕様",
+    "copyPart": "{kind}：{name}",
+    "selectTip": "リスト内のアプリまたはプロセスをクリックすると、その詳細がここに表示されます。もう一度クリックすると選択が解除されます。",
+    "closeTip": "詳細ペインは既定で常に表示されます。ウィンドウ右上の {icon} をクリックすると折りたためます。",
+    "tips": "操作のヒント",
+    "tipsCollapse": "操作のヒントを折りたたむ",
+    "tipsExpand": "操作のヒントを展開",
+    "cpu": "プロセッサー",
+    "cores": {
+      "other": "{count} コア"
+    },
+    "hybrid": "（{performance} P-コア + {efficiency} E-コア）",
+    "hybridLp": "（{performance} P-コア + {efficiency} E-コア + {lowPower} LP E-コア）",
+    "hybridLpOnly": "（{performance} P-コア + {lowPower} LP E-コア）",
+    "threads": {
+      "other": "{count} スレッド"
+    },
+    "base": "ベース {speed}",
+    "slots": "使用中のスロット {used} / {total}",
+    "disk": "ストレージ",
+    "gpu": "グラフィック",
+    "vram": "専用グラフィックス メモリ {size}",
+    "sharedMemory": "共有メモリを使用します",
+    "battery": "バッテリー",
+    "designed": "設計容量 {capacity}",
+    "health": "正常性 {percent}%"
+  },
+  "exited": {
+    "title": "プロセスが終了しました",
+    "hint": "リスト内の別のプロセスを選択して、その詳細を表示します。"
+  },
+  "group": {
+    "count": {
+      "other": "{count} プロセス"
+    },
+    "earliest": "最も早い起動時刻",
+    "members": "プロセス（{count}）",
+    "open": "PID {pid} の詳細を表示"
+  },
+  "services": "実行中のサービス（{count}）",
+  "section": {
+    "process": "プロセス",
+    "resources": "リソース",
+    "location": "ファイルの場所",
+    "commandLine": "コマンドライン",
+    "version": "ファイルバージョン"
+  },
+  "parent": "親プロセス",
+  "parentLink": "{name}（{pid}）",
+  "noParent": "なし（PID {pid}）",
+  "started": "起動時刻",
+  "cpuTime": "CPU 時間",
+  "user": "ユーザー名",
+  "integrity": "整合性",
+  "integrityLevel": {
+    "untrusted": "信頼できない",
+    "low": "低",
+    "medium": "中",
+    "mediumPlus": "中高",
+    "high": "高（昇格済み）",
+    "system": "システム",
+    "protected": "保護"
+  },
+  "architecture": "アーキテクチャ",
+  "arch": {
+    "x64": "64ビット（x64）",
+    "x86": "32ビット（x86）",
+    "arm64": "ARM64",
+    "arm": "ARM"
+  },
+  "priority": "優先度",
+  "session": "セッション",
+  "privateWs": "プライベート ワーキング セット",
+  "workingSet": "ワーキング セット",
+  "commit": "コミット サイズ",
+  "gpuEngine": "（{engine}）",
+  "gpuDedicated": "専用 GPU メモリ",
+  "gpuShared": "共有 GPU メモリ",
+  "netNeedsAdmin": "GoodGood を管理者として実行して表示します",
+  "threads": "スレッド",
+  "handles": "ハンドル",
+  "noAccess": "このプロセスのコマンド ラインとユーザー情報を読み取るためにプロセスを開けませんでした。確認するには GoodGood を管理者として実行してください。",
+  "product": "製品",
+  "version": "バージョン"
+}

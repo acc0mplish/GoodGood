@@ -1,0 +1,58 @@
+{
+  "filter": {
+    "all": {
+      "label": "Todos"
+    },
+    "listen": {
+      "label": "Escuchando"
+    },
+    "established": {
+      "label": "Establecida"
+    }
+  },
+  "protocolFilter": {
+    "tcp": "TCP",
+    "tcp6": "TCPv6",
+    "udp": "UDP",
+    "udp6": "UDPv6"
+  },
+  "state": {
+    "listen": "Escuchando",
+    "established": "Establecida",
+    "synSent": "SYN enviado",
+    "synReceived": "SYN recibido",
+    "finWait1": "Cerrando",
+    "finWait2": "Cerrando",
+    "closeWait": "Esperando el cierre",
+    "closing": "Cerrando",
+    "lastAck": "Cerrando",
+    "timeWait": "Tiempo de espera",
+    "closed": "Cerrada"
+  },
+  "menu": {
+    "end": "Finalizar {name}",
+    "close": "Cerrar esta conexión",
+    "copyLocal": "Copiar dirección local",
+    "copyRemote": "Copiar dirección remota"
+  },
+  "copied": {
+    "local": "dirección local",
+    "remote": "dirección remota"
+  },
+  "search": "Puerto, dirección o proceso, p. ej., 8080",
+  "column": {
+    "process": "Proceso",
+    "protocol": "Protocolo",
+    "localAddress": "Dirección local",
+    "localPort": "Puerto local",
+    "remoteAddress": "Dirección remota",
+    "remotePort": "Puerto remoto"
+  },
+  "exited": "Finalizado",
+  "unowned": "Sin proceso asociado",
+  "loading": "Leyendo conexiones…",
+  "noMatch": "No hay conexiones coincidentes",
+  "noMatchPort": "No hay conexiones coincidentes: ningún programa está utilizando el puerto {port}",
+  "clearFilter": "Borrar filtros",
+  "note": "Se actualiza cada 2 segundos. Haga doble clic en una fila para ir al proceso correspondiente."
+}

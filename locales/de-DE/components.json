@@ -1,0 +1,220 @@
+{
+  "sections": {
+    "tray": "Infobereich",
+    "desktop": "Desktopanzeige",
+    "taskbar": "Taskleistenanzeige",
+    "planned": "Weitere Komponenten"
+  },
+  "tray": {
+    "icon": {
+      "title": "Symbol im Infobereich",
+      "desc": "Verlauf zeigt die letzten CPU-Messwerte als Spalten, Anteil zeigt die aktuelle Auslastung als Punkteraster und Zahl als Prozentwert. Ab 80 % werden sie bernsteinfarben.",
+      "logo": "App-Symbol",
+      "load": "Verlauf",
+      "share": "Anteil",
+      "number": "Zahl"
+    },
+    "card": {
+      "title": "Hoverkarte",
+      "desc": "Zeigt aktuelle Werte für CPU, Arbeitsspeicher, GPU und Netzwerk, solange der Mauszeiger auf dem Symbol ruht. Ausgeschaltet erscheint die QuickInfo des Systems."
+    },
+    "menu": {
+      "title": "Rechtsklick auf das Symbol",
+      "desc": "Das Schnellfenster zeigt aktuelle Werte, die aktivsten Prozesse und häufige Aktionen; das Menü nur die häufigen Aktionen.",
+      "panel": "Schnellfenster",
+      "menu": "Menü"
+    },
+    "moved": {
+      "title": "Infobereich und Komponenten",
+      "desc": "Symbol, Schnellfenster, Verhalten beim Schließen und das Intervall im Infobereich befinden sich jetzt auf der Seite „Komponenten“.",
+      "open": "Komponenten öffnen"
+    }
+  },
+  "metrics": {
+    "title": "Angezeigte Werte",
+    "desc": "Die ausgewählten Werte erscheinen in der unten aufgeführten Reihenfolge. Bei mehreren GPUs, Datenträgern oder Netzwerkadaptern lassen sie sich für jedes Gerät einzeln auswählen. Ohne ausgewähltes Gerät stammen GPU-Werte von der GPU mit dem meisten dedizierten Speicher, Datenträger- und Netzwerkdatenraten sind Summen, und aktive Zeit und Temperatur zeigen den höchsten Wert aller Datenträger.",
+    "group": {
+      "cpu": "CPU",
+      "memory": "Speicher",
+      "gpu": "GPU",
+      "disk": "Laufwerk",
+      "network": "Netzwerk",
+      "other": "Sonstiges"
+    },
+    "all": {
+      "disk": "Alle Datenträger",
+      "diskDetail": "Summe, Aktivität/Temp. max.",
+      "network": "Alle Netzwerkadapter",
+      "networkDetail": "Datenrate summiert"
+    },
+    "gpuMemory": "{memory} dediziert",
+    "gpuMain": "{memory} · Standard-GPU",
+    "diskNumber": "Datenträger {index}",
+    "absent": "Nicht verbunden"
+  },
+  "metric": {
+    "cpu": {
+      "name": "CPU",
+      "short": "CPU",
+      "option": "Auslastung"
+    },
+    "cpuTemperature": {
+      "name": "CPU-Temperatur",
+      "short": "CPU",
+      "option": "Temperatur"
+    },
+    "cpuClock": {
+      "name": "CPU-Takt",
+      "short": "CPU",
+      "option": "Takt"
+    },
+    "cpuPower": {
+      "name": "CPU-Leistung",
+      "short": "CPU",
+      "option": "Leistung"
+    },
+    "memory": {
+      "name": "Arbeitsspeicher",
+      "short": "RAM",
+      "option": "Prozent"
+    },
+    "memoryUsed": {
+      "name": "Speichernutzung",
+      "short": "RAM",
+      "option": "In Verwendung"
+    },
+    "gpu": {
+      "name": "GPU",
+      "short": "GPU",
+      "option": "Auslastung"
+    },
+    "gpuTemperature": {
+      "name": "GPU-Temperatur",
+      "short": "GPU",
+      "option": "Temperatur"
+    },
+    "gpuMemory": {
+      "name": "GPU-Speicher",
+      "short": "VRAM",
+      "option": "Speicher"
+    },
+    "gpuClock": {
+      "name": "GPU-Takt",
+      "short": "GPU",
+      "option": "Takt"
+    },
+    "gpuPower": {
+      "name": "GPU-Leistung",
+      "short": "GPU",
+      "option": "Leistung"
+    },
+    "gpuFan": {
+      "name": "GPU-Lüfter",
+      "short": "Lüfter",
+      "option": "Lüfter"
+    },
+    "disk": {
+      "name": "Datenträger",
+      "option": "Lesen/Schreiben"
+    },
+    "diskActive": {
+      "name": "Datenträgeraktivität",
+      "short": "Disk",
+      "option": "Aktive Zeit"
+    },
+    "diskTemperature": {
+      "name": "Datenträgertemperatur",
+      "short": "Disk",
+      "option": "Temperatur"
+    },
+    "network": {
+      "name": "Netzwerk",
+      "option": "Datenrate"
+    },
+    "battery": {
+      "name": "Akku",
+      "short": "Akku",
+      "option": "Ladezustand"
+    },
+    "uptime": {
+      "name": "Betriebszeit",
+      "short": "Zeit",
+      "option": "Betriebszeit"
+    },
+    "read": "L",
+    "write": "S",
+    "onDevice": "{device} {metric}"
+  },
+  "desktop": {
+    "title": "Desktopanzeige",
+    "desc": "Zeigt die ausgewählten Werte in einem kleinen Fenster auf dem Desktop. Ziehen verschiebt das Fenster, ein Doppelklick öffnet GoodGood, ein Rechtsklick das Menü. Während der Anzeige gilt das „Aktualisierungsintervall“.",
+    "topmost": {
+      "title": "Immer im Vordergrund",
+      "desc": "Bleibt über anderen Fenstern."
+    },
+    "locked": {
+      "title": "Position sperren",
+      "desc": "Gesperrt lässt sich das Fenster nicht verschieben."
+    },
+    "clickThrough": {
+      "title": "Klicks durchlassen",
+      "desc": "Klicks und Ziehen wirken auf das Fenster darunter. Einmal aktiviert, lässt sich die Option nur auf dieser Seite wieder ausschalten."
+    },
+    "opacity": {
+      "title": "Deckkraft",
+      "desc": "Deckkraft des gesamten Fensters."
+    },
+    "menu": {
+      "open": "GoodGood öffnen",
+      "topmost": "Immer im Vordergrund",
+      "locked": "Position sperren",
+      "settings": "Komponenteneinstellungen…",
+      "hide": "Desktopanzeige ausschalten"
+    }
+  },
+  "taskbar": {
+    "title": "Taskleistenanzeige",
+    "desc": "Zeigt die ausgewählten Werte in der Taskleiste des Hauptbildschirms. Ein Klick zeigt oder verbirgt das Fenster, ein Rechtsklick öffnet einen Bereich, in dem sich Stil und angezeigte Werte ändern lassen. Während der Anzeige gilt das „Aktualisierungsintervall“.",
+    "place": {
+      "title": "Position",
+      "desc": "„Linke Seite“ gilt nur für die Taskleiste von Windows 11 mit zentrierten Schaltflächen. Andernfalls erscheint die Anzeige neben dem Infobereich.",
+      "tray": "Neben dem Infobereich",
+      "start": "Linke Seite"
+    },
+    "style": {
+      "title": "Stil",
+      "desc": "Beschriftungen: Namen und Werte in zwei Zeilen. Kurven: eine Kachel je Wert mit Name und Wert über dem jüngsten Verlauf. Kapseln: eine abgerundete Kapsel je Wert in einer Zeile, mit einem Punkt in der Gerätefarbe. Große Zahlen: ein kleiner Name in der Gerätefarbe über einer großen Zahl. Kurven, Kapseln und große Zahlen brauchen Platz für zwei Textzeilen; auf einer niedrigeren Taskleiste erscheinen sie als Beschriftungen.",
+      "labels": "Beschriftungen",
+      "curves": "Kurven",
+      "capsules": "Kapseln",
+      "figures": "Große Zahlen"
+    },
+    "panel": {
+      "settings": "Komponenteneinstellungen…",
+      "hide": "Taskleistenanzeige ausschalten"
+    }
+  },
+  "planned": {
+    "state": "Geplant",
+    "island": {
+      "title": "Dynamic Island",
+      "desc": "Aktuelle Werte und Benachrichtigungen in einer Kapsel am oberen Bildschirmrand."
+    }
+  },
+  "panel": {
+    "label": "GoodGood-Schnellfenster",
+    "open": "GoodGood öffnen",
+    "busiest": "Höchste Auslastung",
+    "update": "Version {version} ist bereit",
+    "updateHint": "Neuerungen ansehen und installieren",
+    "install": "Aktualisieren",
+    "settings": "Einstellungen für den Infobereich",
+    "quit": "GoodGood beenden"
+  },
+  "card": {
+    "click": "Klicken: Fenster ein- oder ausblenden",
+    "rightPanel": "Rechtsklick: Schnellfenster öffnen",
+    "rightMenu": "Rechtsklick: Menü öffnen",
+    "update": "Version {version}"
+  }
+}

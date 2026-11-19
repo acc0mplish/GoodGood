@@ -1,0 +1,220 @@
+{
+  "sections": {
+    "tray": "알림 영역",
+    "desktop": "데스크톱 모니터",
+    "taskbar": "작업 표시줄 모니터",
+    "planned": "추가 구성 요소"
+  },
+  "tray": {
+    "icon": {
+      "title": "알림 영역 아이콘",
+      "desc": "추세는 최근 CPU 표본을 열로 표시하고, 비율은 현재 사용률을 점 격자로 밝히며, 숫자는 백분율을 표시합니다. 모두 80%부터 호박색으로 바뀝니다.",
+      "logo": "앱 아이콘",
+      "load": "추세",
+      "share": "비율",
+      "number": "숫자"
+    },
+    "card": {
+      "title": "마우스 올림 카드",
+      "desc": "포인터가 알림 영역 아이콘에 머무는 동안 CPU, 메모리, GPU, 네트워크의 실시간 값을 표시합니다. 끄면 시스템 도구 설명이 대신 표시됩니다."
+    },
+    "menu": {
+      "title": "알림 영역 아이콘을 마우스 오른쪽 단추로 클릭할 때",
+      "desc": "빠른 패널은 실시간 값, 사용량이 가장 많은 프로세스, 자주 쓰는 작업을 표시하고, 메뉴는 자주 쓰는 작업만 표시합니다.",
+      "panel": "빠른 패널",
+      "menu": "메뉴"
+    },
+    "moved": {
+      "title": "알림 영역과 구성 요소",
+      "desc": "알림 영역 아이콘, 빠른 패널, 창을 닫을 때의 동작, 알림 영역에서의 새로 고침 빈도는 이제 구성 요소 페이지에 있습니다.",
+      "open": "구성 요소 열기"
+    }
+  },
+  "metrics": {
+    "title": "표시할 항목",
+    "desc": "선택한 항목은 아래 순서대로 표시됩니다. GPU, 디스크, 네트워크 어댑터가 여러 개이면 장치마다 항목을 선택할 수 있습니다. 장치를 선택하지 않으면 GPU 값은 전용 메모리가 가장 많은 GPU에서 가져오고, 디스크 속도와 네트워크 속도는 합계로 표시하며, 디스크 활성 시간과 온도는 모든 디스크 중 가장 높은 값을 표시합니다.",
+    "group": {
+      "cpu": "CPU",
+      "memory": "메모리",
+      "gpu": "GPU",
+      "disk": "디스크",
+      "network": "네트워크",
+      "other": "기타"
+    },
+    "all": {
+      "disk": "모든 디스크",
+      "diskDetail": "속도는 합계, 활성과 온도는 최댓값",
+      "network": "모든 네트워크 어댑터",
+      "networkDetail": "속도는 합계"
+    },
+    "gpuMemory": "{memory} 전용",
+    "gpuMain": "{memory} · 기본 GPU",
+    "diskNumber": "디스크 {index}",
+    "absent": "연결되지 않음"
+  },
+  "metric": {
+    "cpu": {
+      "name": "CPU",
+      "short": "CPU",
+      "option": "사용률"
+    },
+    "cpuTemperature": {
+      "name": "CPU 온도",
+      "short": "CPU",
+      "option": "온도"
+    },
+    "cpuClock": {
+      "name": "CPU 클럭",
+      "short": "CPU",
+      "option": "클럭"
+    },
+    "cpuPower": {
+      "name": "CPU 전력",
+      "short": "CPU",
+      "option": "전력"
+    },
+    "memory": {
+      "name": "메모리",
+      "short": "RAM",
+      "option": "백분율"
+    },
+    "memoryUsed": {
+      "name": "메모리 사용량",
+      "short": "RAM",
+      "option": "사용량"
+    },
+    "gpu": {
+      "name": "GPU",
+      "short": "GPU",
+      "option": "사용률"
+    },
+    "gpuTemperature": {
+      "name": "GPU 온도",
+      "short": "GPU",
+      "option": "온도"
+    },
+    "gpuMemory": {
+      "name": "GPU 메모리",
+      "short": "VRAM",
+      "option": "메모리"
+    },
+    "gpuClock": {
+      "name": "GPU 클럭",
+      "short": "GPU",
+      "option": "클럭"
+    },
+    "gpuPower": {
+      "name": "GPU 전력",
+      "short": "GPU",
+      "option": "전력"
+    },
+    "gpuFan": {
+      "name": "GPU 팬",
+      "short": "팬",
+      "option": "팬"
+    },
+    "disk": {
+      "name": "디스크",
+      "option": "읽기 및 쓰기"
+    },
+    "diskActive": {
+      "name": "디스크 활성 시간",
+      "short": "디스크",
+      "option": "활성 시간"
+    },
+    "diskTemperature": {
+      "name": "디스크 온도",
+      "short": "디스크",
+      "option": "온도"
+    },
+    "network": {
+      "name": "네트워크",
+      "option": "받기 및 보내기"
+    },
+    "battery": {
+      "name": "배터리",
+      "short": "배터리",
+      "option": "충전 수준"
+    },
+    "uptime": {
+      "name": "가동 시간",
+      "short": "가동",
+      "option": "가동 시간"
+    },
+    "read": "R",
+    "write": "W",
+    "onDevice": "{device} {metric}"
+  },
+  "desktop": {
+    "title": "데스크톱 모니터",
+    "desc": "선택한 항목을 데스크톱의 작은 창에 표시합니다. 끌어서 옮기고, 두 번 클릭해 GoodGood을 열며, 마우스 오른쪽 단추로 클릭해 메뉴를 엽니다. 표시하는 동안 GoodGood은 “새로 고침 빈도”에 따라 수집합니다.",
+    "topmost": {
+      "title": "항상 위",
+      "desc": "다른 창보다 위에 유지됩니다."
+    },
+    "locked": {
+      "title": "위치 고정",
+      "desc": "고정하면 끌어서 옮길 수 없습니다."
+    },
+    "clickThrough": {
+      "title": "클릭 통과",
+      "desc": "클릭과 끌기가 아래에 있는 창으로 전달됩니다. 한 번 켜면 이 페이지에서만 끌 수 있습니다."
+    },
+    "opacity": {
+      "title": "불투명도",
+      "desc": "창 전체의 불투명도입니다."
+    },
+    "menu": {
+      "open": "GoodGood 열기",
+      "topmost": "항상 위",
+      "locked": "위치 고정",
+      "settings": "구성 요소 설정…",
+      "hide": "데스크톱 모니터 끄기"
+    }
+  },
+  "taskbar": {
+    "title": "작업 표시줄 모니터",
+    "desc": "기본 디스플레이의 작업 표시줄에 선택한 항목을 표시합니다. 클릭하면 창을 표시하거나 숨기고, 마우스 오른쪽 단추로 클릭하면 스타일과 표시할 항목을 바꾸는 패널이 열립니다. 표시하는 동안 GoodGood은 “새로 고침 빈도”에 따라 수집합니다.",
+    "place": {
+      "title": "위치",
+      "desc": "“왼쪽”은 단추가 가운데 정렬된 Windows 11 작업 표시줄에서만 적용됩니다. 그 외의 경우 모니터는 알림 영역 옆에 표시됩니다.",
+      "tray": "알림 영역 옆",
+      "start": "왼쪽"
+    },
+    "style": {
+      "title": "스타일",
+      "desc": "레이블: 이름과 값을 두 줄로 표시합니다. 곡선: 항목마다 타일을 두고 이름과 값을 최근 곡선 위에 표시합니다. 캡슐: 항목마다 둥근 캡슐을 한 줄로 늘어놓고 장치의 색으로 점을 찍습니다. 큰 숫자: 장치의 색으로 작은 이름을, 그 아래에 큰 숫자를 표시합니다. 곡선, 캡슐, 큰 숫자에는 두 줄 분량의 높이가 필요하며, 작업 표시줄이 낮으면 레이블로 표시됩니다.",
+      "labels": "레이블",
+      "curves": "곡선",
+      "capsules": "캡슐",
+      "figures": "큰 숫자"
+    },
+    "panel": {
+      "settings": "구성 요소 설정…",
+      "hide": "작업 표시줄 모니터 끄기"
+    }
+  },
+  "planned": {
+    "state": "예정",
+    "island": {
+      "title": "다이내믹 아일랜드",
+      "desc": "화면 위쪽의 캡슐에 실시간 값과 알림을 표시합니다."
+    }
+  },
+  "panel": {
+    "label": "GoodGood 빠른 패널",
+    "open": "GoodGood 열기",
+    "busiest": "사용량 상위",
+    "update": "버전 {version} 준비됨",
+    "updateHint": "변경 내용을 확인하고 설치",
+    "install": "업데이트",
+    "settings": "알림 영역 설정",
+    "quit": "GoodGood 종료"
+  },
+  "card": {
+    "click": "클릭: 창 표시 또는 숨기기",
+    "rightPanel": "마우스 오른쪽 단추 클릭: 빠른 패널 열기",
+    "rightMenu": "마우스 오른쪽 단추 클릭: 메뉴 열기",
+    "update": "버전 {version}"
+  }
+}

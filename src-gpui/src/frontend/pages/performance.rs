@@ -1,0 +1,3770 @@
+use super::*;
+use charts::{ChartHeight, GIB, KIB, Line, Look, MIB, MetricFormat, RateScale, Scale};
+use gpui_kit::base::ElementExt;
+mod cpu_motion;
+mod disk_details;
+mod engines;
+mod kernel_fade;
+pub(in crate::frontend) mod rail;
+mod telemetry;
+
+/// Device list geometry (the interface's `.dev` rows).
+const ROW_HEIGHT: f32 = 58.;
+const ROW_PADDING_LEFT: f32 = 12.;
+const ROW_PADDING: f32 = 8.;
+const PREVIEW_WIDTH: f32 = 76.;
+const PREVIEW_GAP: f32 = 10.;
+/// The selection marker follows the actual wrapped names, including when
+/// the rail is resized or the user changes the base font size.
+fn row_height(title: &str, width: Pixels, window: &Window, cx: &App) -> Pixels {
+    let line_height = |size: Pixels| {
+        window.pixel_snap(theme::line_height().to_pixels(size.into(), window.rem_size()))
+    };
+    let size = theme::font(13.);
+    let title_line = line_height(size);
+    let run = theme::text_run(title, theme::LABEL_WEIGHT, cx);
+    let height = window
+        .text_system()
+        .shape_text(title.to_owned().into(), size, &[run], Some(width), None)
+        .map_or(title_line, |lines| {
+            lines.iter().map(|line| line.size(title_line).height).sum()
+        });
+    px(ROW_HEIGHT).max(height + line_height(theme::font(12.)) + px(2. * ROW_PADDING + 2.))
+}
+const ROW_GAP: f32 = 4.;
+const SIDE_DEFAULT: f32 = 248.;
+const SIDE_MIN: f32 = 200.;
+const SIDE_MAX: f32 = 440.;
+/// Space between the device list and the detail card.
+const PAGE_GAP: f32 = 12.;
+/// Live figures: `repeat(auto-fill, minmax(120px, 1fr))` with 14 × 20 gaps.
+const STAT_MIN: f32 = 120.;
+/// Narrowest the figures' columns go where one more of them spares a row.
+const STAT_TIGHT: f32 = 112.;
+const STAT_GAP_X: f32 = 20.;
+const STAT_GAP_Y: f32 = 14.;
+/// Gap between the figures and the specs beside them.
+const STATS_GAP: f32 = 28.;
+/// Gap between the figures and the specs under them.
+const STACK_GAP: f32 = 20.;
+/// Widest a figure's explanation runs before it wraps.
+const HINT_WIDTH: f32 = 420.;
+/// Figures and specs go side by side once the figures' share holds this many
+/// columns: with fewer, the figures take more rows beside the specs than both
+/// take stacked.
+const SIDE_COLUMNS: usize = 3;
+/// Narrowest a column of the specs under the figures at the base font size.
+const SPECS_MIN: f32 = 280.;
+/// Smallest chart heights before the page scrolls (main, half, small).
+const MAIN_MIN: f32 = 120.;
+const HALF_MIN: f32 = 80.;
+const SMALL_MIN: f32 = 64.;
+/// A detail card at most this tall (its content box) draws the chart
+/// captions inside the frames: `@container perf (max-height: 640px)`.
+const SHORT_CARD: f32 = 640.;
+/// Whether the CPU graphs draw kernel time under the usage curves.
+pub(in crate::frontend) const KERNEL_TIME: &str = "cpuKernelTime";
+/// The kernel time of one logical processor: a fainter line in the
+/// processor's colour (the cards are too small for dashes), over an area
+/// that deepens the usage curve's own.
+const CORE_KERNEL_LINE: f32 = 0.6;
+const CORE_KERNEL_FILL: f32 = 0.4;
+
+/// A logical processor's core type on a hybrid CPU, as `hardware.cpu.threads`
+/// tell it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum CoreKind {
+    Performance,
+    Efficient,
+    /// Intel's LP E-cores: efficiency cores outside the shared L3 cache.
+    LowPower,
+}
+impl CoreKind {
+    pub(super) fn of(thread: Option<&Value>) -> Self {
+        match thread {
+            Some(thread) if boolean(thread, "lowPower") => Self::LowPower,
+            Some(thread) if boolean(thread, "efficient") => Self::Efficient,
+            _ => Self::Performance,
+        }
+    }
+    /// The core types of `cpu` in the order they are named; none unless it is
+    /// hybrid.
+    fn present(cpu: &Value) -> Vec<Self> {
+        let kinds = [Self::Performance, Self::Efficient, Self::LowPower]
+            .into_iter()
+            .filter(|kind| kind.cores(cpu) > 0)
+            .collect::<Vec<_>>();
+        if kinds.first() == Some(&Self::Performance) && kinds.len() > 1 {
+            kinds
+        } else {
+            Vec::new()
+        }
+    }
+    /// How many of `cpu`'s cores are of this type.
+    fn cores(self, cpu: &Value) -> u64 {
+        number(
+            cpu,
+            match self {
+                Self::Performance => "performanceCores",
+                Self::Efficient => "efficiencyCores",
+                Self::LowPower => "lowPowerCores",
+            },
+        ) as u64
+    }
+    /// Its part of the catalog keys, and its value of the `coreFilter` preference.
+    fn key(self) -> &'static str {
+        match self {
+            Self::Performance => "p",
+            Self::Efficient => "e",
+            Self::LowPower => "lp",
+        }
+    }
+    /// The letters on its processors' cards.
+    fn badge(self) -> &'static str {
+        match self {
+            Self::Performance => "P",
+            Self::Efficient => "E",
+            Self::LowPower => "LP",
+        }
+    }
+    fn color(self, p: Palette) -> Hsla {
+        match self {
+            Self::Performance => p.cpu,
+            Self::Efficient => p.cpu_e,
+            Self::LowPower => p.cpu_lp,
+        }
+    }
+}
+
+/// How a view arranges its live figures and its specs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct StatsLayout {
+    /// The specs go under the figures instead of beside them.
+    stacked: bool,
+    /// The figures' columns.
+    columns: u16,
+    /// The columns the specs are spread over: one beside the figures.
+    spec_columns: u16,
+}
+
+/// Arranges `figures` and `specs` rows in `width`. The fewer rows they take,
+/// the more of the card's height the charts keep before the view scrolls.
+fn stats_layout(
+    width: f32,
+    cpu: bool,
+    text_scale: f32,
+    figures: usize,
+    specs: usize,
+) -> StatsLayout {
+    let fit = |width: f32, min: f32, gap: f32| {
+        ((width + gap) / (min * text_scale + gap)).floor().max(1.) as usize
+    };
+    let share = if cpu {
+        (width - STATS_GAP) / 2.
+    } else {
+        (width - STATS_GAP) * 1.1 / 2.1
+    };
+    let stacked = fit(share, STAT_MIN, STAT_GAP_X) < SIDE_COLUMNS;
+    let stats_width = if stacked { width } else { share };
+    let base = fit(stats_width, STAT_MIN, STAT_GAP_X);
+    let tight = fit(stats_width, STAT_TIGHT, STAT_GAP_X);
+    // Tighter columns only where they spare a row. Several rows are as even
+    // as they go, so that the last one is not left with a figure or two; a
+    // single row keeps the usual columns.
+    let rows = figures.div_ceil(tight);
+    let columns = if rows > 1 {
+        figures.div_ceil(rows)
+    } else {
+        base.max(figures)
+    };
+    // Under the figures the specs use the width too. No column for one row.
+    let spec_columns = if stacked {
+        fit(width, SPECS_MIN, STAT_GAP_X).min(specs.div_ceil(2).max(1))
+    } else {
+        1
+    };
+    StatsLayout {
+        stacked,
+        columns: columns as u16,
+        spec_columns: spec_columns as u16,
+    }
+}
+
+#[derive(Clone)]
+pub(super) struct Device {
+    pub(super) id: String,
+    pub(super) title: String,
+    pub(super) model: String,
+    pub(super) color: Hsla,
+    pub(super) kind: &'static str,
+    pub(super) index: usize,
+    /// What the device is remembered by once hidden from the list (`rail::stable_key`).
+    pub(super) stable: String,
+    /// A disk's number and first drive letter, which the list can order disks by.
+    pub(super) disk: Option<(u64, Option<String>)>,
+}
+pub(super) fn available_devices(snapshot: &Value, p: Palette) -> Vec<Device> {
+    let hw = &snapshot["hardware"];
+    let mut out = vec![
+        Device {
+            id: "cpu".into(),
+            title: label("common.resource.cpu"),
+            model: text(&hw["cpu"], "name").into(),
+            color: p.cpu,
+            kind: "cpu",
+            index: 0,
+            stable: rail::stable_key("cpu", &Value::Null),
+            disk: None,
+        },
+        Device {
+            id: "memory".into(),
+            title: label("common.resource.memory"),
+            model: theme::memory(number(&snapshot["system"], "memTotal")),
+            color: p.memory,
+            kind: "memory",
+            index: 0,
+            stable: rail::stable_key("memory", &Value::Null),
+            disk: None,
+        },
+    ];
+    let batteries = values(&hw["batteries"]).len();
+    for (kind, collection, prefix, color) in [
+        ("disk", "disks", "disk", p.io),
+        ("network", "nics", "nic", p.network),
+        ("gpu", "gpus", "gpu", p.gpu),
+        ("battery", "batteries", "bat", p.battery),
+    ] {
+        for (index, item) in values(&hw[collection]).iter().enumerate() {
+            let info = &item["info"];
+            let identity = if kind == "disk" {
+                info["index"].to_string()
+            } else {
+                text(info, "id").into()
+            };
+            let title = match kind {
+                "disk" => disk_title(info),
+                "gpu" => format!("{} {index}", label("common.resource.gpu")),
+                "battery" if batteries > 1 => {
+                    tr!("performance.battery.titleNumbered", id = text(info, "id"))
+                }
+                "battery" => label("performance.battery.title"),
+                _ => text(info, "name").into(),
+            };
+            let model = if kind == "disk" {
+                text(info, "model")
+            } else if kind == "network" {
+                text(info, "description")
+            } else {
+                text(info, "name")
+            };
+            out.push(Device {
+                id: format!("{prefix}:{identity}"),
+                title,
+                model: model.into(),
+                color,
+                kind,
+                index,
+                stable: rail::stable_key(kind, info),
+                disk: (kind == "disk").then(|| {
+                    (
+                        info["index"].as_u64().unwrap_or(index as u64),
+                        values(&info["volumes"])
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .min()
+                            .map(str::to_owned),
+                    )
+                }),
+            });
+        }
+    }
+    let stable = rail::distinct(
+        out.iter_mut()
+            .map(|device| std::mem::take(&mut device.stable))
+            .collect(),
+    );
+    for (device, stable) in out.iter_mut().zip(stable) {
+        device.stable = stable;
+    }
+    out
+}
+/// What the list orders `devices` by (`rail::arrange`).
+fn order_entries(devices: &[Device]) -> Vec<rail::Entry<'_>> {
+    devices
+        .iter()
+        .map(|device| rail::Entry {
+            key: &device.stable,
+            disk: device
+                .disk
+                .as_ref()
+                .map(|(number, letter)| (*number, letter.as_deref())),
+        })
+        .collect()
+}
+/// The row the list marks: the chosen device while the list shows it, else
+/// the first row it shows.
+fn selected_device(devices: &[Device], shown: &[bool], chosen: &str) -> usize {
+    devices
+        .iter()
+        .zip(shown)
+        .position(|(device, shown)| *shown && device.id == chosen)
+        .or_else(|| shown.iter().position(|shown| *shown))
+        .unwrap_or(0)
+}
+/// What a dragged device row carries; the list keeps the drag itself
+/// (`rail::RowDrag`).
+struct DevicePayload;
+/// Nothing follows the pointer but the row itself.
+struct DeviceGhost;
+impl Render for DeviceGhost {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        div()
+    }
+}
+/// The common look of a device row, whatever element draws it.
+fn device_row<E: Styled>(row: E, p: Palette, height: Pixels) -> E {
+    row.line_height(theme::line_height())
+        .flex()
+        .items_center()
+        .flex_shrink_0()
+        .text_color(p.ink)
+        .relative()
+        .h(height)
+        .w_full()
+        .justify_start()
+        .pl(px(ROW_PADDING_LEFT))
+        .pr(px(ROW_PADDING))
+        .py(px(ROW_PADDING))
+        .gap(px(PREVIEW_GAP))
+        .border_1()
+        .border_color(gpui_kit::gpui::transparent_black())
+        .rounded(px(6.))
+}
+
+// ---- Formatting ------------------------------------------------
+
+fn missing() -> String {
+    label("format.missing")
+}
+fn ghz(mhz: f64) -> String {
+    crate::regional::number!("{:.2} GHz", mhz / 1000.)
+}
+fn gb(bytes: f64) -> String {
+    crate::regional::number!("{:.1}", bytes / GIB)
+}
+fn fmt_cache(bytes: f64) -> String {
+    if bytes >= MIB {
+        crate::regional::number!("{:.1} MB", bytes / MIB)
+    } else {
+        format!("{} KB", (bytes / KIB).round())
+    }
+}
+/// Capacity in binary units, the way Windows reports drive sizes.
+fn fmt_capacity(bytes: f64) -> String {
+    if bytes >= 1024. * GIB {
+        crate::regional::number!("{:.1} TB", bytes / (1024. * GIB))
+    } else {
+        format!("{} GB", (bytes / GIB).round())
+    }
+}
+fn link_speed(bits: f64) -> String {
+    if bits >= 1e9 {
+        let value = format!("{:.1}", bits / 1e9);
+        format!(
+            "{} Gbps",
+            crate::regional::numeric(value.trim_end_matches(".0").to_owned())
+        )
+    } else {
+        format!("{} Mbps", (bits / 1e6).round())
+    }
+}
+/// A figure split into number and unit: "912.0" + "MB".
+fn split(value: String) -> (String, Option<String>) {
+    match value.split_once(' ') {
+        Some((number, unit)) => (number.into(), Some(unit.into())),
+        None => (value, None),
+    }
+}
+fn duration(seconds: f64) -> String {
+    let hours = (seconds / 3600.).floor();
+    let minutes = ((seconds % 3600.) / 60.).round();
+    if hours > 0. {
+        tr!(
+            "performance.battery.hoursMinutes",
+            hours = hours,
+            minutes = minutes
+        )
+    } else {
+        tr!("performance.battery.minutes", minutes = minutes)
+    }
+}
+fn disk_title(info: &Value) -> String {
+    let volumes = values(&info["volumes"])
+        .iter()
+        .filter_map(Value::as_str)
+        .collect::<Vec<_>>();
+    if volumes.is_empty() {
+        tr!("performance.disk.title", index = info["index"])
+    } else {
+        tr!(
+            "performance.disk.titleVolumes",
+            index = info["index"],
+            volumes = volumes.join(" ")
+        )
+    }
+}
+/// A disk's medium and bus, e.g. "SSD (NVMe)".
+fn disk_kind(info: &Value) -> String {
+    let bus = match text(info, "bus") {
+        "nvme" => "NVMe",
+        "usb" => "USB",
+        "sata" => "SATA",
+        "ata" => "ATA",
+        "scsi" => "SCSI",
+        "sas" => "SAS",
+        "raid" => "RAID",
+        _ => "",
+    };
+    let media = match info["ssd"].as_bool() {
+        Some(true) => "SSD".into(),
+        Some(false) => "HDD".into(),
+        None if boolean(info, "removable") => label("performance.disk.removableMedia"),
+        None => String::new(),
+    };
+    [
+        media,
+        if bus.is_empty() {
+            String::new()
+        } else {
+            format!("({bus})")
+        },
+    ]
+    .into_iter()
+    .filter(|part| !part.is_empty())
+    .collect::<Vec<_>>()
+    .join(" ")
+}
+pub(super) use model::cpu_temperature;
+/// The CPU's one power figure and the label naming its source: the package,
+/// or the cores where the package has no reading.
+pub(super) fn cpu_power(power: &Value) -> Option<(f64, &'static str)> {
+    [
+        ("package", "performance.cpu.packagePower"),
+        ("cores", "performance.cpu.corePower"),
+    ]
+    .into_iter()
+    .find_map(|(field, source)| power[field].as_f64().map(|watts| (watts, source)))
+}
+pub(super) fn has_die_temperature(hw: &Value) -> bool {
+    let sensors = &hw["cpuSensors"];
+    sensors["packageCelsius"].is_number() || !values(&sensors["coreTemperatures"]).is_empty()
+}
+/// Memory parts that do not overlap; standby and the rest are unknown without the page lists.
+fn memory_composition(sys: &Value) -> (f64, Option<f64>, Option<f64>, Option<f64>) {
+    let total = number(sys, "memTotal").max(0.);
+    let lists = &sys["memoryLists"];
+    if !lists.is_object() {
+        return (number(sys, "memUsed").clamp(0., total), None, None, None);
+    }
+    let free = number(lists, "free").clamp(0., total);
+    let standby = number(lists, "standby").clamp(0., total - free);
+    let modified = number(lists, "modified").clamp(0., total - free - standby);
+    (
+        total - free - standby - modified,
+        Some(modified),
+        Some(standby),
+        Some(free),
+    )
+}
+fn battery_state(state: &str) -> String {
+    label(&format!("performance.battery.state.{state}"))
+}
+fn chemistry(code: &str) -> String {
+    let id = match code.to_uppercase().as_str() {
+        "LION" | "LI-I" => "liIon",
+        "LIP" | "LIPO" => "liPoly",
+        "PBAC" => "leadAcid",
+        "NICD" => "niCd",
+        "NIMH" => "niMh",
+        "RAM" => "alkaline",
+        _ if code.is_empty() => return missing(),
+        _ => return code.into(),
+    };
+    label(&format!("performance.battery.chemistries.{id}"))
+}
+fn watt_hours(milliwatt_hours: &Value) -> String {
+    milliwatt_hours
+        .as_f64()
+        .filter(|v| *v > 0.)
+        .map(|v| crate::regional::number!("{:.1} Wh", v / 1000.))
+        .unwrap_or_else(missing)
+}
+fn or_missing(value: &str) -> String {
+    if value.is_empty() {
+        missing()
+    } else {
+        value.into()
+    }
+}
+/// How a grid's cards move. They glide only once this display has been laid
+/// out at its real size (`measured`): entering the page or switching device or
+/// view places them at once, while later resizes and layout changes animate.
+fn settle_policy(
+    id: &'static str,
+    measured: bool,
+    window: &mut Window,
+    cx: &mut App,
+) -> gpui_kit::base::motion::Transition {
+    let settled = window.use_keyed_state(id, cx, |_, _| false);
+    if *settled.read(cx) {
+        return theme::transition();
+    }
+    if measured {
+        settled.update(cx, |settled, _| *settled = true);
+    }
+    gpui_kit::base::motion::Transition::new(std::time::Duration::ZERO)
+}
+/// Splits text such as "5<u>d</u> 14:00:00" into plain and small runs.
+fn rich_runs(template: &str) -> Vec<(String, bool)> {
+    let mut runs = Vec::new();
+    let mut rest = template;
+    while let Some(start) = rest.find("<u>") {
+        if start > 0 {
+            runs.push((rest[..start].to_owned(), false));
+        }
+        let tail = &rest[start + 3..];
+        let end = tail.find("</u>").unwrap_or(tail.len());
+        runs.push((tail[..end].to_owned(), true));
+        rest = tail.get(end + 4..).unwrap_or("");
+    }
+    if !rest.is_empty() {
+        runs.push((rest.to_owned(), false));
+    }
+    runs
+}
+
+impl Desktop {
+    fn net_bits(&self) -> bool {
+        self.prefs.get::<String>("netUnit", "bytes".into()) == "bits"
+    }
+    /// The stable keys of the devices hidden from the list.
+    fn hidden_devices(&self) -> HashSet<String> {
+        self.prefs
+            .get::<Vec<String>>(rail::HIDDEN, Vec::new())
+            .into_iter()
+            .collect()
+    }
+    fn save_hidden_devices(&mut self, hidden: &HashSet<String>) {
+        let mut keys = hidden.iter().cloned().collect::<Vec<_>>();
+        keys.sort();
+        self.prefs.set(rail::HIDDEN, keys);
+    }
+    /// How the disks are ordered among themselves.
+    fn disk_order(&self) -> rail::DiskOrder {
+        rail::DiskOrder::parse(&self.prefs.get::<String>(rail::DISK_ORDER, String::new()))
+    }
+    /// The devices in the order the list shows them (`rail::arrange`).
+    fn listed_devices(&self) -> Vec<Device> {
+        let devices = available_devices(&self.snapshot, self.palette);
+        let order = rail::arrange(
+            &order_entries(&devices),
+            &self.prefs.get::<Vec<String>>(rail::ORDER, Vec::new()),
+            self.disk_order(),
+        );
+        let mut slots = devices.into_iter().map(Some).collect::<Vec<_>>();
+        order
+            .into_iter()
+            .filter_map(|index| slots.get_mut(index)?.take())
+            .collect()
+    }
+    /// Orders the disks by `order` (`rail::DISK_ORDER`). Ordering them by
+    /// hand starts from the list as it is, to drag from there.
+    pub(in crate::frontend) fn set_disk_order(&mut self, order: rail::DiskOrder) {
+        if order == rail::DiskOrder::Custom && self.disk_order() != order {
+            let keys = self
+                .listed_devices()
+                .into_iter()
+                .map(|device| device.stable)
+                .collect::<Vec<_>>();
+            self.save_device_order(&keys);
+        }
+        self.prefs.set(rail::DISK_ORDER, order.key());
+    }
+    /// Saves the order of the devices present now (stable keys); devices
+    /// absent now keep their saved places (`rail::merged_order`).
+    fn save_device_order(&mut self, present: &[String]) {
+        let saved = self.prefs.get::<Vec<String>>(rail::ORDER, Vec::new());
+        self.prefs
+            .set(rail::ORDER, rail::merged_order(&saved, present));
+    }
+    /// Puts every device back in the collector's order (`rail::RESET_ORDER`).
+    pub(in crate::frontend) fn reset_device_order(&mut self) {
+        self.prefs.set(rail::ORDER, Vec::<String>::new());
+        self.prefs
+            .set(rail::DISK_ORDER, rail::DiskOrder::default().key());
+    }
+    /// Lets go of a dragged device row: it glides into its place, and the
+    /// list keeps the order it arranged.
+    fn finish_device_drag(
+        &mut self,
+        rail: &Entity<rail::RailMotion>,
+        animate: bool,
+        cx: &mut Context<Self>,
+    ) {
+        let released = rail.update(cx, |rail, _| {
+            rail.release(px(ROW_GAP), animate, Instant::now())
+        });
+        if let Some(drag) = released
+            && drag.order != drag.initial
+        {
+            self.keep_device_order(&drag.order);
+        }
+    }
+    /// Keeps the order a drag left the rows in (`order`, by id). The disks
+    /// keep the order chosen for them only while the drag kept it too;
+    /// otherwise they stay where they were dragged.
+    fn keep_device_order(&mut self, order: &[String]) {
+        let devices = available_devices(&self.snapshot, self.palette);
+        let indices = order
+            .iter()
+            .filter_map(|id| devices.iter().position(|device| &device.id == id))
+            .collect::<Vec<_>>();
+        if !rail::keeps(&order_entries(&devices), &indices, self.disk_order()) {
+            self.prefs
+                .set(rail::DISK_ORDER, rail::DiskOrder::Custom.key());
+        }
+        let keys = indices
+            .into_iter()
+            .map(|index| devices[index].stable.clone())
+            .collect::<Vec<_>>();
+        self.save_device_order(&keys);
+    }
+    /// Which of `devices` the list shows.
+    fn shown_devices(&self, devices: &[Device]) -> Vec<bool> {
+        let keys = devices
+            .iter()
+            .map(|device| device.stable.as_str())
+            .collect::<Vec<_>>();
+        rail::shown(&keys, &self.hidden_devices())
+    }
+    /// Hides a device from the list or shows it again (`rail::HIDE`). A
+    /// hidden row's selection goes to the row after it.
+    pub(in crate::frontend) fn set_device_hidden(&mut self, change: &Value, window: &Window) {
+        let Some(key) = change["key"].as_str() else {
+            return;
+        };
+        let hide = boolean(change, "hidden");
+        let devices = self.listed_devices();
+        let keys = devices
+            .iter()
+            .map(|device| device.stable.as_str())
+            .collect::<Vec<_>>();
+        let hidden = self.hidden_devices();
+        if let Some(next) = rail::with_hidden(&keys, &hidden, key, hide) {
+            let selected = selected_device(&devices, &rail::shown(&keys, &hidden), &self.device);
+            if hide
+                && devices[selected].stable == key
+                && let Some(successor) = rail::successor(&rail::shown(&keys, &next), selected)
+            {
+                self.device = devices[successor].id.clone();
+                self.prefs.set("perfDevice", &self.device);
+            }
+            self.save_hidden_devices(&next);
+        }
+        // A check in the open menu: its entries follow what came of it.
+        if let Some(target) = change.get("menu") {
+            let items = self.device_menu_items(target.as_str(), window);
+            self.update_popup(items);
+        }
+    }
+    /// Shows every device again (`rail::RESTORE`).
+    pub(in crate::frontend) fn restore_devices(&mut self) {
+        if !self.hidden_devices().is_empty() {
+            self.save_hidden_devices(&HashSet::new());
+        }
+    }
+    /// Returns device `id` to the list if it was hidden: opened from
+    /// elsewhere (the overview's parts, a vitals card), it is one the user
+    /// asked to see.
+    pub(in crate::frontend) fn reveal_device(&mut self, id: &str) {
+        let mut hidden = self.hidden_devices();
+        if hidden.is_empty() {
+            return;
+        }
+        let devices = available_devices(&self.snapshot, self.palette);
+        if let Some(device) = devices.iter().find(|device| device.id == id)
+            && hidden.remove(&device.stable)
+        {
+            self.save_hidden_devices(&hidden);
+        }
+    }
+    /// The device a shortcut to one of `kind` opens: `preferred` while the
+    /// list shows it, else the first of its kind the list shows. With none
+    /// of them shown it is `preferred`, which opening returns to the list.
+    pub(in crate::frontend) fn device_target(&self, kind: &str, preferred: String) -> String {
+        if self.hidden_devices().is_empty() {
+            return preferred;
+        }
+        let devices = self.listed_devices();
+        let shown = self.shown_devices(&devices);
+        let mut candidates = devices
+            .iter()
+            .zip(&shown)
+            .filter(|(device, shown)| **shown && device.kind == kind)
+            .map(|(device, _)| &device.id);
+        let first = candidates.next();
+        if first == Some(&preferred) || candidates.any(|id| *id == preferred) {
+            return preferred;
+        }
+        first.cloned().unwrap_or(preferred)
+    }
+    /// The device list's menu, opened on `target`'s row or on the list itself.
+    fn device_menu_items(&self, target: Option<&str>, window: &Window) -> Vec<MenuItem> {
+        let devices = self.listed_devices();
+        let shown = self.shown_devices(&devices);
+        let visible = shown.iter().filter(|shown| **shown).count();
+        let change = |device: &Device, hide: bool, staying: bool| {
+            let mut change = json!({"key": device.stable, "hidden": hide});
+            if staying {
+                change["menu"] = json!(target);
+            }
+            Action::Preference(rail::HIDE.into(), change)
+        };
+        let mut items = Vec::new();
+        if let Some((device, shown)) = devices
+            .iter()
+            .zip(&shown)
+            .find(|(device, _)| Some(device.id.as_str()) == target)
+        {
+            items.push(
+                MenuItem::new(
+                    tr!("performance.devices.hide", name = device.title),
+                    change(device, true, false),
+                )
+                .icon("EyeOffIcon")
+                // The list keeps its last row.
+                .disabled(!*shown || visible <= 1),
+            );
+            items.push(MenuItem::separator());
+        }
+        let children = devices
+            .iter()
+            .zip(&shown)
+            .map(|(device, shown)| {
+                MenuItem::new(device.title.clone(), change(device, *shown, true))
+                    .checked(*shown)
+                    .disabled(*shown && visible <= 1)
+                    .stay()
+            })
+            .collect::<Vec<_>>();
+        // Every device, to check in and out. Left out in a window too short
+        // for a list this long (a machine with dozens of adapters).
+        if menus::fits(children.len(), window.viewport_size().height) {
+            items.push(
+                MenuItem::new(label("performance.devices.shown"), Action::CloseOverlay)
+                    .icon("EyeIcon")
+                    .detail(format!("{visible}/{}", devices.len()))
+                    .submenu(children),
+            );
+        }
+        // How the disks are ordered: by number, by drive letter, or as
+        // dragged. A drag that breaks the chosen order checks the last.
+        let disks = devices
+            .iter()
+            .filter(|device| device.disk.is_some())
+            .count();
+        let ordered = self.disk_order();
+        let orders = rail::DiskOrder::ALL
+            .into_iter()
+            .map(|order| {
+                MenuItem::new(
+                    label(&format!("performance.devices.diskOrder.{}", order.key())),
+                    Action::Preference(rail::DISK_ORDER.into(), json!(order.key())),
+                )
+                .checked(order == ordered)
+            })
+            .collect::<Vec<_>>();
+        items.push(
+            MenuItem::new(
+                label("performance.devices.diskOrder.title"),
+                Action::CloseOverlay,
+            )
+            .icon("OrderIcon")
+            .disabled(disks < 2)
+            .submenu(orders),
+        );
+        items.push(MenuItem::separator());
+        items.push(
+            MenuItem::new(
+                label("performance.devices.restore"),
+                Action::Preference(rail::RESTORE.into(), Value::Null),
+            )
+            .icon("ResetIcon")
+            .disabled(self.hidden_devices().is_empty()),
+        );
+        items.push(
+            MenuItem::new(
+                label("performance.devices.resetOrder"),
+                Action::Preference(rail::RESET_ORDER.into(), Value::Null),
+            )
+            .icon("ResetIcon")
+            .disabled(
+                ordered == rail::DiskOrder::default()
+                    && self
+                        .prefs
+                        .get::<Vec<String>>(rail::ORDER, Vec::new())
+                        .is_empty(),
+            ),
+        );
+        items
+    }
+    pub(in crate::frontend) fn device_menu(
+        &mut self,
+        target: Option<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let items = self.device_menu_items(target.as_deref(), window);
+        self.open_popup(items, window, cx);
+    }
+    /// How much of the kernel time layer the CPU graphs draw: 1 while it is
+    /// shown, 0 while hidden, and a few steps between as it fades in the
+    /// `graphs` graphs on screen (`kernel_fade`).
+    fn kernel_layer(&self, graphs: usize, window: &mut Window, cx: &mut Context<Self>) -> f32 {
+        let shown = self.prefs.get(KERNEL_TIME, true);
+        // At an even pace, so that the steps are evenly apart.
+        let level = gpui_kit::base::motion::transition(
+            "cpu-kernel-layer",
+            if shown { 1f32 } else { 0. },
+            theme::transition().ease(|progress| progress),
+            window,
+            cx,
+        );
+        kernel_fade::stepped(level, graphs)
+    }
+    /// The device list, the CPU graphs' kernel time layer and the logical
+    /// processors' grid as tests see them (test control `inspectLayout`).
+    pub(in crate::frontend) fn performance_test_state(&self) -> Value {
+        let devices = self.listed_devices();
+        let shown = self.shown_devices(&devices);
+        let selected = selected_device(&devices, &shown, &self.device);
+        let mut hidden = self.hidden_devices().into_iter().collect::<Vec<_>>();
+        hidden.sort();
+        json!({
+            "devices": devices
+                .iter()
+                .zip(&shown)
+                .filter(|(_, shown)| **shown)
+                .map(|(device, _)| device.id.as_str())
+                .collect::<Vec<_>>(),
+            "hidden": hidden,
+            "diskOrder": self.disk_order().key(),
+            "arranged": self.prefs.get::<Vec<String>>(rail::ORDER, Vec::new()),
+            "selected": devices.get(selected).map(|device| device.id.as_str()),
+            "kernelTime": self.prefs.get(KERNEL_TIME, true),
+            "overallSeries": self.chart_series("cpu-overall-plot"),
+            "coreSeries": self.chart_series("cpu-0"),
+            "coreColumns": self.core_columns.get(),
+            "coreKinds": CoreKind::present(&self.snapshot["hardware"]["cpu"])
+                .into_iter()
+                .map(CoreKind::key)
+                .collect::<Vec<_>>(),
+        })
+    }
+    /// The CPU graphs' menu.
+    pub(in crate::frontend) fn cpu_graph_menu(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let shown = self.prefs.get(KERNEL_TIME, true);
+        let items = vec![
+            MenuItem::new(
+                label("performance.cpu.showKernelTime"),
+                Action::Preference(KERNEL_TIME.into(), json!(!shown)),
+            )
+            .checked(shown),
+        ];
+        self.open_popup(items, window, cx);
+    }
+    /// The device list's width: at most half the page, so the detail never gets squeezed.
+    fn side_width(&self, page: f32) -> f32 {
+        self.perf_sidebar_width
+            .min(SIDE_MAX)
+            .min(page / 2.)
+            .max(SIDE_MIN)
+            .round()
+    }
+    fn page_width(&self, window: &Window) -> f32 {
+        let navigation = if self.nav_top {
+            0.
+        } else if self.nav_expanded {
+            self.nav_width + 8.
+        } else {
+            48.
+        };
+        f32::from(window.viewport_size().width) - navigation - 2. * PAGE_GAP
+    }
+    /// The detail card's content height (the interface's `100cqh`), once laid
+    /// out: the card fills the page's height whatever it holds, so in this
+    /// viewport it is the viewport's less what surrounds the card.
+    fn perf_card_height(&self, window: &Window) -> Option<Pixels> {
+        self.perf_card_chrome
+            .get()
+            .map(|chrome| window.viewport_size().height - chrome)
+    }
+    /// The detail card's content width: the page less the list, gap, border, padding and scrollbar.
+    fn detail_width(&self, window: &Window) -> f32 {
+        let page = self.page_width(window);
+        (page - self.side_width(page) - PAGE_GAP - 2. - 40. - 10.).max(160.)
+    }
+    fn device_sub(&self, device: &Device) -> String {
+        let hw = &self.snapshot["hardware"];
+        let sys = &self.snapshot["system"];
+        match device.kind {
+            "cpu" => {
+                let load = format!("{}%", number(sys, "cpu").round());
+                match hw["cpuMhz"].as_f64().filter(|v| *v > 0.) {
+                    Some(mhz) => format!("{load}  {}", ghz(mhz)),
+                    None => load,
+                }
+            }
+            "memory" => tr!(
+                "performance.memory.sub",
+                used = gb(number(sys, "memUsed")),
+                total = gb(number(sys, "memTotal")),
+                percent = (number(sys, "memUsed") / number(sys, "memTotal").max(1.) * 100.).round()
+            ),
+            "disk" => {
+                let disk = &hw["disks"][device.index];
+                let mut parts = vec![
+                    disk["active"]
+                        .as_f64()
+                        .map(|v| format!("{}%", v.round()))
+                        .unwrap_or_else(missing),
+                ];
+                let kind = disk_kind(&disk["info"]);
+                if !kind.is_empty() {
+                    parts.insert(0, kind);
+                }
+                if let Some(celsius) = disk["temperature"].as_f64() {
+                    parts.push(format!("{} °C", celsius.round()));
+                }
+                parts.join("  ")
+            }
+            "network" => {
+                let nic = &hw["nics"][device.index];
+                let bits = self.net_bits();
+                tr!(
+                    "performance.network.sub",
+                    rx = charts::net_rate(number(nic, "rx"), bits),
+                    tx = charts::net_rate(number(nic, "tx"), bits)
+                )
+            }
+            "gpu" => {
+                let gpu = &hw["gpus"][device.index];
+                let mut parts = vec![format!("{}%", number(gpu, "util").round())];
+                if let Some(celsius) = gpu["temperature"].as_f64() {
+                    parts.push(format!("{} °C", celsius.round()));
+                }
+                if let Some(power) = gpu["boardPower"].as_f64() {
+                    parts.push(format!("{} W", charts::watts(power)));
+                }
+                parts.join("  ")
+            }
+            "battery" => {
+                let battery = &hw["batteries"][device.index];
+                let percent = format!("{}%", number(battery, "percent").round());
+                let state = text(battery, "state");
+                if state == "discharging" {
+                    match battery["remaining"].as_f64().filter(|v| *v > 0.) {
+                        Some(seconds) => format!(
+                            "{percent}  {}",
+                            tr!("performance.battery.timeLeft", time = duration(seconds))
+                        ),
+                        None => format!("{percent}  {}", label("performance.battery.onBattery")),
+                    }
+                } else {
+                    format!("{percent}  {}", battery_state(state))
+                }
+            }
+            _ => device.model.clone(),
+        }
+    }
+    /// A device's preview chart and its scale.
+    fn device_lines(&self, device: &Device) -> (Vec<Line>, Scale) {
+        let c = device.color;
+        match device.kind {
+            "cpu" => (vec![Line::new("system.cpu", c)], Scale::Fixed(100.)),
+            "memory" => (
+                vec![Line::new("system.memUsed", c)],
+                Scale::Fixed(number(&self.snapshot["system"], "memTotal").max(1.)),
+            ),
+            "disk" => (
+                vec![Line::new(
+                    format!("hardware.disks.{}.active", device.index),
+                    c,
+                )],
+                Scale::Fixed(100.),
+            ),
+            "network" => (
+                vec![
+                    Line::new(format!("hardware.nics.{}.rx", device.index), c),
+                    Line::new(format!("hardware.nics.{}.tx", device.index), c).dashed(),
+                ],
+                Scale::Rate(RateScale::Network(self.net_bits())),
+            ),
+            "gpu" => (
+                vec![Line::new(format!("hardware.gpus.{}.util", device.index), c)],
+                Scale::Fixed(100.),
+            ),
+            _ => (
+                vec![Line::new(
+                    format!("hardware.batteries.{}.percent", device.index),
+                    c,
+                )],
+                Scale::Fixed(100.),
+            ),
+        }
+    }
+    pub(in crate::frontend) fn performance_view(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        // A device hidden from the list collapses, and one shown again
+        // returns, while the rows below glide to their places (`rail`).
+        let rail =
+            window.use_keyed_state("perf-device-rail", cx, |_, _| rail::RailMotion::default());
+        let now = Instant::now();
+        let animate = !cx.reduce_motion();
+        // A row let go away from the list (no drop there) settles too.
+        if rail.read(cx).drag.is_some() && !cx.has_active_drag() {
+            self.finish_device_drag(&rail, animate, cx);
+        }
+        // While a row is dragged, the rows are in the order it arranges.
+        let mut devices = self.listed_devices();
+        let dragged = rail.read(cx).drag.clone();
+        if let Some(drag) = &dragged {
+            devices.sort_by_key(|device| {
+                drag.order
+                    .iter()
+                    .position(|id| *id == device.id)
+                    .unwrap_or(usize::MAX)
+            });
+        }
+        let shown = self.shown_devices(&devices);
+        let selected_index = selected_device(&devices, &shown, &self.device);
+        let selected = devices.get(selected_index).cloned();
+        self.open_disk_details(selected.as_ref(), window, cx);
+        let p = self.palette;
+        let page = self.page_width(window);
+        let side_width = self.side_width(page);
+        let title_width = px(side_width
+            - scrollbar::SIZE
+            - 2.
+            - ROW_PADDING_LEFT
+            - ROW_PADDING
+            - PREVIEW_GAP
+            - PREVIEW_WIDTH);
+        let presence = rail.update(cx, |rail, _| {
+            rail.presence(
+                &devices
+                    .iter()
+                    .zip(&shown)
+                    .map(|(device, shown)| (device.id.as_str(), *shown))
+                    .collect::<Vec<_>>(),
+                animate,
+                now,
+            )
+        });
+        let heights: Vec<_> = devices
+            .iter()
+            .zip(&presence)
+            .map(|(device, presence)| {
+                if *presence > 0. {
+                    row_height(&device.title, title_width, window, cx)
+                } else {
+                    px(0.)
+                }
+            })
+            .collect();
+        let places = rail::layout(&heights, &presence, px(ROW_GAP));
+        // Rows the order moved (a drag, another disk order, a device come or
+        // gone) glide from where they were to their new places.
+        let offsets = rail.update(cx, |rail, _| {
+            rail.arranged(
+                devices.iter().map(|device| device.id.clone()).collect(),
+                devices
+                    .iter()
+                    .zip(&heights)
+                    .zip(&presence)
+                    .map(|((device, height), presence)| (device.id.clone(), (*height, *presence)))
+                    .collect(),
+                px(ROW_GAP),
+                animate,
+                now,
+            );
+            devices
+                .iter()
+                .map(|device| rail.offset(&device.id, now))
+                .collect::<Vec<_>>()
+        });
+        // The dragged row is drawn under the pointer, within the list.
+        let list_end = places
+            .last()
+            .map_or(0., |place| f32::from(place.top + place.height));
+        let lifted = dragged.as_ref().and_then(|drag| {
+            let index = devices.iter().position(|device| device.id == drag.id)?;
+            let height = f32::from(heights[index]);
+            Some((index, drag.at().clamp(0., (list_end - height).max(0.))))
+        });
+        // Let go, it glides into its place from where it was drawn.
+        if let Some((_, top)) = lifted {
+            rail.update(cx, |rail, _| {
+                if let Some(drag) = rail.drag.as_mut() {
+                    drag.drawn = Some(top);
+                }
+            });
+        }
+        // Where each row is drawn: its place, moved by its glide or the pointer.
+        let drawn_top = |index: usize| match lifted {
+            Some((lifted, top)) if lifted == index => px(top),
+            _ => places[index].top + px(offsets[index]),
+        };
+        let selected_place = places[selected_index];
+        let selected_height = selected_place.height;
+        // The selected device: a raised surface with an accent pill, sliding
+        // between rows and keeping to its row while the list rearranges.
+        let mark_top = rail.update(cx, |rail, _| {
+            rail.mark_top(
+                selected.as_ref().map_or("", |device| device.id.as_str()),
+                drawn_top(selected_index),
+                animate,
+                now,
+            )
+        });
+        if rail.read(cx).moving(now) {
+            window.request_animation_frame();
+        }
+        let device_list = window
+            .use_keyed_state("devices-scroll", cx, |_, _| ScrollHandle::new())
+            .read(cx)
+            .clone();
+        // The rows leave the scrollbar's width free, whether or not it shows
+        // (`.dev` is `100cqw - var(--scrollbar-size)` wide).
+        let mut list = div()
+            .id("devices")
+            .track_scroll(&device_list)
+            .relative()
+            .w(px(side_width))
+            .flex_shrink_0()
+            .overflow_y_scroll()
+            .flex()
+            .flex_col()
+            .pr(px(scrollbar::SIZE))
+            // The list's own menu, where no row takes the press.
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener(|this, _, window, cx| this.device_menu(None, window, cx)),
+            )
+            // A dragged row follows the pointer and the others make room.
+            .on_drag_move(cx.listener({
+                let rail = rail.clone();
+                move |_, event: &DragMoveEvent<DevicePayload>, _, cx| {
+                    let pointer = f32::from(event.event.position.y);
+                    rail.update(cx, |rail, _| rail.follow(pointer, px(ROW_GAP)));
+                    cx.notify();
+                }
+            }))
+            .on_drop(cx.listener({
+                let rail = rail.clone();
+                move |this, _: &DevicePayload, _, cx| {
+                    this.finish_device_drag(&rail, !cx.reduce_motion(), cx);
+                    cx.notify();
+                }
+            }))
+            .child(
+                div()
+                    .absolute()
+                    .left_0()
+                    .right(px(scrollbar::SIZE))
+                    .top(mark_top)
+                    .h(selected_height)
+                    .border_1()
+                    .border_color(p.stroke)
+                    .rounded(px(6.))
+                    .bg(p.layer_strong)
+                    .child(
+                        div()
+                            .absolute()
+                            .left(px(-1.))
+                            .top((selected_height - px(2. + 18.)) / 2.)
+                            .w(px(3.))
+                            .h(px(18.))
+                            .rounded(px(2.))
+                            .bg(p.accent),
+                    ),
+            );
+        let mut raised = None;
+        let raised_rect = lifted.map(|(index, top)| (top, top + f32::from(heights[index])));
+        for (index, device) in devices.iter().enumerate() {
+            let present = presence[index];
+            if present <= 0. {
+                continue;
+            }
+            let (place, height) = (places[index], heights[index]);
+            let lifted = lifted
+                .filter(|(lifted, _)| *lifted == index)
+                .map(|(_, top)| top);
+            // A row on its way in or out fades, and one gliding to a new
+            // place moves; its curve, which the chart layer draws, with it.
+            let dy = if lifted.is_some() { 0. } else { offsets[index] };
+            // A row the dragged one passes over fades as far as it is
+            // covered: the chart layer draws every curve above the rows, and
+            // this one would show through the raised row.
+            let covered = raised_rect
+                .filter(|_| lifted.is_none())
+                .map_or(0., |(top, bottom)| {
+                    let (own_top, own_bottom) = (
+                        f32::from(place.top) + dy,
+                        f32::from(place.top + height) + dy,
+                    );
+                    (own_bottom.min(bottom) - own_top.max(top)).max(0.) / f32::from(height).max(1.)
+                });
+            let opacity = rail::opacity(present) * (1. - covered).clamp(0., 1.);
+            let fading = (present < 1. || dy != 0. || covered > 0.).then(|| charts::Live {
+                transform: LiveTransform::new(LiveTransformValue {
+                    offset: point(px(0.), px(dy)),
+                    ..LiveTransformValue::zoom(1., opacity)
+                }),
+                anchor: Rc::new(Cell::new(Point::default())),
+            });
+            if let Some(live) = &fading {
+                self.chart_lives.borrow_mut().push(live.clone());
+            }
+            let (lines, scale) = self.device_lines(device);
+            let graph = self.chart_view(
+                &format!("device-preview-{}", device.id),
+                &lines,
+                Some(scale),
+                px(38.),
+                Look::default(),
+                cx,
+            );
+            if fading.is_some() {
+                self.chart_lives.borrow_mut().pop();
+            }
+            let current = selected_index == index;
+            let text = div()
+                .w(title_width)
+                .flex_shrink_0()
+                .flex()
+                .flex_col()
+                .child(
+                    div()
+                        .font_weight(theme::LABEL_WEIGHT)
+                        .child(device.title.clone()),
+                )
+                .child(
+                    div()
+                        .text_size(theme::font(12.))
+                        .text_color(p.muted)
+                        .truncate()
+                        // `.dev-sub` collapsed runs of spaces, as HTML does.
+                        .child(
+                            self.device_sub(device)
+                                .split_whitespace()
+                                .collect::<Vec<_>>()
+                                .join(" "),
+                        ),
+                );
+            let preview = div()
+                .w(px(PREVIEW_WIDTH))
+                .h(px(40.))
+                .flex_shrink_0()
+                .border_1()
+                .border_color(device.color.opacity(0.45))
+                .rounded(px(3.))
+                .overflow_hidden()
+                .child(div().size_full().bg(p.chart_surface).child(graph));
+            // The dragged row rises over the list under the pointer; its
+            // place stays as a tinted slot for it to drop into.
+            if let Some(top) = lifted {
+                raised = Some(
+                    device_row(div(), p, height)
+                        .absolute()
+                        .left_0()
+                        .top(px(top))
+                        .w(px(side_width - scrollbar::SIZE))
+                        .bg(p.raised)
+                        .border_color(p.accent.opacity(0.55))
+                        .cursor_grabbing()
+                        .when(current, |row| {
+                            row.child(
+                                div()
+                                    .absolute()
+                                    .left(px(-1.))
+                                    .top((height - px(2. + 18.)) / 2.)
+                                    .w(px(3.))
+                                    .h(px(18.))
+                                    .rounded(px(2.))
+                                    .bg(p.accent),
+                            )
+                        })
+                        .child(text)
+                        .child(preview),
+                );
+                list = list.child(
+                    div()
+                        .w_full()
+                        .flex_shrink_0()
+                        .mt(place.gap)
+                        .h(place.height)
+                        .rounded(px(6.))
+                        .bg(p.accent.opacity(0.08)),
+                );
+                continue;
+            }
+            let row = if shown[index] {
+                device_row(
+                    Button::new(SharedString::from(format!("device-{}", device.id)))
+                        .accessibility_label(device.title.clone()),
+                    p,
+                    height,
+                )
+                .when(!current, |row| row.hover(move |style| style.bg(p.hover)))
+                .on_click(cx.listener({
+                    let id = device.id.clone();
+                    move |this, _, window, cx| this.act(Action::Device(id.clone()), window, cx)
+                }))
+                // Dragged up or down, the row takes another place in the list.
+                .on_drag(DevicePayload, {
+                    let rail = rail.clone();
+                    let id = device.id.clone();
+                    let top = f32::from(drawn_top(index));
+                    let desktop = cx.entity().downgrade();
+                    move |_, _, window, cx| {
+                        let pointer = f32::from(window.mouse_position().y);
+                        rail.update(cx, |rail, _| rail.take(&id, top, pointer));
+                        let _ = desktop.update(cx, |_, cx| cx.notify());
+                        cx.new(|_| DeviceGhost)
+                    }
+                })
+                .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                .on_mouse_down(
+                    MouseButton::Right,
+                    cx.listener({
+                        let id = device.id.clone();
+                        move |this, _, window, cx| {
+                            cx.stop_propagation();
+                            this.device_menu(Some(id.clone()), window, cx);
+                        }
+                    }),
+                )
+                .child(text)
+                .child(preview)
+                .into_any_element()
+            } else {
+                // On its way out: drawn as it was, taking no input or focus.
+                device_row(div(), p, height)
+                    .child(text)
+                    .child(preview)
+                    .into_any_element()
+            };
+            let row = match fading {
+                Some(live) => super::super::shift::live(
+                    row,
+                    live.transform,
+                    super::super::shift::Anchor::TopLeft,
+                    live.anchor,
+                )
+                .into_any_element(),
+                None => row,
+            };
+            // Where tests reach the row.
+            let anchor = self.options.test.then(|| {
+                let anchors = self.ui.anchors.clone();
+                let name = SharedString::from(format!("device-{}", device.id));
+                canvas(
+                    move |bounds, _, _| {
+                        anchors.borrow_mut().insert(name.clone(), bounds);
+                    },
+                    |_, _, _, _| {},
+                )
+                .absolute()
+                .inset_0()
+            });
+            list = list.child(
+                div()
+                    .relative()
+                    .w_full()
+                    .flex_shrink_0()
+                    .mt(place.gap)
+                    .h(place.height)
+                    .when(present < 1., |slot| slot.overflow_hidden())
+                    .child(row)
+                    .children(anchor),
+            );
+        }
+        // Drawn after the rows, over them.
+        list = list.children(raised);
+        // Replace the device at full contrast and slide it from its direction
+        // in the list. Layout stays in place so the scroll range is stable.
+        let arrival = window.use_keyed_state("perf-device-arrival", cx, |_, _| {
+            (String::new(), 0usize, 0f32, None::<Instant>)
+        });
+        let (previous_id, previous_index, mut direction, mut started) = arrival.read(cx).clone();
+        let current_id = selected.as_ref().map(|d| d.id.clone()).unwrap_or_default();
+        if previous_id != current_id {
+            if !previous_id.is_empty() {
+                direction = (selected_index as f32 - previous_index as f32).signum();
+                started = Some(Instant::now());
+                self.device_scroll.set_offset(point(px(0.), px(0.)));
+            }
+            arrival.update(cx, |state, _| {
+                *state = (current_id, selected_index, direction, started)
+            });
+        }
+        let progress = started
+            .filter(|_| !cx.reduce_motion())
+            .map(|at| (at.elapsed().as_secs_f32() / 0.25).min(1.))
+            .unwrap_or(1.);
+        let arriving = if progress < 1. {
+            window.request_animation_frame();
+            theme::ease_out(progress)
+        } else {
+            1.
+        };
+        let offset = point(
+            px(0.),
+            window.pixel_snap(px(direction * 16. * (1. - arriving))),
+        );
+        // Give the separately painted charts the same offset and viewport.
+        self.chart_slide = (progress < 1.).then(|| charts::DeviceSlide {
+            offset,
+            viewport: Rc::new(Cell::new(Bounds::default())),
+        });
+        // A short card (the interface's size container query on the card)
+        // takes the chart captions into the frames.
+        let short = self
+            .perf_card_height(window)
+            .is_some_and(|card| card <= px(SHORT_CARD));
+        self.chart_captions_inside.set(short);
+        let content = selected
+            .map(|device| self.device_view(&device, window, cx))
+            .unwrap_or_else(|| div().into_any_element());
+        self.chart_captions_inside.set(false);
+        let viewport = self.chart_slide.take().map(|slide| slide.viewport);
+        let content = super::super::shift::shifted(
+            div().flex_1().flex().flex_col().child(content),
+            offset,
+            1.,
+        )
+        .within_viewport(viewport)
+        .into_any_element();
+        let anchors = self.ui.anchors.clone();
+        let splitter = div()
+            .id("perf-sidebar-splitter")
+            .group("perf-splitter")
+            .relative()
+            .w(px(PAGE_GAP))
+            .h_full()
+            .flex_shrink_0()
+            .flex()
+            .items_center()
+            .justify_center()
+            .cursor_col_resize()
+            .child(
+                div()
+                    .w(px(2.))
+                    .h(px(24.))
+                    .rounded(px(1.))
+                    .invisible()
+                    .group_hover("perf-splitter", |s| s.visible())
+                    .bg(p.stroke_strong),
+            )
+            // Where tests take hold of it.
+            .when(self.options.test, |d| {
+                d.child(
+                    canvas(
+                        move |bounds, _, _| {
+                            anchors
+                                .borrow_mut()
+                                .insert("perf-sidebar-splitter".into(), bounds);
+                        },
+                        |_, _, _, _| {},
+                    )
+                    .absolute()
+                    .inset_0(),
+                )
+            })
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, event: &MouseDownEvent, window, cx| {
+                    if event.click_count >= 2 {
+                        this.perf_sidebar_width = SIDE_DEFAULT;
+                        this.prefs.set("perfSideWidth", SIDE_DEFAULT);
+                        this.drag = None;
+                    } else {
+                        let page = this.page_width(window);
+                        this.drag =
+                            Some(("perf-sidebar".into(), event.position, this.side_width(page)));
+                    }
+                    cx.notify();
+                }),
+            );
+        let chrome = self.perf_card_chrome.clone();
+        let owner = cx.entity().downgrade();
+        div()
+            .size_full()
+            .min_h_0()
+            .px(px(PAGE_GAP))
+            .flex()
+            // The interface body line height; GPUI's default is taller.
+            .line_height(relative(1.4))
+            // The card is as tall as the page; its content box is inside the
+            // border. What surrounds it changes rarely (text size, navigation,
+            // toolbar rows): the views sized by it are built again then.
+            .on_prepaint(move |bounds, window, cx| {
+                let card = bounds.size.height - px(2.);
+                let measured = Some(window.viewport_size().height - card);
+                let previous = chrome.replace(measured);
+                if previous != measured {
+                    // The first layout uses the viewport height for chart sizing.
+                    if (previous.is_none() || short != (card <= px(SHORT_CARD)))
+                        && !bounds.is_empty()
+                    {
+                        window.defer_presentation_until_layout();
+                    }
+                    window.defer(cx, move |_, cx| {
+                        let _ = owner.update(cx, |_, cx| cx.notify());
+                    });
+                }
+            })
+            .child(list.child(scrollbar::scrollbar(
+                "devices-scrollbar",
+                &device_list,
+                p.dark,
+            )))
+            .child(splitter)
+            .child(
+                div()
+                    .id("device-content")
+                    .track_scroll(&self.device_scroll)
+                    .flex_1()
+                    .min_w_0()
+                    .border_1()
+                    .border_color(p.stroke)
+                    .rounded(px(8.))
+                    .bg(p.layer)
+                    .overflow_y_scroll()
+                    .flex()
+                    .flex_col()
+                    // The gutter is kept (`scrollbar-gutter: stable`).
+                    .pr(px(scrollbar::SIZE))
+                    .child(content)
+                    // Clear of the card's rounded corners (`.perf-scroll` track margin).
+                    .child(
+                        scrollbar::scrollbar("device-scrollbar", &self.device_scroll, p.dark)
+                            .border(1.)
+                            .track_margin(8.),
+                    ),
+            )
+            .into_any_element()
+    }
+
+    // ---- Shared building blocks ------------------------------------------------
+
+    /// A view's title, the controls that follow it, and the model on the right.
+    fn perf_head(
+        &self,
+        title: String,
+        model: Option<String>,
+        controls: Option<AnyElement>,
+        cx: &App,
+    ) -> AnyElement {
+        // `.perf-head`: the model on the title's baseline.
+        div()
+            .flex()
+            .flex_shrink_0()
+            .items_baseline()
+            .justify_between()
+            .gap_4()
+            .mb(px(14.))
+            .child(
+                div()
+                    .flex()
+                    .flex_none()
+                    .items_center()
+                    .gap(px(14.))
+                    .child(
+                        div()
+                            .font_family(theme::display_font(cx))
+                            .text_size(theme::font_dimension("pageTitleSize"))
+                            .font_weight(theme::LABEL_WEIGHT)
+                            .whitespace_nowrap()
+                            .child(title),
+                    )
+                    .children(controls),
+            )
+            .when_some(model.filter(|m| !m.is_empty()), |d, model| {
+                d.child(
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .text_size(theme::font(15.))
+                        .text_color(self.palette.muted)
+                        .text_right()
+                        .child(model),
+                )
+            })
+            .into_any_element()
+    }
+    /// A live figure: label, large value with a small unit, and an optional note in another unit.
+    fn stat(
+        &self,
+        title: impl Into<SharedString>,
+        value: impl Into<SharedString>,
+        unit: Option<String>,
+        note: Option<String>,
+        cx: &App,
+    ) -> AnyElement {
+        let value = div()
+            .flex()
+            .items_baseline()
+            .child(value.into())
+            .when_some(unit, |d, unit| {
+                d.child(
+                    div()
+                        .ml(px(2.))
+                        .text_size(theme::font(13.))
+                        .text_color(self.palette.muted)
+                        .child(unit),
+                )
+            })
+            .into_any_element();
+        self.stat_element(title, value, note, cx)
+    }
+    fn stat_element(
+        &self,
+        title: impl Into<SharedString>,
+        value: AnyElement,
+        note: Option<String>,
+        cx: &App,
+    ) -> AnyElement {
+        // A long label (often a translation) wraps to a second line instead of
+        // being cut off. Tiles stay top-aligned: some carry a note under the
+        // value, so pushing values to the row's bottom would misalign them.
+        div()
+            .min_w_0()
+            .flex()
+            .flex_col()
+            .child(
+                div()
+                    .text_size(theme::font(12.))
+                    .text_color(self.palette.muted)
+                    .line_clamp(2)
+                    .text_ellipsis()
+                    .child(title.into()),
+            )
+            .child(
+                div()
+                    .font_family(theme::display_font(cx))
+                    .text_size(theme::font_dimension("metricSize"))
+                    .whitespace_nowrap()
+                    .child(value),
+            )
+            .when_some(note, |d, note| {
+                d.child(
+                    div()
+                        .mt(px(1.))
+                        .text_size(theme::font(12.))
+                        .text_color(self.palette.faint)
+                        .child(note),
+                )
+            })
+            .into_any_element()
+    }
+    /// A figure explained on hover, as the interface's `title` does. The
+    /// explanation wraps like a system tooltip instead of running off the window.
+    fn hinted(&self, id: &'static str, hint: Option<String>, stat: AnyElement) -> AnyElement {
+        let hint = hint.map(SharedString::from);
+        match hint {
+            Some(hint) => div()
+                .id(id)
+                .min_w_0()
+                .child(stat)
+                .tooltip(move |window, cx| {
+                    widgets::wrapping_tooltip(hint.clone(), px(HINT_WIDTH), window, cx)
+                })
+                .into_any_element(),
+            None => stat,
+        }
+    }
+    /// A figure split into number and unit.
+    fn stat_parts(&self, title: String, value: String, cx: &App) -> AnyElement {
+        let (number, unit) = split(value);
+        self.stat(title, number, unit, None, cx)
+    }
+    /// Uptime to the second: days, then hh:mm:ss, which keeps its width as it ticks.
+    fn uptime_value(&self, milliseconds: f64) -> AnyElement {
+        let seconds = (milliseconds / 1000.).floor() as u64;
+        let days = seconds / 86400;
+        let clock = format!(
+            "{:02}:{:02}:{:02}",
+            seconds % 86400 / 3600,
+            seconds % 3600 / 60,
+            seconds % 60
+        );
+        if days == 0 {
+            return div().child(clock).into_any_element();
+        }
+        let text = tr!("format.uptimeExact", days = days, clock = clock);
+        div()
+            .flex()
+            .items_baseline()
+            .children(rich_runs(&text).into_iter().map(|(run, small)| {
+                if small {
+                    div()
+                        .ml(px(2.))
+                        .text_size(theme::font(13.))
+                        .text_color(self.palette.muted)
+                        .child(run)
+                } else {
+                    div().whitespace_nowrap().child(run.replace(' ', "\u{a0}"))
+                }
+            }))
+            .into_any_element()
+    }
+    /// Labels and values in two columns: the labels as wide as the longest, the values the rest.
+    fn info_list(&self, rows: Vec<(String, AnyElement)>) -> AnyElement {
+        div()
+            .grid()
+            .grid_cols_max_content(2)
+            .gap_x(px(20.))
+            .gap_y(px(6.))
+            .items_start()
+            .children(rows.into_iter().flat_map(|(name, value)| {
+                [
+                    div()
+                        .text_color(self.palette.muted)
+                        .whitespace_nowrap()
+                        .child(name)
+                        .into_any_element(),
+                    div().min_w_0().child(value).into_any_element(),
+                ]
+            }))
+            .into_any_element()
+    }
+    /// A view's live figures and its specs (`info_list` rows): side by side in
+    /// a wide card, the specs in columns under the figures in a narrower one
+    /// (`stats_layout`).
+    fn perf_stats(
+        &self,
+        stats: Vec<AnyElement>,
+        specs: Vec<(String, AnyElement)>,
+        cpu: bool,
+        window: &Window,
+    ) -> AnyElement {
+        let width = self.detail_width(window);
+        let StatsLayout {
+            stacked,
+            columns,
+            spec_columns,
+        } = stats_layout(
+            width,
+            cpu,
+            f32::from(theme::font(13.)) / 13.,
+            stats.len(),
+            specs.len(),
+        );
+        let grid = div()
+            .min_w_0()
+            .grid()
+            .grid_cols(columns)
+            .gap_x(px(STAT_GAP_X))
+            .gap_y(px(STAT_GAP_Y))
+            .content_start()
+            .children(stats);
+        let info = if spec_columns > 1 {
+            // In reading order down each column, the columns as even as they go.
+            let rows = specs.len().div_ceil(usize::from(spec_columns));
+            let mut specs = specs.into_iter().peekable();
+            let mut lists = Vec::new();
+            while specs.peek().is_some() {
+                lists.push(self.info_list(specs.by_ref().take(rows).collect()));
+            }
+            // The figures' column gap: the columns line up with an even grid of figures.
+            div()
+                .grid()
+                .grid_cols(lists.len() as u16)
+                .gap_x(px(STAT_GAP_X))
+                // A shorter column keeps its row spacing.
+                .items_start()
+                .children(lists)
+                .into_any_element()
+        } else {
+            self.info_list(specs)
+        };
+        let info = div().min_w_0().child(info);
+        div()
+            .mt(px(20.))
+            .flex_shrink_0()
+            .flex()
+            .map(|d| {
+                if stacked {
+                    d.flex_col()
+                        .gap(px(STACK_GAP))
+                        .child(grid.w_full())
+                        .child(info.w_full())
+                } else {
+                    d.gap(px(STATS_GAP))
+                        .items_start()
+                        .child(
+                            grid.flex_grow(if cpu { 1. } else { 1.1 })
+                                .flex_shrink(1.)
+                                .flex_basis(px(0.)),
+                        )
+                        .child(info.flex_grow(1.).flex_shrink(1.).flex_basis(px(0.)))
+                }
+            })
+            .into_any_element()
+    }
+    fn perf_note(&self, note: String) -> AnyElement {
+        div()
+            .mt(px(18.))
+            .flex_shrink_0()
+            .max_w(px(640.))
+            .text_size(theme::font(12.))
+            .text_color(self.palette.faint)
+            .child(note)
+            .into_any_element()
+    }
+    /// A details card's title (with an optional note), a one-line summary on the right, and its body.
+    fn card(
+        &self,
+        title: String,
+        note: Option<String>,
+        summary: Option<String>,
+        alert: bool,
+        body: impl IntoElement,
+    ) -> AnyElement {
+        let p = self.palette;
+        div()
+            .min_w_0()
+            .pt(px(14.))
+            .px(px(16.))
+            .pb(px(16.))
+            .border_1()
+            .border_color(if alert {
+                p.danger.opacity(0.45)
+            } else {
+                p.stroke
+            })
+            .rounded(px(8.))
+            .bg(p.layer)
+            .child(
+                div()
+                    .flex()
+                    .items_baseline()
+                    .gap_4()
+                    .mb(px(12.))
+                    .child(
+                        div()
+                            .flex_none()
+                            .flex()
+                            .items_baseline()
+                            .text_size(theme::font(14.))
+                            .font_weight(theme::LABEL_WEIGHT)
+                            .child(title)
+                            .when_some(note, |d, note| {
+                                d.child(
+                                    div()
+                                        .ml(px(6.))
+                                        .text_size(theme::font(12.))
+                                        .font_weight(FontWeight::NORMAL)
+                                        .text_color(p.muted)
+                                        .child(note),
+                                )
+                            }),
+                    )
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .truncate()
+                            .text_right()
+                            .text_size(theme::font(12.))
+                            .text_color(if alert { p.danger } else { p.muted })
+                            .child(summary.unwrap_or_default()),
+                    ),
+            )
+            .child(body)
+            .into_any_element()
+    }
+    /// The toolbar above a view's charts: right-aligned controls.
+    fn perf_toolbar(&self, controls: Vec<AnyElement>) -> AnyElement {
+        div()
+            .flex()
+            // Controls too wide for a narrow view take a row each rather
+            // than run out of it on the left.
+            .flex_wrap()
+            .flex_shrink_0()
+            .justify_end()
+            .gap_2()
+            .mt(px(-6.))
+            .mb(px(8.))
+            .children(controls)
+            .into_any_element()
+    }
+
+    // ---- Detail views ------------------------------------------------------------
+
+    fn device_view(
+        &self,
+        device: &Device,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let details = match device.kind {
+            "cpu" => self.cpu_page == "details",
+            "disk" => self.disk_page == "details",
+            _ => false,
+        };
+        let body = div()
+            .flex()
+            .flex_col()
+            .pt(px(16.))
+            .px(px(20.))
+            .pb(px(20.))
+            .when(!details, |d| d.flex_1().flex_shrink_0());
+        let content = match device.kind {
+            "cpu" => self.cpu_view(window, cx),
+            "memory" => self.memory_view(window, cx),
+            "disk" => self.disk_view(device, window, cx),
+            "network" => self.nic_view(device, window, cx),
+            "gpu" => self.gpu_view(device, window, cx),
+            "battery" => self.battery_view(device, window, cx),
+            _ => Vec::new(),
+        };
+        body.children(content).into_any_element()
+    }
+    fn cpu_view(&self, window: &mut Window, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let hw = &self.snapshot["hardware"];
+        let sys = &self.snapshot["system"];
+        let cpu = &hw["cpu"];
+        let pages = self.segments(
+            "cpu-page",
+            ["overview", "details"]
+                .into_iter()
+                .map(|page| {
+                    (
+                        label(&format!("performance.cpu.page.{page}")),
+                        None,
+                        Action::CpuMode(if page == "details" {
+                            "details".into()
+                        } else {
+                            self.cpu_mode.clone()
+                        }),
+                        self.cpu_page == page,
+                    )
+                })
+                .collect(),
+            cx,
+        );
+        let mut out = vec![self.perf_head(
+            label("common.resource.cpu"),
+            Some(text(cpu, "name").into()),
+            Some(pages),
+            cx,
+        )];
+        if self.cpu_page == "details" {
+            out.push(self.cpu_details(hw, window, cx));
+            return out;
+        }
+        let kinds = CoreKind::present(cpu);
+        let hybrid = !kinds.is_empty();
+        // A type this CPU lacks (a preference from other hardware) shows all.
+        let filter: String = self.prefs.get("coreFilter", "all".into());
+        let filter = if kinds.iter().any(|kind| kind.key() == filter) {
+            filter
+        } else {
+            "all".into()
+        };
+        let logical = self.cpu_mode == "logical";
+        let mut controls = Vec::new();
+        if hybrid && logical {
+            controls.push(
+                self.segments(
+                    "core-filter",
+                    std::iter::once("all")
+                        .chain(kinds.iter().map(|kind| kind.key()))
+                        .map(|choice| {
+                            (
+                                label(&if choice == "all" {
+                                    "performance.cpu.filterAll".into()
+                                } else {
+                                    format!("performance.cpu.filterShort.{choice}")
+                                }),
+                                None,
+                                Action::Preference("coreFilter".into(), json!(choice)),
+                                choice == filter,
+                            )
+                        })
+                        .collect(),
+                    cx,
+                ),
+            );
+        }
+        controls.push(
+            self.segments(
+                "cpu-mode",
+                ["overall", "logical"]
+                    .into_iter()
+                    .map(|mode| {
+                        (
+                            label(&format!("performance.cpu.{mode}")),
+                            None,
+                            Action::CpuMode(mode.into()),
+                            self.cpu_mode == mode,
+                        )
+                    })
+                    .collect(),
+                cx,
+            ),
+        );
+        out.push(self.perf_toolbar(controls));
+        out.push(self.cpu_graphs(logical, hybrid, &filter, window, cx));
+        // Live figures.
+        let mut stats = vec![
+            self.stat(
+                label("performance.cpu.utilization"),
+                format!("{}", number(sys, "cpu").round()),
+                Some("%".into()),
+                None,
+                cx,
+            ),
+            self.stat(
+                label("performance.cpu.speed"),
+                hw["cpuMhz"]
+                    .as_f64()
+                    .filter(|mhz| *mhz > 0.)
+                    .map(|mhz| crate::regional::number!("{:.2}", mhz / 1000.))
+                    .unwrap_or_else(missing),
+                Some("GHz".into()),
+                None,
+                cx,
+            ),
+        ];
+        if hybrid {
+            for kind in &kinds {
+                let title = match kind {
+                    CoreKind::Performance => "performance.cpu.pCoreSpeed",
+                    CoreKind::Efficient => "performance.cpu.eCoreSpeed",
+                    CoreKind::LowPower => "performance.cpu.lpCoreSpeed",
+                };
+                let clocks = values(&cpu["threads"])
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, thread)| CoreKind::of(Some(thread)) == *kind)
+                    .filter_map(|(i, _)| hw["coreMhz"][i].as_f64())
+                    .filter(|mhz| *mhz > 0.)
+                    .collect::<Vec<_>>();
+                if !clocks.is_empty() {
+                    stats.push(self.stat(
+                        label(title),
+                        crate::regional::number!(
+                            "{:.2}",
+                            clocks.iter().sum::<f64>() / clocks.len() as f64 / 1000.
+                        ),
+                        Some("GHz".into()),
+                        None,
+                        cx,
+                    ));
+                }
+            }
+        }
+        if let Some(celsius) = cpu_temperature(hw) {
+            stats.push(self.stat(
+                label("common.resource.temperature"),
+                format!("{}", celsius.round()),
+                Some("°C".into()),
+                None,
+                cx,
+            ));
+        }
+        // One power figure, its source named on hover. Graphics power belongs
+        // to the GPU view, where its source is named.
+        if let Some((watts, source)) = cpu_power(&hw["power"]) {
+            let stat = self.stat(
+                label("performance.cpu.power"),
+                charts::watts(watts),
+                Some("W".into()),
+                None,
+                cx,
+            );
+            stats.push(self.hinted("cpu-stat-power", Some(label(source)), stat));
+        }
+        for (field, title) in [
+            ("processCount", "performance.cpu.processes"),
+            ("threadCount", "performance.cpu.threads"),
+            ("handleCount", "performance.cpu.handles"),
+        ] {
+            stats.push(self.stat(
+                label(title),
+                theme::count(number(sys, field)),
+                None,
+                None,
+                cx,
+            ));
+        }
+        stats.push(self.stat_element(
+            label("performance.cpu.uptime"),
+            self.uptime_value(number(sys, "uptimeMs")),
+            None,
+            cx,
+        ));
+        // Specs.
+        let base_source = match text(cpu, "baseSource") {
+            "cpuid" => Some(label("performance.cpu.baseSourceCpuid")),
+            "" => None,
+            _ => Some(label("performance.cpu.baseSourceWindows")),
+        };
+        let base = number(cpu, "baseMhz");
+        let base_value = div()
+            .id("cpu-base-speed")
+            .child(if base > 0. { ghz(base) } else { missing() })
+            .when_some(base_source, |d, source| {
+                d.tooltip(move |window, cx| widgets::tooltip(source.clone(), window, cx))
+            })
+            .into_any_element();
+        let plain = |value: String| div().child(value).into_any_element();
+        let count = |kind: CoreKind| kind.cores(cpu);
+        let cores = match (
+            hybrid,
+            count(CoreKind::Efficient) > 0,
+            count(CoreKind::LowPower) > 0,
+        ) {
+            (false, ..) => cpu["cores"].to_string(),
+            (true, true, true) => tr!(
+                "performance.cpu.coresHybridLp",
+                cores = cpu["cores"],
+                performance = count(CoreKind::Performance),
+                efficiency = count(CoreKind::Efficient),
+                lowPower = count(CoreKind::LowPower)
+            ),
+            (true, false, true) => tr!(
+                "performance.cpu.coresHybridLpOnly",
+                cores = cpu["cores"],
+                performance = count(CoreKind::Performance),
+                lowPower = count(CoreKind::LowPower)
+            ),
+            (true, ..) => tr!(
+                "performance.cpu.coresHybrid",
+                cores = cpu["cores"],
+                performance = count(CoreKind::Performance),
+                efficiency = count(CoreKind::Efficient)
+            ),
+        };
+        let specs = vec![
+            (label("performance.cpu.baseSpeed"), base_value),
+            (
+                label("performance.cpu.sockets"),
+                plain(cpu["sockets"].to_string()),
+            ),
+            (label("performance.cpu.cores"), plain(cores)),
+            (
+                label("performance.cpu.logicalProcessors"),
+                plain(cpu["logical"].to_string()),
+            ),
+            (
+                label("performance.cpu.virtualization"),
+                plain(label(if boolean(cpu, "virtualization") {
+                    "common.enabled"
+                } else {
+                    "performance.cpu.notEnabled"
+                })),
+            ),
+            (
+                tr!("performance.cpu.cache", level = 1),
+                plain(fmt_cache(number(cpu, "l1"))),
+            ),
+            (
+                tr!("performance.cpu.cache", level = 2),
+                plain(fmt_cache(number(cpu, "l2"))),
+            ),
+            (
+                tr!("performance.cpu.cache", level = 3),
+                plain(fmt_cache(number(cpu, "l3"))),
+            ),
+        ];
+        out.push(self.perf_stats(stats, specs, true, window));
+        if hw["cpuSensors"].is_null() && values(&hw["thermal"]).is_empty() {
+            out.push(self.perf_note(label("performance.cpu.thermalMissing")));
+        }
+        out
+    }
+    /// The CPU chart area: the overall graph or the logical processors' grid.
+    /// Another graph cross-fades in from a slight zoom (`cpu_motion`): the
+    /// outgoing one stays drawn over it where it was, fading out quickly. The
+    /// area is laid out once in its new arrangement; the zoom and fades are
+    /// live transforms, so their frames replay the page's paint rather than
+    /// render it, and the chart layer draws the curves inside them.
+    fn cpu_graphs(
+        &self,
+        logical: bool,
+        hybrid: bool,
+        filter: &str,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let animate = !cx.reduce_motion();
+        let graphs = if logical {
+            values(&self.snapshot["system"]["cores"]).len()
+        } else {
+            1
+        };
+        let kernel = self.kernel_layer(graphs, window, cx);
+        let motions = self.live_motions.clone();
+        let switch = window.use_keyed_state("cpu-view-switch", cx, |_, _| {
+            cpu_motion::ViewSwitch::default()
+        });
+        let cores = window.use_keyed_state("cpu-core-motion", cx, |_, _| {
+            cpu_motion::CoreMotion::default()
+        });
+        let drawn = cores.read(cx).drawn(&motions);
+        let done = self.render_page_later(cx);
+        let leaving = switch.update(cx, |switch, _| {
+            switch.update(logical, animate, &motions, || drawn, done)
+        });
+        let (area, ghost, ghost_cards) = {
+            let switch = switch.read(cx);
+            (
+                switch.area.clone(),
+                switch.ghost.clone(),
+                switch.cards.clone(),
+            )
+        };
+        let lives = |transform: &LiveTransform| charts::Live {
+            transform: transform.clone(),
+            anchor: Rc::new(Cell::new(Point::default())),
+        };
+        let incoming = leaving.map(|_| lives(&area));
+        if let Some(live) = &incoming {
+            self.chart_lives.borrow_mut().push(live.clone());
+        }
+        let graphs = if logical {
+            let (graphs, placed) = self.core_grid(hybrid, filter, kernel, &cores, window, cx);
+            // A grid shown for the first time places its cards once it knows
+            // its size, a frame later: the switch begins when they are drawn.
+            if placed {
+                let done = self.render_page_later(cx);
+                switch.update(cx, |switch, _| switch.ready(&motions, done));
+            } else {
+                switch.update(cx, |switch, _| switch.wait());
+            }
+            graphs
+        } else {
+            cores.update(cx, |cores, _| cores.reset(&motions));
+            self.cpu_overall_chart(kernel, cx)
+        };
+        if incoming.is_some() {
+            self.chart_lives.borrow_mut().pop();
+        }
+        let graphs = div()
+            .w_full()
+            .min_w_0()
+            .flex_1()
+            .flex()
+            .flex_col()
+            .child(graphs);
+        let graphs = match incoming {
+            Some(live) => super::super::shift::live(
+                graphs,
+                live.transform,
+                super::super::shift::Anchor::Center,
+                live.anchor,
+            )
+            .into_any_element(),
+            None => graphs.into_any_element(),
+        };
+        let leaving = leaving.map(|was_logical| {
+            let live = lives(&ghost);
+            self.chart_lives.borrow_mut().push(live.clone());
+            let graphs = if was_logical {
+                let cards = ghost_cards
+                    .iter()
+                    .map(|(index, card)| (*index, *card, None))
+                    .collect::<Vec<_>>();
+                self.core_layout(hybrid, kernel, &cards, None, None, px(0.), false, cx)
+            } else {
+                self.cpu_overall_chart(kernel, cx)
+            };
+            self.chart_lives.borrow_mut().pop();
+            div()
+                .absolute()
+                .inset_0()
+                .flex()
+                .flex_col()
+                .child(super::super::shift::live(
+                    div().size_full().flex().flex_col().child(graphs),
+                    live.transform,
+                    super::super::shift::Anchor::TopLeft,
+                    live.anchor,
+                ))
+        });
+        div()
+            .relative()
+            .w_full()
+            .min_w_0()
+            .flex_1()
+            .flex()
+            .flex_col()
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener(|this, _, window, cx| {
+                    cx.stop_propagation();
+                    this.cpu_graph_menu(window, cx);
+                }),
+            )
+            .child(graphs)
+            .children(leaving)
+            // Where tests reach the graphs.
+            .when(self.options.test, |graphs| {
+                let anchors = self.ui.anchors.clone();
+                graphs.child(
+                    canvas(
+                        move |bounds, _, _| {
+                            anchors.borrow_mut().insert("cpu-graphs".into(), bounds);
+                        },
+                        |_, _, _, _| {},
+                    )
+                    .absolute()
+                    .inset_0(),
+                )
+            })
+            .into_any_element()
+    }
+    /// The overall graph, with `kernel` of the kernel time layer (`kernel_layer`).
+    fn cpu_overall_chart(&self, kernel: f32, cx: &mut Context<Self>) -> AnyElement {
+        let p = self.palette;
+        let mut lines = vec![Line::new("system.cpu", p.cpu).label(label("performance.cpu.total"))];
+        if kernel > 0. {
+            lines.push(
+                Line::new("system.cpuKernel", p.cpu.opacity(kernel))
+                    .dashed()
+                    .fill(0.18)
+                    .label(label("performance.cpu.kernel"))
+                    .layer(),
+            );
+        }
+        self.chart_view(
+            "cpu-overall-plot",
+            &lines,
+            Some(Scale::Fixed(100.)),
+            ChartHeight::Fill,
+            Look::boxed(label("performance.cpu.utilizationChart"))
+                .top("100%")
+                .format(MetricFormat::RoundPercent)
+                .min_height(px(MAIN_MIN))
+                // The legend keeps its place whether the layer shows, so
+                // the graph keeps its height.
+                .legend(vec![
+                    (label("performance.cpu.total"), false),
+                    (label("performance.cpu.kernelTime"), true),
+                ])
+                .legend_fade(1, kernel),
+            cx,
+        )
+    }
+    /// The logical processors' grid: rows stretch to the height the view leaves it,
+    /// and the column count follows the area. Another core type or another
+    /// size of the grid rearranges the cards (`cpu_motion`): they are laid out
+    /// where they go, and drawn moving there with live transforms. Also
+    /// returns whether it placed its cards (not before it knows its size).
+    fn core_grid(
+        &self,
+        hybrid: bool,
+        filter: &str,
+        kernel: f32,
+        cores: &Entity<cpu_motion::CoreMotion>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> (AnyElement, bool) {
+        let hw = &self.snapshot["hardware"];
+        let sys = &self.snapshot["system"];
+        let cpu = &hw["cpu"];
+        let core_values = values(&sys["cores"]);
+        let threads = values(&cpu["threads"]);
+        let visible = (0..core_values.len())
+            .filter(|index| filter == "all" || CoreKind::of(threads.get(*index)).key() == filter)
+            .collect::<Vec<_>>();
+        let gap = theme::dimension("coreGap");
+        let cell_width = theme::dimension("coreMinWidth");
+        let cell_height = theme::dimension("coreMinHeight");
+        let header = theme::dimension("coreHeaderHeight");
+        // Below the preferred card height the cards flatten to this before the view scrolls.
+        let fit_height = theme::dimension("coreFitHeight");
+        // The grid's size in this display; until it is known, the size it last had.
+        let here_state = window.use_keyed_state("cpu-core-grid-size", cx, |_, _| None);
+        let here: Option<Size<Pixels>> = *here_state.read(cx);
+        let measured = here.unwrap_or_else(|| self.core_grid_size.get());
+        let available = if measured.width > px(0.) {
+            measured.width
+        } else {
+            px(self.detail_width(window))
+        };
+        let previous = window.use_keyed_state("cpu-core-columns", cx, |_, _| (0usize, 0usize));
+        let (previous_count, previous_columns) = *previous.read(cx);
+        let columns = model::core_grid_columns(
+            &model::CoreGrid {
+                count: visible.len(),
+                width: f32::from(available),
+                height: f32::from(measured.height),
+                cell_width: f32::from(cell_width),
+                cell_height: f32::from(cell_height),
+                header_height: f32::from(header),
+                gap: f32::from(gap),
+            },
+            if previous_count == visible.len() {
+                previous_columns
+            } else {
+                0
+            },
+        );
+        previous.update(cx, |state, _| *state = (visible.len(), columns));
+        self.core_columns.set(columns);
+        let rows = visible.len().div_ceil(columns).max(1);
+        let arrangement = cpu_motion::Grid {
+            columns,
+            rows,
+            gap,
+            min_height: fit_height,
+        };
+        let area = size(available, measured.height);
+        let grid_size = self.core_grid_size.clone();
+        let first_layout = here.is_none() && !visible.is_empty();
+        let owner = cx.entity().downgrade();
+        let measuring = cores.clone();
+        let measure = canvas(
+            move |bounds, window, cx| {
+                grid_size.set(bounds.size);
+                let previous = here_state.update(cx, |size, _| size.replace(bounds.size));
+                if bounds.size != measured {
+                    // Laid out at a size it does not have: again at its own.
+                    if first_layout && !bounds.is_empty() {
+                        window.defer_presentation_until_layout();
+                    }
+                    let owner = owner.clone();
+                    window.defer(cx, move |_, cx| {
+                        let _ = owner.update(cx, |_, cx| cx.notify());
+                    });
+                } else if previous.is_none() {
+                    // A first display laid out at the size the grid last had,
+                    // which it has: no second render (it would hold up the
+                    // transition to this graph), and later changes animate.
+                    measuring.update(cx, |cores, _| cores.measured());
+                }
+            },
+            |_, _, _, _| {},
+        )
+        .absolute()
+        .size_full()
+        .into_any_element();
+        // Never laid out before: the cards wait one frame for the real size
+        // rather than appearing in a guessed arrangement.
+        let place = here.is_some() || measured.height > px(0.);
+        let targets = visible
+            .iter()
+            .enumerate()
+            .filter(|_| place)
+            .map(|(ordinal, index)| (*index, arrangement.bounds(ordinal, area)))
+            .collect::<Vec<_>>();
+        let animate = !cx.reduce_motion();
+        let enter_scale = theme::design()["layout"]["coreEnterScale"]
+            .as_f64()
+            .expect("core enter scale") as f32;
+        let motions = self.live_motions.clone();
+        let done = self.render_page_later(cx);
+        let moving = cores.update(cx, |cores, _| {
+            cores.update(
+                filter,
+                &targets,
+                arrangement,
+                area,
+                here.is_some(),
+                animate,
+                header,
+                enter_scale,
+                &motions,
+                done,
+            )
+        });
+        // The cards of the arrangement take their places in its fractions, so
+        // that they follow the grid in the frame it changes size; cards going
+        // stay where they were.
+        let slot = |index: usize| {
+            targets
+                .iter()
+                .position(|(target, _)| *target == index)
+                .map(|ordinal| cpu_motion::Slot {
+                    grid: arrangement,
+                    ordinal,
+                })
+        };
+        let cards = match &moving {
+            Some(moving) => moving
+                .cards
+                .iter()
+                .map(|card| {
+                    (
+                        card.index,
+                        cpu_motion::Card {
+                            bounds: card.layout(),
+                            presence: 1.,
+                        },
+                        card.stays().then(|| slot(card.index)).flatten(),
+                    )
+                })
+                .collect(),
+            None => targets
+                .iter()
+                .map(|(index, bounds)| {
+                    (
+                        *index,
+                        cpu_motion::Card {
+                            bounds: *bounds,
+                            presence: 1.,
+                        },
+                        slot(*index),
+                    )
+                })
+                .collect::<Vec<_>>(),
+        };
+        let grid = self.core_layout(
+            hybrid,
+            kernel,
+            &cards,
+            moving.as_deref(),
+            Some(measure),
+            (fit_height + gap) * rows as f32 - gap,
+            true,
+            cx,
+        );
+        (grid, place)
+    }
+    /// The grid holding `cards`, with the legend below. While the cards
+    /// rearrange (`moving`), each is drawn inside its live transforms;
+    /// `interactive` cards carry their tooltips (not those of a grid fading out).
+    #[allow(clippy::too_many_arguments)]
+    fn core_layout(
+        &self,
+        hybrid: bool,
+        kernel: f32,
+        cards: &[(usize, cpu_motion::Card, Option<cpu_motion::Slot>)],
+        moving: Option<&cpu_motion::Rearrangement>,
+        measure: Option<AnyElement>,
+        min_height: Pixels,
+        interactive: bool,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let p = self.palette;
+        let core_temperatures =
+            values(&self.snapshot["hardware"]["cpuSensors"]["coreTemperatures"])
+                .iter()
+                .filter_map(|core| {
+                    Some((
+                        (core["group"].as_u64()?, core["processor"].as_u64()?),
+                        core["celsius"].as_f64()?,
+                    ))
+                })
+                .collect::<HashMap<_, _>>();
+        let mut grid = div()
+            .relative()
+            .w_full()
+            .flex_1()
+            .min_h(min_height)
+            .children(measure);
+        for (index, card, slot) in cards {
+            let lives = moving.and_then(|moving| {
+                moving
+                    .cards
+                    .iter()
+                    .find(|moving| moving.index == *index)
+                    .map(|moving| moving.lives.clone())
+            });
+            grid = grid.child(self.core_card(
+                *index,
+                *card,
+                *slot,
+                lives,
+                hybrid,
+                kernel,
+                interactive,
+                &core_temperatures,
+                cx,
+            ));
+        }
+        div()
+            .flex_1()
+            .flex()
+            .flex_col()
+            .child(grid)
+            .when(hybrid, |d| {
+                d.child(
+                    self.legend(
+                        CoreKind::present(&self.snapshot["hardware"]["cpu"])
+                            .into_iter()
+                            .map(|kind| {
+                                (
+                                    label(&format!("performance.cpu.coreKind.{}", kind.key())),
+                                    kind.color(p),
+                                    false,
+                                )
+                            })
+                            .collect(),
+                    ),
+                )
+            })
+            .into_any_element()
+    }
+    /// A logical processor's card at `card`'s bounds, drawn faded and shrunk
+    /// toward its centre by its presence (a grid fading out keeps the cards as
+    /// they were drawn). A card that `lives` move is drawn inside them: the
+    /// card zooms and fades, its caption's two ends follow the card's top
+    /// corners and its chart frame stretches to the card, its curve with it.
+    #[allow(clippy::too_many_arguments)]
+    fn core_card(
+        &self,
+        index: usize,
+        card: cpu_motion::Card,
+        slot: Option<cpu_motion::Slot>,
+        lives: Option<cpu_motion::CardLives>,
+        hybrid: bool,
+        kernel: f32,
+        interactive: bool,
+        core_temperatures: &HashMap<(u64, u64), f64>,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        use super::super::shift::{Anchor, live};
+        let p = self.palette;
+        let hw = &self.snapshot["hardware"];
+        let threads = values(&hw["cpu"]["threads"]);
+        let value = &self.snapshot["system"]["cores"][index];
+        let header = theme::dimension("coreHeaderHeight");
+        let enter_scale = theme::design()["layout"]["coreEnterScale"]
+            .as_f64()
+            .expect("core enter scale") as f32;
+        let bounds = card.bounds;
+        let key = format!("system.cores.{index}");
+        let kind = if hybrid {
+            CoreKind::of(threads.get(index))
+        } else {
+            CoreKind::Performance
+        };
+        let color = kind.color(p);
+        let anchored = |transform: &LiveTransform| charts::Live {
+            transform: transform.clone(),
+            anchor: Rc::new(Cell::new(Point::default())),
+        };
+        // A card drawn part way in or out (a grid fading out keeps it so).
+        let presence = (card.presence < 1.).then(|| {
+            LiveTransform::new(LiveTransformValue::zoom(
+                enter_scale + (1. - enter_scale) * card.presence,
+                card.presence,
+            ))
+        });
+        let whole = lives
+            .as_ref()
+            .map(|lives| anchored(&lives.card))
+            .or_else(|| presence.as_ref().map(anchored));
+        let frame = lives.as_ref().map(|lives| anchored(&lives.frame));
+        let pushed = whole
+            .iter()
+            .chain(frame.iter())
+            .cloned()
+            .collect::<Vec<_>>();
+        self.chart_lives.borrow_mut().extend(pushed.iter().cloned());
+        let mut lines = vec![Line::new(key, color)];
+        if kernel > 0. {
+            lines.push(
+                Line::new(
+                    format!("system.coreKernel.{index}"),
+                    color.opacity(CORE_KERNEL_LINE * kernel),
+                )
+                .fill(CORE_KERNEL_FILL)
+                .layer(),
+            );
+        }
+        let chart = self.chart_view(
+            &format!("cpu-{index}"),
+            &lines,
+            Some(Scale::Fixed(100.)),
+            ChartHeight::Fill,
+            Look {
+                frame: true,
+                min_height: Some(px(1.)),
+                ..Look::default()
+            },
+            cx,
+        );
+        {
+            let mut stack = self.chart_lives.borrow_mut();
+            let kept = stack.len() - pushed.len();
+            stack.truncate(kept);
+        }
+        let chart = match frame {
+            Some(frame) => {
+                live(chart, frame.transform, Anchor::TopLeft, frame.anchor).into_any_element()
+            }
+            None => chart,
+        };
+        let thread = threads.get(index);
+        let core = thread
+            .and_then(|t| t["core"].as_u64())
+            .map(|c| c.to_string())
+            .unwrap_or_else(|| "?".into());
+        let mut tip = match (hybrid, kind) {
+            (false, _) => tr!("performance.cpu.coreTip", index = index, core = core),
+            (_, CoreKind::Performance) => {
+                tr!("performance.cpu.coreTipP", index = index, core = core)
+            }
+            (_, CoreKind::Efficient) => {
+                tr!("performance.cpu.coreTipE", index = index, core = core)
+            }
+            (_, CoreKind::LowPower) => {
+                tr!("performance.cpu.coreTipLp", index = index, core = core)
+            }
+        };
+        if let Some(celsius) = thread.and_then(|t| {
+            core_temperatures
+                .get(&(t["group"].as_u64()?, t["processor"].as_u64()?))
+                .copied()
+        }) {
+            tip.push_str(&format!(
+                "\n{}: {} °C",
+                label("common.resource.temperature"),
+                celsius.round()
+            ));
+        }
+        if kernel > 0.
+            && let Some(share) = self.snapshot["system"]["coreKernel"][index].as_f64()
+        {
+            tip.push_str(&format!(
+                "\n{}: {}%",
+                label("performance.cpu.kernelTime"),
+                share.round()
+            ));
+        }
+        let mhz = number(&hw["coreMhz"], &index.to_string())
+            .max(hw["coreMhz"][index].as_f64().unwrap_or(0.));
+        let name = div()
+            .flex()
+            .items_center()
+            .gap(px(6.))
+            .min_w_0()
+            .when(hybrid, |d| {
+                d.child(
+                    div()
+                        .flex_none()
+                        .min_w(px(15.))
+                        .px(px(3.))
+                        .rounded(px(4.))
+                        .bg(color.opacity(0.16))
+                        .text_color(color.blend(p.ink.opacity(0.3)))
+                        .text_size(theme::font(10.))
+                        .font_weight(FontWeight::BOLD)
+                        .line_height(px(15.))
+                        .text_center()
+                        .child(kind.badge()),
+                )
+            })
+            .child(
+                div()
+                    .text_size(theme::font(12.))
+                    .font_weight(FontWeight::MEDIUM)
+                    .child(index.to_string()),
+            )
+            .when(mhz > 0., |d| {
+                d.child(
+                    div()
+                        .ml(px(2.))
+                        .min_w_0()
+                        .truncate()
+                        .text_size(theme::font(11.))
+                        .text_color(p.muted)
+                        .child(ghz(mhz)),
+                )
+            });
+        let load = div()
+            .flex_none()
+            .flex()
+            .items_baseline()
+            .text_size(theme::font(13.))
+            .font_weight(FontWeight::SEMIBOLD)
+            .map(|d| match value.as_f64() {
+                Some(load) => d.child(format!("{}", load.round())).child(
+                    div()
+                        .ml(px(1.))
+                        .text_size(theme::font(10.5))
+                        .font_weight(FontWeight::NORMAL)
+                        .text_color(p.muted)
+                        .child("%"),
+                ),
+                None => d.child(missing()),
+            });
+        let (name, load) = match &lives {
+            Some(lives) => (
+                live(
+                    name,
+                    lives.left.clone(),
+                    Anchor::TopLeft,
+                    Rc::new(Cell::new(Point::default())),
+                )
+                .into_any_element(),
+                live(
+                    load,
+                    lives.right.clone(),
+                    Anchor::TopLeft,
+                    Rc::new(Cell::new(Point::default())),
+                )
+                .into_any_element(),
+            ),
+            None => (name.into_any_element(), load.into_any_element()),
+        };
+        let head = div()
+            .h(header)
+            .flex_shrink_0()
+            .flex()
+            .items_center()
+            .justify_between()
+            .gap_2()
+            .px(px(1.))
+            .pb(px(3.))
+            .whitespace_nowrap()
+            .child(name)
+            .child(load);
+        let cell = div()
+            .absolute()
+            .map(|d| match slot {
+                Some(slot) => {
+                    let (left, right, top, bottom) = slot.insets();
+                    d.left(left).right(right).top(top).bottom(bottom)
+                }
+                None => d
+                    .left(bounds.origin.x)
+                    .top(bounds.origin.y)
+                    .w(bounds.size.width)
+                    .h(bounds.size.height),
+            })
+            // A card gliding from a larger size draws its frame past its bounds.
+            .when(lives.is_none(), |d| d.overflow_hidden())
+            .flex()
+            .flex_col()
+            .child(head)
+            .child(chart);
+        let cell = if interactive {
+            cell.id(("core-cell", index))
+                .tooltip(move |window, cx| widgets::tooltip(tip.clone(), window, cx))
+                .into_any_element()
+        } else {
+            cell.into_any_element()
+        };
+        let cell = match whole {
+            Some(whole) => {
+                live(cell, whole.transform, Anchor::Center, whole.anchor).into_any_element()
+            }
+            None => cell,
+        };
+        match slot {
+            Some(slot) => {
+                let (left, top, width, height) = slot.fractions();
+                div()
+                    .absolute()
+                    .left(relative(left))
+                    .top(relative(top))
+                    .w(relative(width))
+                    .h(relative(height))
+                    .child(cell)
+                    .into_any_element()
+            }
+            None => cell,
+        }
+    }
+    fn memory_view(&self, window: &mut Window, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let p = self.palette;
+        let sys = &self.snapshot["system"];
+        let memory = &self.snapshot["hardware"]["memory"];
+        let total = number(sys, "memTotal");
+        let installed = number(memory, "installed");
+        let model = crate::regional::number!(
+            "{:.0} GB{}",
+            (if installed > 0. { installed } else { total }) / GIB,
+            memory["kind"]
+                .as_str()
+                .map(|kind| format!(" {kind}"))
+                .unwrap_or_default()
+        );
+        let (used, modified, standby, free) = memory_composition(sys);
+        let fraction = |bytes: f64| (bytes / total.max(1.)).clamp(0., 1.) as f32;
+        let segment = |start: f64, length: f64, color: Hsla| {
+            div()
+                .absolute()
+                .top_0()
+                .bottom_0()
+                .left(relative(fraction(start)))
+                .w(relative(fraction(length)))
+                .bg(color)
+        };
+        let reading = |bytes: Option<f64>| bytes.map(theme::memory).unwrap_or_else(missing);
+        let bar = div()
+            .relative()
+            .flex_shrink_0()
+            .h(px(28.))
+            .mt(px(14.))
+            .overflow_hidden()
+            .border_1()
+            .border_color(p.memory.opacity(0.45))
+            .rounded(px(4.))
+            .child(segment(0., used, p.memory.opacity(0.55)))
+            .child(segment(used, modified.unwrap_or(0.), p.memory.opacity(0.9)))
+            .child(segment(
+                used + modified.unwrap_or(0.),
+                standby.unwrap_or(0.),
+                p.memory.opacity(0.2),
+            ));
+        let legend_item =
+            |id: &'static str, swatch: Div, description: &'static str, text: String| {
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(px(6.))
+                    .child(
+                        swatch
+                            .id(id)
+                            .size(px(10.))
+                            .rounded(px(2.))
+                            .flex_shrink_0()
+                            .tooltip(move |window, cx| {
+                                widgets::tooltip(label(description), window, cx)
+                            }),
+                    )
+                    .child(text)
+            };
+        let legend = div()
+            .flex()
+            .flex_wrap()
+            .flex_shrink_0()
+            .gap_x(px(18.))
+            .mt(px(6.))
+            .text_size(theme::font(12.))
+            .text_color(p.muted)
+            .child(legend_item(
+                "memory-legend-used",
+                div().bg(p.memory.opacity(0.55)),
+                "performance.memory.inUseDescription",
+                tr!(
+                    "performance.memory.legendInUse",
+                    value = theme::memory(used)
+                ),
+            ))
+            .child(legend_item(
+                "memory-legend-modified",
+                div().bg(p.memory.opacity(0.9)),
+                "performance.memory.modifiedDescription",
+                tr!(
+                    "performance.memory.legendModified",
+                    value = reading(modified)
+                ),
+            ))
+            .child(legend_item(
+                "memory-legend-standby",
+                div().bg(p.memory.opacity(0.2)),
+                "performance.memory.standbyDescription",
+                tr!("performance.memory.legendStandby", value = reading(standby)),
+            ))
+            .child(legend_item(
+                "memory-legend-free",
+                div().border_1().border_color(p.stroke_strong),
+                "performance.memory.freeDescription",
+                tr!("performance.memory.legendFree", value = reading(free)),
+            ));
+        let gb_stat =
+            |key: &str, bytes: f64| self.stat(label(key), gb(bytes), Some("GB".into()), None, cx);
+        let stats = vec![
+            gb_stat("performance.memory.inUse", used),
+            gb_stat("performance.memory.available", number(sys, "memAvailable")),
+            self.stat(
+                label("performance.memory.committed"),
+                format!(
+                    "{} / {}",
+                    gb(number(sys, "commitUsed")),
+                    gb(number(sys, "commitLimit"))
+                ),
+                Some("GB".into()),
+                None,
+                cx,
+            ),
+            gb_stat("performance.memory.cached", number(sys, "cached")),
+            self.stat_parts(
+                label("performance.memory.pagedPool"),
+                theme::memory(number(sys, "kernelPaged")),
+                cx,
+            ),
+            self.stat_parts(
+                label("performance.memory.nonPagedPool"),
+                theme::memory(number(sys, "kernelNonpaged")),
+                cx,
+            ),
+        ];
+        let plain = |value: String| div().child(value).into_any_element();
+        let reserved = (installed - total).max(0.);
+        let form_factor = memory["formFactor"].as_str();
+        let mut rows = vec![
+            (
+                label("performance.memory.speed"),
+                plain(
+                    memory["speed"]
+                        .as_f64()
+                        .filter(|v| *v > 0.)
+                        .map(|v| format!("{v} MT/s"))
+                        .unwrap_or_else(missing),
+                ),
+            ),
+            (
+                label("performance.memory.slotsUsed"),
+                plain(if number(memory, "slotsTotal") > 0. {
+                    format!("{} / {}", memory["slotsUsed"], memory["slotsTotal"])
+                } else {
+                    missing()
+                }),
+            ),
+            (
+                label("performance.memory.formFactor"),
+                plain(match form_factor {
+                    Some("onboard") => label("performance.memory.onboard"),
+                    Some(value) => value.into(),
+                    None => missing(),
+                }),
+            ),
+            (
+                label("performance.memory.type"),
+                plain(
+                    memory["kind"]
+                        .as_str()
+                        .map(String::from)
+                        .unwrap_or_else(missing),
+                ),
+            ),
+        ];
+        if reserved > 0. {
+            rows.push((
+                label("performance.memory.reserved"),
+                plain(crate::regional::number!("{:.0} MB", reserved / MIB)),
+            ));
+        }
+        vec![
+            self.perf_head(label("common.resource.memory"), Some(model), None, cx),
+            self.chart_view(
+                "memory-usage",
+                &[Line::new("system.memUsed", p.memory)],
+                Some(Scale::Fixed(total.max(1.))),
+                ChartHeight::Fill,
+                Look::boxed(label("performance.memory.usage"))
+                    .top(format!("{} GB", gb(total)))
+                    .format(MetricFormat::Gigabytes)
+                    .min_height(px(MAIN_MIN)),
+                cx,
+            ),
+            bar.into_any_element(),
+            legend.into_any_element(),
+            self.perf_stats(stats, rows, false, window),
+        ]
+    }
+    fn disk_view(
+        &self,
+        device: &Device,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Vec<AnyElement> {
+        let p = self.palette;
+        let disk = &self.snapshot["hardware"]["disks"][device.index];
+        let info = &disk["info"];
+        let details = self.disk_page == "details";
+        let pages = self.segments(
+            "disk-page",
+            ["overview", "details"]
+                .into_iter()
+                .map(|page| {
+                    (
+                        label(&format!("performance.disk.page.{page}")),
+                        None,
+                        Action::Preference("diskPage".into(), json!(page)),
+                        self.disk_page == page,
+                    )
+                })
+                .collect(),
+            cx,
+        );
+        let controls = div()
+            .flex()
+            .items_center()
+            .gap(px(8.))
+            .child(pages)
+            .when_some(info["index"].as_u64().filter(|_| details), |d, index| {
+                d.child(self.disk_refresh_button(index, cx))
+            })
+            .into_any_element();
+        let head = self.perf_head(
+            device.title.clone(),
+            Some(device.model.clone()),
+            Some(controls),
+            cx,
+        );
+        if details {
+            return vec![head, self.disk_details(device, window, cx)];
+        }
+        let counter_volumes = values(&disk["performanceVolumes"]);
+        let volume_note = (!counter_volumes.is_empty()).then(|| {
+            let volumes = counter_volumes
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(", ");
+            if counter_volumes.len() == 1 {
+                tr!("performance.disk.volumeCounters", volumes = volumes)
+            } else {
+                tr!("performance.disk.volumeCountersMultiple", volumes = volumes)
+            }
+        });
+        let head = div()
+            .flex()
+            .flex_col()
+            .child(head)
+            .when(
+                ["active", "read", "write", "responseMs"]
+                    .iter()
+                    .all(|field| !disk[*field].is_number()),
+                |d| {
+                    d.child(
+                        div()
+                            .mt(px(6.))
+                            .text_size(theme::font(12.))
+                            .text_color(p.muted)
+                            .child(label("performance.disk.performanceUnavailable")),
+                    )
+                },
+            )
+            .when_some(volume_note, |d, note| {
+                d.child(
+                    div()
+                        .mt(px(6.))
+                        .text_size(theme::font(12.))
+                        .text_color(p.muted)
+                        .child(note),
+                )
+            })
+            .into_any_element();
+        let prefix = format!("hardware.disks.{}", device.index);
+        let mut stats = vec![
+            self.stat(
+                label("performance.disk.activeTime"),
+                disk["active"]
+                    .as_f64()
+                    .map(|v| format!("{}", v.round()))
+                    .unwrap_or_else(missing),
+                disk["active"].is_number().then(|| "%".into()),
+                None,
+                cx,
+            ),
+            self.stat(
+                label("performance.disk.responseTime"),
+                disk["responseMs"]
+                    .as_f64()
+                    .map(|v| crate::regional::number!("{v:.1}"))
+                    .unwrap_or_else(missing),
+                disk["responseMs"]
+                    .is_number()
+                    .then(|| label("performance.disk.ms")),
+                None,
+                cx,
+            ),
+            self.stat_parts(
+                label("performance.disk.readSpeed"),
+                disk["read"]
+                    .as_f64()
+                    .map(charts::byte_rate)
+                    .unwrap_or_else(missing),
+                cx,
+            ),
+            self.stat_parts(
+                label("performance.disk.writeSpeed"),
+                disk["write"]
+                    .as_f64()
+                    .map(charts::byte_rate)
+                    .unwrap_or_else(missing),
+                cx,
+            ),
+        ];
+        if let Some(celsius) = disk["temperature"].as_f64().filter(|v| *v != 0.) {
+            stats.push(self.stat(
+                label("common.resource.temperature"),
+                format!("{}", celsius.round()),
+                Some("°C".into()),
+                None,
+                cx,
+            ));
+        }
+        let plain = |value: String| div().child(value).into_any_element();
+        let volumes = values(&info["volumes"])
+            .iter()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>()
+            // Separate the description fields with a single space.
+            .join(" ");
+        let kind = disk_kind(info);
+        let mut rows = vec![
+            (
+                label("performance.disk.capacity"),
+                plain(
+                    info["size"]
+                        .as_f64()
+                        .filter(|v| *v > 0.)
+                        .map(fmt_capacity)
+                        .unwrap_or_else(missing),
+                ),
+            ),
+            (
+                label("performance.disk.type"),
+                plain(if kind.is_empty() { missing() } else { kind }),
+            ),
+            (
+                label("performance.disk.volumes"),
+                plain(if volumes.is_empty() {
+                    label("common.none")
+                } else {
+                    volumes
+                }),
+            ),
+        ];
+        if boolean(info, "removable") {
+            rows.push((
+                label("performance.disk.removable"),
+                plain(label("performance.disk.yes")),
+            ));
+        }
+        if let Some(warning) = disk["temperatureWarning"].as_f64().filter(|v| *v > 0.) {
+            rows.push((
+                label("performance.disk.warningTemperature"),
+                plain(format!("{warning} °C")),
+            ));
+        }
+        vec![
+            head,
+            self.chart_view(
+                "disk-active",
+                &[Line::new(format!("{prefix}.active"), p.io)],
+                Some(Scale::Fixed(100.)),
+                ChartHeight::Fill,
+                Look::boxed(label("performance.disk.activeTime"))
+                    .top("100%")
+                    .format(MetricFormat::RoundPercent)
+                    .min_height(px(HALF_MIN)),
+                cx,
+            ),
+            div()
+                .mt(px(18.))
+                .flex_1()
+                .flex()
+                .flex_col()
+                .child(
+                    self.chart_view(
+                        "disk-rate",
+                        &[
+                            Line::new(format!("{prefix}.read"), p.io)
+                                .label(label("performance.disk.read")),
+                            Line::new(format!("{prefix}.write"), p.io)
+                                .dashed()
+                                .label(label("performance.disk.write")),
+                        ],
+                        Some(Scale::Rate(RateScale::Disk)),
+                        ChartHeight::Fill,
+                        Look::boxed(label("performance.disk.transferRate"))
+                            .format(MetricFormat::ByteRate)
+                            .min_height(px(HALF_MIN))
+                            .legend(vec![
+                                (label("performance.disk.read"), false),
+                                (label("performance.disk.write"), true),
+                            ]),
+                        cx,
+                    ),
+                )
+                .into_any_element(),
+            self.perf_stats(stats, rows, false, window),
+        ]
+    }
+    /// Addresses past the first three fold behind a toggle.
+    fn addresses(
+        &self,
+        id: String,
+        list: Vec<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        const SHOWN: usize = 3;
+        if list.is_empty() {
+            return div().child(missing()).into_any_element();
+        }
+        let state = window.use_keyed_state(SharedString::from(id.clone()), cx, |_, _| false);
+        let all = *state.read(cx);
+        let total = list.len();
+        let p = self.palette;
+        div()
+            .flex()
+            .flex_col()
+            .children(
+                list.into_iter()
+                    .take(if all { total } else { SHOWN })
+                    .map(|address| div().child(address)),
+            )
+            .when(total > SHOWN, |d| {
+                let owner = cx.entity().downgrade();
+                d.child(
+                    div()
+                        .id(SharedString::from(format!("{id}-toggle")))
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .mt(px(2.))
+                        .text_size(theme::font(12.))
+                        .text_color(p.accent)
+                        .cursor_pointer()
+                        .child(if all {
+                            label("performance.network.showFewer")
+                        } else {
+                            tr!("performance.network.showAll", count = total)
+                        })
+                        .child(
+                            icon(if all { "ChevronUp" } else { "ChevronDown" }, p.accent)
+                                .size(px(12.)),
+                        )
+                        .on_click(move |_, _, cx| {
+                            state.update(cx, |all, _| *all = !*all);
+                            let _ = owner.update(cx, |_, cx| cx.notify());
+                        }),
+                )
+            })
+            .into_any_element()
+    }
+    fn nic_view(
+        &self,
+        device: &Device,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Vec<AnyElement> {
+        let p = self.palette;
+        let nic = &self.snapshot["hardware"]["nics"][device.index];
+        let info = &nic["info"];
+        let prefix = format!("hardware.nics.{}", device.index);
+        let bits = self.net_bits();
+        let rate_stat = |key: &str, bytes: f64| {
+            let (value, unit) = split(charts::net_rate(bytes, bits));
+            self.stat(
+                label(key),
+                value,
+                unit,
+                Some(charts::net_rate(bytes, !bits)),
+                cx,
+            )
+        };
+        let stats = vec![
+            rate_stat("performance.network.receive", number(nic, "rx")),
+            rate_stat("performance.network.send", number(nic, "tx")),
+        ];
+        let plain = |value: String| div().child(value).into_any_element();
+        let addresses = |list: &Value| {
+            values(list)
+                .iter()
+                .filter_map(Value::as_str)
+                .map(String::from)
+                .collect::<Vec<_>>()
+        };
+        let speed = number(info, "linkSpeed");
+        let ipv4 = self.addresses(
+            format!("nic-{}-ipv4", text(info, "id")),
+            addresses(&info["ipv4"]),
+            window,
+            cx,
+        );
+        let ipv6 = self.addresses(
+            format!("nic-{}-ipv6", text(info, "id")),
+            addresses(&info["ipv6"]),
+            window,
+            cx,
+        );
+        let rows = vec![
+            (
+                label("performance.network.connectionType"),
+                plain(label(&format!(
+                    "performance.network.kind.{}",
+                    match text(info, "kind") {
+                        "" => "other",
+                        kind => kind,
+                    }
+                ))),
+            ),
+            (
+                label("performance.network.linkSpeed"),
+                plain(if speed > 0. {
+                    tr!(
+                        "performance.withAlt",
+                        value = link_speed(speed),
+                        alt = charts::byte_rate(speed / 8.)
+                    )
+                } else {
+                    missing()
+                }),
+            ),
+            (label("performance.network.ipv4"), ipv4),
+            (label("performance.network.ipv6"), ipv6),
+            (
+                label("performance.network.mac"),
+                plain(
+                    info["mac"]
+                        .as_str()
+                        .map(String::from)
+                        .unwrap_or_else(missing),
+                ),
+            ),
+        ];
+        vec![
+            self.perf_head(device.title.clone(), Some(device.model.clone()), None, cx),
+            self.chart_view(
+                "network-throughput",
+                &[
+                    Line::new(format!("{prefix}.rx"), p.network)
+                        .label(label("performance.network.receive")),
+                    Line::new(format!("{prefix}.tx"), p.network)
+                        .dashed()
+                        .label(label("performance.network.send")),
+                ],
+                Some(Scale::Rate(RateScale::Network(bits))),
+                ChartHeight::Fill,
+                Look::boxed(label("performance.network.throughput"))
+                    .format(MetricFormat::NetworkAlt(bits))
+                    .min_height(px(MAIN_MIN))
+                    .legend(vec![
+                        (label("performance.network.receive"), false),
+                        (label("performance.network.send"), true),
+                    ]),
+                cx,
+            ),
+            self.perf_stats(stats, rows, false, window),
+        ]
+    }
+    fn battery_view(
+        &self,
+        device: &Device,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Vec<AnyElement> {
+        let p = self.palette;
+        let battery = &self.snapshot["hardware"]["batteries"][device.index];
+        let info = &battery["info"];
+        let prefix = format!("hardware.batteries.{}", device.index);
+        let state = text(battery, "state");
+        let flow = label(if state == "charging" {
+            "performance.battery.chargeRate"
+        } else {
+            "performance.battery.dischargeRate"
+        });
+        let health = info["fullCapacity"]
+            .as_f64()
+            .zip(info["designedCapacity"].as_f64())
+            .filter(|(full, design)| *full > 0. && *design > 0.)
+            .map(|(full, design)| full / design * 100.);
+        let mut stats = vec![
+            self.stat(
+                label("performance.battery.level"),
+                format!("{}", number(battery, "percent").round()),
+                Some("%".into()),
+                None,
+                cx,
+            ),
+            self.stat_element(
+                label("common.status"),
+                div()
+                    .min_w_0()
+                    .whitespace_normal()
+                    .child(battery_state(state))
+                    .into_any_element(),
+                None,
+                cx,
+            ),
+        ];
+        if let Some(rate) = battery["rate"].as_f64() {
+            stats.push(self.stat(
+                flow.clone(),
+                charts::watts(rate.abs() / 1000.),
+                Some("W".into()),
+                None,
+                cx,
+            ));
+        }
+        if let Some(voltage) = battery["voltage"].as_f64().filter(|v| *v > 0.) {
+            stats.push(self.stat(
+                label("performance.battery.voltage"),
+                crate::regional::number!("{:.2}", voltage / 1000.),
+                Some("V".into()),
+                None,
+                cx,
+            ));
+        }
+        if let Some(remaining) = battery["remaining"].as_f64().filter(|v| *v > 0.) {
+            stats.push(self.stat(
+                label("performance.battery.remaining"),
+                duration(remaining),
+                None,
+                None,
+                cx,
+            ));
+        }
+        if let Some(health) = health {
+            stats.push(self.stat(
+                label("performance.battery.health"),
+                format!("{}", health.round()),
+                Some("%".into()),
+                None,
+                cx,
+            ));
+        }
+        if let Some(cycles) = info["cycleCount"].as_f64().filter(|v| *v > 0.) {
+            stats.push(self.stat(
+                label("performance.battery.cycles"),
+                format!("{cycles}"),
+                None,
+                None,
+                cx,
+            ));
+        }
+        if let Some(celsius) = battery["temperature"].as_f64().filter(|v| *v != 0.) {
+            stats.push(self.stat(
+                label("common.resource.temperature"),
+                format!("{}", celsius.round()),
+                Some("°C".into()),
+                None,
+                cx,
+            ));
+        }
+        let plain = |value: String| div().child(value).into_any_element();
+        let mut rows = vec![
+            (
+                label("performance.battery.capacity"),
+                plain(watt_hours(&battery["capacity"])),
+            ),
+            (
+                label("performance.battery.fullCapacity"),
+                plain(watt_hours(&info["fullCapacity"])),
+            ),
+            (
+                label("performance.battery.designCapacity"),
+                plain(watt_hours(&info["designedCapacity"])),
+            ),
+            (
+                label("performance.battery.chemistry"),
+                plain(chemistry(text(info, "chemistry"))),
+            ),
+            (
+                label("performance.battery.manufacturer"),
+                plain(or_missing(text(info, "manufacturer"))),
+            ),
+            (
+                label("performance.battery.model"),
+                plain(or_missing(text(info, "name"))),
+            ),
+            (
+                label("performance.battery.serial"),
+                plain(or_missing(text(info, "serial"))),
+            ),
+        ];
+        if let Some(date) = info["manufactured"].as_str().filter(|d| !d.is_empty()) {
+            rows.push((
+                label("performance.battery.manufactured"),
+                plain(date.into()),
+            ));
+        }
+        let model = [text(info, "manufacturer"), text(info, "name")]
+            .into_iter()
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
+        let mut out = vec![
+            self.perf_head(label("performance.battery.title"), Some(model), None, cx),
+            self.chart_view(
+                "battery-level",
+                &[Line::new(format!("{prefix}.percent"), p.battery)],
+                Some(Scale::Fixed(100.)),
+                ChartHeight::Fill,
+                Look::boxed(label("performance.battery.level"))
+                    .top("100%")
+                    .format(MetricFormat::RoundPercent)
+                    .min_height(px(HALF_MIN)),
+                cx,
+            ),
+        ];
+        if battery["rate"].is_number() {
+            out.push(
+                div()
+                    .mt(px(18.))
+                    .flex_1()
+                    .flex()
+                    .flex_col()
+                    .child(
+                        self.chart_view(
+                            "battery-rate",
+                            &[
+                                Line::new(format!("{prefix}.rate"), p.battery)
+                                    .magnitude(1. / 1000.),
+                            ],
+                            Some(Scale::Round {
+                                floor: 5.,
+                                unit: "W",
+                            }),
+                            ChartHeight::Fill,
+                            Look::boxed(flow)
+                                .format(MetricFormat::Watts)
+                                .min_height(px(HALF_MIN)),
+                            cx,
+                        ),
+                    )
+                    .into_any_element(),
+            );
+        }
+        out.push(self.perf_stats(stats, rows, false, window));
+        if let Some(health) = health.filter(|h| *h < 80.) {
+            out.push(self.perf_note(tr!(
+                "performance.battery.wornNote",
+                percent = health.round()
+            )));
+        }
+        out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{StatsLayout, cpu_power, stats_layout};
+    use serde_json::json;
+
+    #[test]
+    fn the_cpu_shows_one_power_figure() {
+        let both = json!({"package": 88.4, "cores": 73.1, "graphics": 2.0});
+        assert_eq!(
+            cpu_power(&both),
+            Some((88.4, "performance.cpu.packagePower"))
+        );
+        let cores = json!({"package": null, "cores": 12.5});
+        assert_eq!(cpu_power(&cores), Some((12.5, "performance.cpu.corePower")));
+        // A valid zero is a reading; graphics power is not the CPU's.
+        assert_eq!(
+            cpu_power(&json!({"package": 0.0})),
+            Some((0.0, "performance.cpu.packagePower"))
+        );
+        assert_eq!(cpu_power(&json!({"package": null, "graphics": 3.0})), None);
+        assert_eq!(cpu_power(&serde_json::Value::Null), None);
+    }
+
+    #[test]
+    fn performance_figures_and_specs_stack_before_large_text_collides() {
+        for cpu in [false, true] {
+            let layout = |width, scale| stats_layout(width, cpu, scale, 10, 8);
+            assert!(layout(480., 1.).stacked);
+            assert!(!layout(900., 1.).stacked);
+            // Large text stacks them, in columns no narrower than it allows.
+            let large = layout(900., 20. / 13.);
+            let columns = f32::from(large.columns);
+            let column = (900. - (columns - 1.) * super::STAT_GAP_X) / columns;
+            assert!(large.stacked && column >= super::STAT_TIGHT * 20. / 13.);
+            assert_eq!(layout(80., 20. / 13.).columns, 1);
+        }
+    }
+
+    /// Rows of figures and of specs a layout takes, and whether one is under the other.
+    fn rows(layout: StatsLayout, figures: usize, specs: usize) -> (usize, usize) {
+        (
+            figures.div_ceil(usize::from(layout.columns)),
+            specs.div_ceil(usize::from(layout.spec_columns)),
+        )
+    }
+
+    #[test]
+    fn the_default_window_spreads_figures_and_specs_over_its_width() {
+        // The detail card of a 1000 px window beside the default device list.
+        let width = 664.;
+        // A hybrid CPU with sensors: ten figures in two rows, the specs in two columns.
+        let cpu = stats_layout(width, true, 1., 10, 8);
+        assert!(cpu.stacked);
+        assert_eq!(rows(cpu, 10, 8), (2, 4));
+        // Tighter columns only where they spare a row; several rows are even.
+        assert_eq!(stats_layout(width, false, 1., 7, 8).columns, 4);
+        assert_eq!(stats_layout(width, false, 1., 6, 4).columns, 3);
+        assert_eq!(stats_layout(width, false, 1., 5, 4).columns, 5);
+        assert_eq!(stats_layout(width, false, 1., 2, 5).columns, 4);
+        // No column of specs for a single row.
+        assert_eq!(stats_layout(width, false, 1., 2, 2).spec_columns, 1);
+        assert_eq!(stats_layout(width, false, 1., 2, 3).spec_columns, 2);
+        // A narrow card keeps the specs in one list.
+        assert_eq!(stats_layout(464., true, 1., 10, 8).spec_columns, 1);
+    }
+
+    #[test]
+    fn a_wider_card_takes_no_more_height() {
+        // A figure is 44 px with 14 px between rows, a spec 18 px with 6 px.
+        let height = |layout: StatsLayout, figures: usize, specs: usize| {
+            let (figure_rows, spec_rows) = rows(layout, figures, specs);
+            let figures = figure_rows as f32 * 58. - 14.;
+            let specs = spec_rows as f32 * 24. - 6.;
+            if layout.stacked {
+                figures + super::STACK_GAP + specs
+            } else {
+                figures.max(specs)
+            }
+        };
+        for cpu in [false, true] {
+            for (figures, specs) in [
+                (11, 8),
+                (10, 8),
+                (8, 8),
+                (7, 8),
+                (7, 7),
+                (6, 4),
+                (5, 4),
+                (2, 5),
+            ] {
+                let mut previous = (f32::INFINITY, true);
+                for width in (300..=1600).map(|width| width as f32) {
+                    let layout = stats_layout(width, cpu, 1., figures, specs);
+                    let now = height(layout, figures, specs);
+                    // Going side by side may cost the gap of a row of figures:
+                    // the arrangement follows the width alone, the same for
+                    // every device.
+                    let allowed = if layout.stacked == previous.1 {
+                        0.
+                    } else {
+                        super::STAT_GAP_Y
+                    };
+                    assert!(
+                        now <= previous.0 + allowed,
+                        "{figures} figures and {specs} specs grow from {} to {now} at {width}",
+                        previous.0
+                    );
+                    previous = (now, layout.stacked);
+                    if !layout.stacked {
+                        assert_eq!(layout.spec_columns, 1);
+                    }
+                }
+            }
+        }
+    }
+}

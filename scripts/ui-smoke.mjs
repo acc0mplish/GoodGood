@@ -1,0 +1,857 @@
+// Owned native-window validation. Capture only the test HWND and reject foreground changes.
+import { spawn, spawnSync } from "node:child_process";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { createInterface } from "node:readline";
+import assert from "node:assert/strict";
+import { cleanupTestProfile, testDirectories } from "./lib/owned-test.mjs";
+import { compareChartPixels } from "./lib/capture-pixels.mjs";
+const root = resolve(import.meta.dirname, "..");
+process.chdir(root);
+const label = process.argv[2] ?? `smoke-${Date.now()}`;
+if (!/^[a-z0-9-]+$/.test(label)) throw Error("Invalid test label");
+const live = process.argv.includes("--live");
+const retained = process.argv.includes("--retained");
+const hoverRetained = process.argv.includes("--hover-retained");
+assert(!hoverRetained || retained, "hover-retained requires retained checks");
+const chartScroll = process.argv.includes("--chart-scroll");
+const missingPreview = process.argv.includes("--missing-preview");
+assert(!missingPreview || chartScroll, "missing-preview checks require chart scrolling");
+const clippedPreview = process.argv.includes("--clipped-preview");
+assert(!clippedPreview || chartScroll, "clipped-preview checks require chart scrolling");
+const chartGap = process.argv.includes("--chart-gap");
+const opaqueWindow = process.argv.includes("--opaque-window");
+const snapshots = process.argv.includes("--snapshots");
+const interactions = process.argv.includes("--interactions");
+const scrollCopy = process.argv.includes("--scroll-copy");
+assert(!(scrollCopy && (live || interactions)), "scroll-copy comparisons require a dedicated fixed replay");
+// Hardware acceleration off: the software rasterizer draws the window.
+const softwareRendering = process.argv.includes("--software-rendering");
+assert(!(interactions && (live || retained || chartScroll || chartGap || snapshots)), "interaction comparisons require a dedicated fixed replay");
+const previewFlag = process.argv.indexOf("--readme");
+const preview = previewFlag < 0 ? null : process.argv[previewFlag + 1];
+if (previewFlag >= 0) assert(["ko-KR", "en-US"].includes(preview) && !(live || retained || chartScroll || chartGap || snapshots || interactions));
+assert(!(chartGap && (live || retained || chartScroll || snapshots)), "chart gap checks use a dedicated fixture replay");
+assert(!(chartScroll && (live || retained || snapshots)), "chart scroll checks use a fixed CPU spike");
+assert(!(live && retained), "retained comparisons require a fixed fixture");
+assert(!(snapshots && (live || retained)), "snapshot comparisons require a fixed fixture");
+const output = resolve("target/native-validation", label);
+mkdirSync(output, { recursive: true });
+const metadata = JSON.parse(readFileSync("resources/app.json"));
+const identifier = `${metadata.identifier}.test.${label}`;
+const [config] = testDirectories(identifier);
+mkdirSync(config, { recursive: true });
+writeFileSync(
+  resolve(config, "settings.json"),
+  JSON.stringify({
+    language: preview ?? "ko-KR",
+    theme: "dark",
+    closeToTray: false,
+    updateCheck: false,
+    hardwareAcceleration: !softwareRendering,
+  }),
+);
+let fixture;
+if (preview) {
+  const { previewFixture } = await import("./lib/readme-fixture.mjs");
+  fixture = previewFixture(preview);
+  writeFileSync(resolve(output, "fixture.json"), JSON.stringify(fixture));
+} else if (!live) {
+  const fixtureFlag = process.argv.indexOf("--fixture");
+  fixture = JSON.parse(readFileSync(fixtureFlag >= 0 ? process.argv[fixtureFlag + 1] : "tools/window-probe/fixtures/desktop.json"));
+  if (chartScroll || snapshots || chartGap) {
+    fixture.snapshot.timestamp = Date.now() - (chartGap ? 731_339_910 : 0);
+  }
+  if (chartScroll) {
+    fixture.snapshot.system.cpu = 12;
+    fixture.snapshot.system.cpuKernel = 4;
+    if (clippedPreview) {
+      const nic = fixture.snapshot.hardware.nics?.[0];
+      assert(nic, "clipped-preview fixture requires a network adapter");
+      fixture.snapshot.hardware.nics = Array.from({ length: 24 }, (_, i) => ({
+        ...structuredClone(nic), info: { ...nic.info, id: String(i + 1), name: `Ethernet ${i + 1}` }, rx: 0, tx: 0,
+      }));
+    }
+    if (missingPreview) {
+      assert(fixture.snapshot.hardware.gpus?.length, "missing-preview fixture requires a GPU");
+      fixture.snapshot.hardware.gpus[0].util = null;
+    }
+  }
+  const samples = JSON.parse(readFileSync("resources/motion.json")).chartSamples;
+  const history = fixture.historySeries ?? [];
+  fixture.snapshots = Array.from({ length: samples - 1 }, (_, i) => {
+    const frame = structuredClone(fixture.snapshot),
+      past = history[Math.floor((i * Math.max(0, history.length - 1)) / samples)];
+    frame.timestamp = fixture.snapshot.timestamp - (samples - 1 - i) * 1000;
+    frame.seq = i + 1;
+    if (past) {
+      frame.system.cpu = past.cpu;
+      frame.system.memUsed = past.memUsed;
+    }
+    if (retained) {
+      if (frame.system.cores?.length) {
+        frame.system.cores = frame.system.cores.map((_, core) => Math.round(45 + 40 * Math.sin(i * 0.37 + core * 0.63)));
+      }
+      // Exercise the engine fills above their grid lines and both memory plots.
+      for (const gpu of frame.hardware?.gpus ?? []) {
+        if (gpu.engines?.length) {
+          gpu.engines = gpu.engines.map((_, engine) => Math.round(40 + 35 * Math.sin(i * 0.39 + engine)));
+          gpu.util = Math.max(...gpu.engines);
+        }
+        if (gpu.info.dedicatedTotal > 0) gpu.dedicatedUsed = Math.round(gpu.info.dedicatedTotal * (0.35 + 0.24 * Math.sin(i * 0.25)));
+        if (gpu.info.sharedTotal > 0) gpu.sharedUsed = Math.round(gpu.info.sharedTotal * (0.16 + 0.12 * Math.cos(i * 0.31)));
+      }
+    }
+    if (chartScroll) frame.system.cpu = i === Math.floor(samples * 0.42) ? 89 : 12;
+    return frame;
+  });
+  fixture.snapshot.seq = samples;
+  writeFileSync(resolve(output, "fixture.json"), JSON.stringify(fixture));
+}
+const hardware = fixture?.snapshot.hardware ?? {};
+const retainedDevices = retained ? [
+  "memory",
+  ...(hardware.disks ?? []).map(d => `disk:${d.info.index}`),
+  ...(hardware.nics ?? []).map(n => `nic:${n.info.id}`),
+  ...(hardware.gpus ?? []).slice(1).map(g => `gpu:${g.info.id}`),
+  ...(hardware.batteries ?? []).map(b => `bat:${b.info.id}`),
+] : [];
+// Every performance overview of the fixture shows in full, without scrolling,
+// in a window of this logical size. The default window is smaller: it shows
+// all of them in full but the grid of logical processors.
+const COMPLETE_WINDOW = [1240, 800];
+const overviewStates = [
+  ["cpu", { device: "cpu", cpuMode: "overall" }],
+  ["logical", { cpuMode: "logical", coreFilter: "all" }],
+  ["memory", { device: "memory" }],
+  ...(hardware.disks ?? []).map((d, i) => [`disk-${i}`, { device: `disk:${d.info.index}` }]),
+  ...(hardware.gpus ?? []).map((g, i) => [`gpu-${i}`, { device: `gpu:${g.info.id}` }]),
+  ...(hardware.nics ?? []).map((n, i) => [`nic-${i}`, { device: `nic:${n.info.id}` }]),
+  ...(hardware.batteries ?? []).map((b, i) => [`battery-${i}`, { device: `bat:${b.info.id}` }]),
+];
+const probeFlag = process.argv.indexOf("--probe");
+const probe = resolve(probeFlag >= 0 ? process.argv[probeFlag + 1] : "target/release/goodgood-window-probe.exe");
+const executable = resolve(output, "goodgood.exe");
+const executableFlag = process.argv.indexOf("--executable");
+copyFileSync(resolve(executableFlag >= 0 ? process.argv[executableFlag + 1] : process.argv.includes("--dev") ? "target/debug/goodgood.exe" : "target/release/goodgood.exe"), executable);
+const child = spawn(
+  probe,
+  [
+    "run",
+    executable,
+    "--hidden",
+    "--test",
+    "--identifier",
+    identifier,
+    "--stop-after",
+    String(180 + 12 * retainedDevices.length),
+    ...(opaqueWindow ? ["--opaque-window"] : []),
+    ...(live ? [] : ["--fixture", resolve(output, "fixture.json")]),
+    ...(preview ? ["--width", "1600", "--height", "1000"] : []),
+  ],
+  { windowsHide: true, stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, ...(retained || chartScroll || chartGap || scrollCopy ? { GOODGOOD_GPUI_DIAGNOSTICS: "1" } : {}), ...(snapshots || chartGap ? { GOODGOOD_GPUI_FRAME_TRACE: "1" } : {}) } },
+);
+const events = [];
+let error = "",
+  shown,
+  exited = false,
+  exitCode;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+child.stderr.on("data", (b) => (error += b));
+child.on("error", (e) => {
+  error += e.message;
+  exited = true;
+});
+child.on("exit", (code) => {
+  exited = true;
+  exitCode = code;
+});
+createInterface({ input: child.stdout }).on("line", (line) => {
+  try {
+    const event = JSON.parse(line);
+    events.push(event);
+    if (event.event === "shown") shown = event;
+  } catch {
+    error += line;
+  }
+});
+const send = (control) => child.stdin.write(`app ${JSON.stringify(control)}\n`);
+const resizeLogical = (width, height) => {
+  // The probe accepts physical pixels; manifest window bounds are logical.
+  const scale = events.findLast((event) => event.event === "ui-conditions")?.dpiScale;
+  assert(Number.isFinite(scale) && scale > 0, "window scale missing before resize");
+  child.stdin.write(`size ${Math.ceil(width * scale)} ${Math.ceil(height * scale)}\n`);
+};
+const capture = async (name, keepPointer = false, inspect = true, references) => {
+  if (inspect) {
+    send({ pointerOutside: !keepPointer, inspectLayout: name });
+    // Pointer dispatch is deferred to a frame. Capture after that paint, not
+    // the backbuffer that can still contain the user's previous hover target.
+    await sleep(250);
+  }
+  const paths = (references ?? []).map(ref => resolve(output, `${ref}.png`));
+  const result = spawnSync(probe, [references ? "capture-preview" : "capture", String(shown.pid), resolve(output, `${name}.png`), ...paths], {
+    windowsHide: true,
+    encoding: "utf8",
+    timeout: 20000,
+  });
+  if (result.status !== 0) throw Error(`Capture ${name}: ${result.stderr}`);
+  console.log(`Captured ${name}`);
+};
+const compareCaptures = (left, right) => {
+  const result = spawnSync(probe, ["compare", resolve(output, `${left}.png`), resolve(output, `${right}.png`)], {
+    windowsHide: true, encoding: "utf8", timeout: 20000,
+  });
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+};
+const compareCompositedCaptures = (left, right, layoutLabel) => {
+  const native = compareCaptures(left, right);
+  const state = events.findLast(e => e.event === "ui-chart-states" && e.label === layoutLabel);
+  const conditions = events.findLast(e => e.event === "ui-conditions" && e.label === layoutLabel);
+  assert(state && conditions, "comparison chart bounds missing");
+  const scoped = compareChartPixels(resolve(output, `${left}.png`), resolve(output, `${right}.png`), state.charts, conditions.dpiScale);
+  assert.equal(scoped.maxChannelDelta, native.maxChannelDelta, "pixel decoder disagrees with native probe");
+  assert.equal(scoped.changedPixels, native.changedPixels, "pixel count disagrees with native probe");
+  return scoped;
+};
+try {
+  for (let i = 0; i < 600 && !shown && !exited; i++) await sleep(50);
+  if (!shown) throw Error(`Window unavailable: ${error}`);
+  await sleep(2500);
+  if (preview) {
+    // Render larger native glyphs rather than enlarging a captured bitmap.
+    send({ page: "processes", view: "apps", navPosition: "top", details: true, sort: "name", preference: { uiScale: 125 } });
+    await capture("preview-sizing");
+    const header = readFileSync(resolve(output, "preview-sizing.png"));
+    // WGC includes the nonclient edge. Adjust the physical client dimensions
+    // so the complete PNG is exactly 1600 x 1000, with no resampling or crop.
+    const width = shown.width + 1600 - header.readUInt32BE(16);
+    const height = shown.height + 1000 - header.readUInt32BE(20);
+    const resizeStart = events.length;
+    child.stdin.write(`size ${width} ${height}\n`);
+    for (let i = 0; i < 100 && !events.slice(resizeStart).some(e => e.event === "resized" && e.width === width && e.height === height); i++) await sleep(50);
+    assert(events.slice(resizeStart).some(e => e.event === "resized" && e.width === width && e.height === height), "README capture dimensions unavailable");
+    const appearance = async command => {
+      const start = events.length;
+      child.stdin.write(`${command}\n`);
+      for (let i = 0; i < 100 && !exited && !events.slice(start).some(e => e.event === command); i++) await sleep(50);
+      assert(events.slice(start).some(e => e.event === command), `Preview appearance unavailable: ${command} ${error}`);
+    };
+    for (const theme of ["light", "dark"]) {
+      send({ theme, pointerOutside: true });
+      await appearance("preview-inactive");
+      await sleep(1200);
+      const inactive = `${theme}-inactive`;
+      await capture(inactive);
+      await appearance("preview-active");
+      await sleep(700);
+      const active = `${theme}-native`;
+      await capture(active);
+      const delta = compareCaptures(inactive, active);
+      events.push({ event: "preview-backdrop", theme, ...delta });
+      // Require the backdrop change to extend well beyond the caption.
+      assert(delta.changedPixels > delta.width * delta.height / 4, `${theme}: active Mica backdrop missing`);
+      await capture(theme, false, true, [inactive, active]);
+      const png = readFileSync(resolve(output, `${theme}.png`));
+      assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1600, 1000], "README preview must retain its native pixel size");
+      const gradation = compareCaptures(active, theme);
+      events.push({ event: "preview-gradation", theme, ...gradation });
+      assert(gradation.maxChannelDelta <= 1, `${theme}: export changed the native SDR tone`);
+      const state = events.findLast(e => e.event === "ui-render-counts" && e.label === theme);
+      assert(state?.sort === "name" && state.descending === false, "README preview must use ascending name order");
+      const conditions = events.findLast(e => e.event === "ui-conditions" && e.label === theme);
+      assert.equal(conditions?.processes, fixture.snapshot.processes.length, "README preview fixture missing");
+    }
+  } else if (live) {
+    if (process.argv.includes("--exercise-updates")) {
+      for (let step=0;step<80;step++) {
+        send({page:"processes",query:step%2?"goodgood":"__goodgood_snapshot_no_match__",view:step%2?"apps":"tree",sort:step%2?"cpu":"mem"});
+        await sleep(25);
+      }
+      send({query:"__goodgood_snapshot_no_match__",view:"tree",sort:"mem"});
+      await sleep(2500);
+      await capture("empty-query");
+      send({query:"",view:"apps",sort:"cpu"});
+    }
+    send({ page: "performance", motion: process.argv.includes("--fluid") ? "fluid" : "balanced" });
+    child.stdin.write("watch\n");
+    send({ inspectLayout: "live-begin" });
+    await sleep(18000);
+    await capture("live-performance");
+    if (process.argv.includes("--exercise-updates")) {
+      send({hoverChart:"cpu-overall-plot"});
+      await sleep(1000);
+      await capture("hovered-performance",true);
+      send({pointerOutside:true});
+      resizeLogical(metadata.window.minWidth, metadata.window.minHeight);
+      await sleep(1800);
+      await capture("live-narrow");
+      resizeLogical(metadata.window.width, metadata.window.height);
+      await sleep(1800);
+      await capture("live-resized");
+    }
+    if (process.argv.includes("--move")) {
+      child.stdin.write("begin-move\n");
+      for (let step = 0; step < 120; step++) {
+        child.stdin.write(`move ${step % 2 ? -4 : 4} 0\n`);
+        await sleep(50);
+      }
+      child.stdin.write("end-move\n");
+      await sleep(600);
+      await capture("moved-performance");
+    }
+    child.stdin.write("hide\n");
+    await sleep(3500);
+    child.stdin.write("show\n");
+    await sleep(4500);
+    await capture("restored-performance");
+  } else if (chartGap) {
+    const limit = events.find(e => e.event === "started")?.jobCommitLimit;
+    assert(limit > 0 && limit <= 2 * 1024 ** 3, "chart gap test requires the limited window probe");
+    send({ page: "performance", device: "cpu", cpuMode: "overall", motion: "fluid", uiMotion: "off", pointerOutside: true });
+    await sleep(1000);
+    send({ inspectLayout: "before-gap" });
+    await sleep(350);
+    const work = label => events.find(e => e.event === "ui-chart-work" && e.label === label);
+    assert(work("before-gap")?.peakRasterBuildBytes > 0, "chart gap test requires the bounded rasterizer");
+    const start = events.length;
+    send({ sample: { at: 0, set: { "/system/cpu": 71, "/system/cpuKernel": 31 } } });
+    await sleep(1200);
+    send({ cpuMode: "logical" });
+    await sleep(900);
+    send({ page: "processes", sample: { at: 0, set: { "/system/cpu": 37 } } });
+    await sleep(900);
+    send({ inspectLayout: "after-gap" });
+    await sleep(350);
+    const layout = events.find(e => e.event === "ui-layout" && e.label === "after-gap");
+    const rasters = events.slice(start).filter(e => e.event === "chart-raster");
+    assert(layout && rasters.length > 0 && work("after-gap").rasterBuilds > work("before-gap").rasterBuilds, "missing post-gap rasters");
+    const maxWidth = Math.ceil(layout.width * layout.scaleFactor * 2 * 1.25) + 32;
+    assert(rasters.every(r => r.width <= maxWidth && r.rgbaBytes <= 128 * 1024 ** 2), "offscreen geometry escaped raster bounds");
+    assert(work("after-gap").peakRasterBuildBytes <= 192 * 1024 ** 2, "in-flight raster budget exceeded");
+    if (process.argv.includes("--require-chart-layers")) {
+      assert(events.slice(start).some(e => e.event === "gpu-chart-layers" && e.images > 0), "post-gap chart visuals were not active");
+    }
+  } else if (chartScroll) {
+    const widthFlag = process.argv.indexOf("--width"), heightFlag = process.argv.indexOf("--height");
+    if (widthFlag >= 0 || heightFlag >= 0) {
+      const width = Number(process.argv[widthFlag + 1]), height = Number(process.argv[heightFlag + 1]);
+      assert(widthFlag >= 0 && heightFlag >= 0 && Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0, "invalid chart test dimensions");
+      child.stdin.write(`size ${width} ${height}\n`);
+      for (let i = 0; i < 100 && !events.some(e => e.event === "resized" && e.width === width && e.height === height); i++) await sleep(50);
+      assert(events.some(e => e.event === "resized" && e.width === width && e.height === height), "chart test dimensions unavailable");
+    }
+    const scaleFlag = process.argv.indexOf("--ui-scale");
+    const uiScale = scaleFlag >= 0 ? Number(process.argv[scaleFlag + 1]) : 100;
+    assert(Number.isInteger(uiScale) && uiScale >= 80 && uiScale <= 150, "invalid chart test UI scale");
+    send({page: "performance", device: "cpu", cpuMode: "overall", theme: "dark", motion: "fluid", uiMotion: "off", uiScale});
+    await sleep(1500);
+    send({pointerOutside: true, inspectLayout: "scroll-plot"});
+    await sleep(300);
+    const layout = events.findLast(e => e.event === "ui-layout" && e.label === "scroll-plot");
+    assert(layout?.cpuPlot, "missing CPU plot bounds");
+    const clipped = clippedPreview
+      ? events.findLast(e => e.event === "ui-chart-states" && e.label === "scroll-plot")?.charts
+        .find(c => c.surface.state === "clipped" && c.clip[2] > 0 && c.clip[3] > 0)
+      : null;
+    if (clippedPreview) assert(clipped, "fixture did not place an image outside a partially visible preview");
+    const [x, y, w, h] = layout.cpuPlot.map(v => v * layout.scaleFactor);
+    const crop = [x + w * 0.04, y + h * 0.35, w * 0.49, Math.min(12, h * 0.025)].map(Math.round);
+    let seq = 0;
+    const append = () => {
+      seq++;
+      send({sample: {at: 0, set: {"/system/cpu": 12 + seq % 8, "/system/threadCount": 13000 + seq}}});
+    };
+    append();
+    await sleep(800);
+    send({pointerOutside: true});
+    await sleep(300);
+    for (const phase of ["samples", "repaints"]) {
+      const start = events.length;
+      const dir = `target/native-validation/${label}/${phase}`;
+      child.stdin.write(`record ${dir} 6000 ${crop.join(" ")}\n`);
+      for (let tick = 0; tick < 12; tick++) {
+        if (tick % 2 === 0) append();
+        else if (phase === "repaints") send({fullPaint: true});
+        await sleep(500);
+      }
+      for (let i = 0; i < 150 && !events.slice(start).some(e => e.event === "recorded"); i++) await sleep(100);
+      const recording = events.slice(start).find(e => e.event === "recorded");
+      assert(recording && !recording.error && recording.frames > 50, JSON.stringify(recording));
+      const result = spawnSync(probe, ["track-chart", resolve(dir)], {windowsHide: true, encoding: "utf8", timeout: 30000});
+      assert.equal(result.status, 0, result.stderr);
+      const track = JSON.parse(result.stdout);
+      events.push({event: "chart-motion-check", phase, ...track});
+      assert(track.tracked >= track.frames * 0.95 && track.travelPx > w * 0.04, `CPU spike did not traverse the recording: ${result.stdout}`);
+      assert(track.maxReversePx <= 0.75, `CPU chart moved backwards: ${result.stdout}`);
+      if (process.argv.includes("--require-chart-layers")) {
+        const frames = events.slice(start);
+        const revisions = new Set(frames.filter(e => e.event === "gpu-chart-layers" && e.images > 0).map(e => e.revision));
+        assert(frames.some(e => e.event === "gpu-chart-handoff") || revisions.size > 1, `${phase}: chart roots were not refreshed`);
+      }
+    }
+    if (clippedPreview) {
+      send({ inspectLayout: "clipped-preview-scroll" });
+      await sleep(250);
+      const before = events.find(e => e.event === "ui-retained-frames" && e.label === "scroll-plot");
+      const after = events.findLast(e => e.event === "ui-retained-frames" && e.label === "clipped-preview-scroll");
+      assert(before && after && after.fastFrames > before.fastFrames + 50, "clipped preview blocked chart motion");
+      send({ chartTime: Date.now() });
+      send({ wheel: { x: clipped.clip[0] + clipped.clip[2] / 2, y: clipped.clip[1] + clipped.clip[3] / 2, lines: -4 } });
+      await sleep(600);
+      await capture("revealed-preview");
+      const states = events.findLast(e => e.event === "ui-chart-states" && e.label === "revealed-preview");
+      assert(states?.charts.some(c => c.chart === clipped.chart && c.surface.state === "painted"), "scrolling did not reveal the clipped curve");
+      send({ fullPaint: true });
+      await sleep(250);
+      await capture("revealed-preview-full", false, false);
+      const difference = compareCompositedCaptures("revealed-preview", "revealed-preview-full", "revealed-preview");
+      events.push({ event: "pixel-comparison", label: "revealed-preview", ...difference });
+      assert(difference.maxChannelDelta <= 2 && difference.maxOutsideCharts <= 1, "revealed curve changed after a full paint");
+    }
+    if (missingPreview) {
+      const chart = `device-preview-gpu:${fixture.snapshot.hardware.gpus[0].info.id}`;
+      assert(events.some(e => e.event === "chart-empty" && e.chart === chart), "GPU preview never entered its empty state");
+      send({inspectLayout:"empty-preview-scroll"});
+      await sleep(250);
+      const begin = events.find(e => e.event === "ui-retained-frames" && e.label === "scroll-plot");
+      const end = events.findLast(e => e.event === "ui-retained-frames" && e.label === "empty-preview-scroll");
+      assert(begin && end && end.fastFrames > begin.fastFrames + 50, "empty device preview blocked chart motion");
+      const previous = events.findLast(e => e.event === "gpu-chart-layers");
+      const start = events.length;
+      for (const value of [30, 40, 50, 60, 70]) {
+        send({ sample: { at: 0, set: { "/hardware/gpus/0/util": value } } });
+        await sleep(650);
+      }
+      if (process.argv.includes("--require-chart-layers")) {
+        assert(previous && events.slice(start).some(e => e.event === "gpu-chart-layers" && e.images > previous.images), "GPU preview did not reappear with new readings");
+      }
+    }
+  } else if (snapshots) {
+    const compare = (left, right) => {
+      const delta = compareCaptures(left, right);
+      events.push({ event: "snapshot-comparison", left, right, ...delta });
+      return delta;
+    };
+    for (const [index, page] of ["services", "startup", "network", "settings"].entries()) {
+      send({ page, pointerOutside: true });
+      await sleep(1800);
+      await capture(`${page}-before`, false, false);
+      const begin = events.length;
+      send({ sample: { set: { "/system/threadCount": 10000 + index, "/system/handleCount": 20000 + index } } });
+      await sleep(350);
+      await capture(`${page}-partial`, false, false);
+      assert(events.slice(begin).some((event) => event.event === "frame-phases" && event.reused >= 3 && !event.rendered.some((name) => name.startsWith("Region"))), `${page}: unchanged page was not replayed`);
+      send({ fullPaint: true });
+      await sleep(250);
+      await capture(`${page}-full`, false, false);
+      assert(compare(`${page}-partial`, `${page}-full`).maxChannelDelta <= 1, `${page}: partial snapshot paint differs`);
+      assert(compare(`${page}-before`, `${page}-partial`).changedPixels > 0, `${page}: status bar did not update`);
+    }
+    // A settings dependency changes: its body must render with the status bar.
+    send({ data: { settings: { ...fixture.settings, kernelSensors: true } }, settingsSection: "data" });
+    await sleep(1200);
+    const begin = events.length;
+    send({ sample: { set: { "/hardware/cpuSensors": { state: "unsupported" } } } });
+    await sleep(350);
+    await capture("sensor-partial", false, false);
+    assert(events.slice(begin).some((event) => event.event === "frame-phases" && event.rendered.some((name) => name.startsWith("Region"))), "sensor state did not invalidate settings");
+    send({ fullPaint: true });
+    await sleep(250);
+    await capture("sensor-full", false, false);
+    assert(compare("sensor-partial", "sensor-full").maxChannelDelta <= 1, "sensor dependency paint differs");
+    if (fixture.historySeries?.length) {
+      send({ page: "history", pointerOutside: true, uiMotion: "off" });
+      await sleep(1200);
+      send({ inspectLayout: "history-plot" });
+      await sleep(250);
+      const layout = events.findLast(e => e.event === "ui-layout" && e.label === "history-plot");
+      assert.equal(layout?.page, "history");
+      await capture("history-rest", false, false);
+      send({ mouse: { x: layout.width * 0.65, y: layout.height * 0.4 } });
+      await sleep(350);
+      await capture("history-hover", false, false);
+      assert(compare("history-rest", "history-hover").changedPixels > 0, "history readout did not appear");
+      send({ fullPaint: true });
+      await sleep(250);
+      await capture("history-full", false, false);
+      assert(compare("history-hover", "history-full").maxChannelDelta <= 1, "history hover paint differs");
+      send({ pointerOutside: true });
+      await sleep(350);
+      await capture("history-out", false, false);
+      assert(compare("history-rest", "history-out").maxChannelDelta <= 1, "history fill changed after hover");
+    }
+    // Follow a content crop that contains the heading and graph in both device layouts.
+    send({ page: "performance", device: "cpu", cpuMode: "overall", navPosition: "top", uiMotion: "on", motion: "off", pointerOutside: true });
+    await sleep(650);
+    send({ inspectLayout: "entrance-crop" });
+    await sleep(250);
+    const layout = events.findLast(e => e.event === "ui-layout" && e.label === "entrance-crop");
+    assert(layout?.cpuPlot, "missing chart bounds for the entrance recording");
+    const [x, y, width, height] = layout.cpuPlot;
+    const heading = [x - 40, Math.max(0, y - 105), Math.min(490, width), 155];
+    const entries = [
+      ["page-entry", { page: "performance" }, heading],
+      ["device-entry", { device: "memory" }, heading],
+    ];
+    const gpu = fixture.snapshot.hardware.gpus?.find(gpu => gpu.info.engines?.length > 1);
+    if (gpu) {
+      // Inside the engine grid, away from the heading and memory graphs.
+      entries.push(["engine-grid-entry", { device: `gpu:${gpu.info.id}` }, [x + 2, y + 24, Math.min(520, width - 2), Math.min(100, height / 2)]]);
+    }
+    send({ page: "settings", settingsSection: "language" });
+    await sleep(650);
+    for (const [name, state, bounds] of entries) {
+      const start = events.length;
+      const dir = `target/native-validation/${label}/${name}`;
+      const crop = bounds.map(v => Math.round(v * layout.scaleFactor));
+      child.stdin.write(`record ${dir} 2000 ${crop.join(" ")}\n`);
+      const event = kind => events.slice(start).find(e => e.event === kind);
+      for (let i = 0; i < 100 && !event("recording"); i++) await sleep(25);
+      assert(event("recording"), `${name}: recorder did not start`);
+      await sleep(450);
+      send({ fullPaint: true });
+      await sleep(450);
+      child.stdin.write(`mark ${name}\n`);
+      send(state);
+      for (let i = 0; i < 150 && !event("recorded"); i++) await sleep(100);
+      const result = event("recorded");
+      assert(result && !result.error && result.frames >= 4, `${name}: missing transition frames`);
+      const mark = events.slice(start).find(e => e.event === "mark" && e.tag === name);
+      assert(mark && result.times100ns[0] < mark.qpc100ns && result.times100ns.at(-1) > mark.qpc100ns + 100 * 10000, `${name}: recording missed the switch`);
+      const scan = spawnSync(probe, ["frame-contrast", resolve(dir)], { windowsHide: true, encoding: "utf8", timeout: 30000 });
+      assert.equal(scan.status, 0, scan.stderr);
+      const levels = JSON.parse(scan.stdout);
+      const endpoints = Math.min(levels[0], levels.at(-1));
+      const lowest = Math.min(...levels);
+      events.push({ event: "entrance-contrast", name, endpoints, lowest });
+      // A quiet chart still has its faint grid lines. Headings have a much larger range.
+      const minimumEndpoint = name === "engine-grid-entry" ? 6 : 50;
+      assert(endpoints > minimumEndpoint && lowest >= endpoints * 0.75, `${name}: contrast fell from ${endpoints} to ${lowest}`);
+    }
+  } else if (scrollCopy) {
+    // Frames of a wheel glide copy the list from the last frame and draw only
+    // what came into view or changed. Each comparison captures the frame the
+    // glide left on screen, then a complete paint of the same scene: they
+    // must be identical. The pointer rests on the list, so the hovered row
+    // changes while the rows pass under it. Graphics cards draw a glyph moved
+    // by whole pixels to the same pixels; the software rasterizer's edges can
+    // differ by two code values from one drawn where it now is.
+    const glyphRounding = softwareRendering ? 2 : 0;
+    let copied = 0;
+    // Group headers stick to the top, draw a gradient rule and name the
+    // group beside the scrollbar for a while after a scroll: wait it out.
+    const groups = { view: "apps", preference: { processSort: { key: "name", desc: false }, groupByUser: "off" } };
+    for (const [name, state, at, settle = 700] of [
+      ["dark", { theme: "dark" }, [300, 450]],
+      ["light", { theme: "light" }, [300, 450]],
+      ["details", { theme: "dark", details: true }, [300, 450]],
+      // Inside the list of the 1000 × 680 window at each scale.
+      ["scale-125", { theme: "dark", preference: { uiScale: 125 } }, [300, 330]],
+      ["scale-150", { theme: "light", preference: { uiScale: 150 } }, [300, 300]],
+      // Last: the grouping stays for the cases that follow.
+      ["groups", { theme: "dark", ...groups, preference: { ...groups.preference, uiScale: 100 } }, [300, 450], 2000],
+      ["groups-light", { theme: "light", ...groups }, [300, 450], 2000],
+    ]) {
+      let caseCopied = 0;
+      send({ page: "processes", uiMotion: "off", motion: "fluid", details: false, pointerOutside: true, ...state });
+      await sleep(1600);
+      // Curves hold still: only the list changes between the two captures.
+      send({ chartTime: fixture.snapshot.timestamp + 700 });
+      await sleep(500);
+      send({ mouse: { type: "move", x: at[0], y: at[1] }, passive: true });
+      await sleep(300);
+      for (const [step, wheel] of [
+        ["down", { lines: -3 }],
+        ["down-again", { lines: -3 }],
+        ["down-far", { lines: -9 }],
+        ["up", { lines: 3 }],
+        ["up-far", { lines: 6 }],
+        ["sideways", { lines: -3, shift: true }],
+        ["sideways-back", { lines: 3, shift: true }],
+        ["down-late", { lines: -3 }],
+      ]) {
+        const start = events.length;
+        send({ wheel: { x: at[0], y: at[1], ...wheel }, passive: true });
+        // A glide lasts at most 200 ms.
+        await sleep(settle);
+        const frames = events.slice(start).filter((event) => event.event === "gpu-scroll-copy").length;
+        copied += frames;
+        caseCopied += frames;
+        const before = `${name}-${step}-copied`, after = `${name}-${step}-full`;
+        await capture(before, true, false);
+        send({ fullPaint: true });
+        await sleep(300);
+        await capture(after, true, false);
+        const difference = compareCaptures(before, after);
+        events.push({ event: "pixel-comparison", label: before, copiedFrames: frames, ...difference });
+        assert(difference.maxChannelDelta <= glyphRounding,
+          `${before}: a copied scroll frame differs from a complete paint: ${JSON.stringify(difference)}`);
+      }
+      // The list scrolled: some frames were copied (the sideways steps move
+      // each row on its own and are drawn the usual way).
+      if (!process.env.GOODGOOD_GPUI_DISABLE_SCROLL_COPY) assert(caseCopied > 0, `${name}: no scroll frame was copied`);
+    }
+    if (process.env.GOODGOOD_GPUI_DISABLE_SCROLL_COPY) assert.equal(copied, 0, "scroll copy ran while disabled");
+    else assert(copied > 0, "no scroll frame was copied");
+  } else if (interactions) {
+    for (const theme of ["dark", "light"]) {
+      send({ page: "processes", theme, details: true, uiMotion: "off", motion: "fluid", pointerOutside: true });
+      await sleep(1600);
+      send({ chartTime: fixture.snapshot.timestamp + 700 });
+      await sleep(500);
+      for (const [name, state] of [
+        ["row-a", { mouse: { type: "move", x: 150, y: 300 } }],
+        ["row-b", { mouse: { type: "move", x: 150, y: 360 } }],
+        ["column", { hoverHeader: "name" }],
+        ["picked", { selectRow: 1, pointerOutside: true }],
+        ["details", { hoverChart: "details-cpu" }],
+        ["details-outside", { mouse: { type: "move", x: 1000, y: 510 } }],
+        ["cleared", { selectRow: 1, pointerOutside: true }],
+        ["outside", { pointerOutside: true }],
+        // Input alone, as from the system: a row takes its hover fill in the
+        // scene on screen, without its view drawing again.
+        ["row-a-in-place", { mouse: { type: "move", x: 150, y: 300 }, passive: true }],
+        ["row-b-in-place", { mouse: { type: "move", x: 150, y: 360 }, passive: true }],
+        ["outside-in-place", { mouse: { type: "move", x: 2, y: 2 }, passive: true }],
+        // The details pane scrolls another row under the resting pointer,
+        // which then goes straight to a third: the second gives its fill up.
+        ["pane-row-in-place", { mouse: { type: "move", x: 800, y: 470 }, passive: true }],
+        ["pane-scrolled-in-place", { wheel: { x: 800, y: 470, lines: -2 }, passive: true }],
+        ["pane-next-row-in-place", { mouse: { type: "move", x: 800, y: 560 }, passive: true }],
+        ["pane-left-in-place", { mouse: { type: "move", x: 2, y: 2 }, passive: true }],
+      ]) {
+        send(state);
+        await sleep(700);
+        const before = `${theme}-${name}-cached`, after = `${theme}-${name}-full`;
+        await capture(before, false, false);
+        send({ fullPaint: true });
+        await sleep(250);
+        await capture(after, false, false);
+        const difference = compareCaptures(before, after);
+        events.push({ event: "pixel-comparison", label: before, ...difference });
+        assert(difference.maxChannelDelta <= 2, `${before}: interaction cache differs from full rendering: ${JSON.stringify(difference)}`);
+      }
+    }
+  } else if (retained) {
+    let expectedSteps = 0;
+    const gpu = fixture.snapshot.hardware?.gpus?.[0];
+    const gpuPage = gpu ? { page: "performance", device: `gpu:${gpu.info.id}` } : null;
+    // Light-theme cards are translucent white over the backdrop: composited
+    // curve pixels must cover it exactly as a full paint does.
+    const cases = [
+      ["processes", { page: "processes", theme: "dark" }],
+      ["processes-details", { page: "processes", selectRow: 1, details: true }],
+      ...(gpuPage ? [["gpu", gpuPage]] : []),
+      ["overall", { page: "performance", device: "cpu", cpuMode: "overall" }],
+      ["logical", { page: "performance", cpuMode: "logical" }],
+      ["cpu-telemetry", { page: "performance", device: "cpu", cpuMode: "details" }],
+      ...retainedDevices.map((device, index) => [`device-${index}`, { page: "performance", device }]),
+      ["processes-light", { page: "processes", theme: "light" }],
+      ...(gpuPage ? [["gpu-light", gpuPage]] : []),
+      ["overall-light", { page: "performance", device: "cpu", cpuMode: "overall" }],
+      ["logical-light", { page: "performance", device: "cpu", cpuMode: "logical" }],
+    ];
+    // A hovered card's tint lies over its curve together with the scrim and
+    // the text. A full paint rounds the window to 8 bits after each layer; a
+    // composed frame blends one 8-bit image of them over the curve and lets the
+    // compositor interpolate between 8-bit scroll phases. Where a steep curve
+    // edge meets all of them, single pixels differ by three code values.
+    const hoverCases = ["dark", "light"].flatMap(theme => [
+      [`vital-tooltip-${theme}`, { page: "processes", theme, details: true }, { hoverChart: "vital-cpu" }, 3],
+      [`column-tooltip-${theme}`, { page: "processes", theme }, { hoverHeader: "name" }],
+    ]);
+    for (const [name, state, hover, chartRounding = 2] of hoverRetained ? hoverCases : cases) {
+      send({ ...state, uiMotion: "off", pointerOutside: true });
+      await sleep(1500);
+      send({ pointerOutside: true });
+      await sleep(250);
+      if (hover) {
+        send(hover);
+        await sleep(1400);
+      }
+      const settled = events.length;
+      for (const [index, offset] of [50, 200, 700].entries()) {
+        // Give the asynchronous backdrop scan its own presentation before measuring.
+        send({ chartTime: fixture.snapshot.timestamp + offset - 2 });
+        expectedSteps += 3;
+        await sleep(150);
+        send({ chartTime: fixture.snapshot.timestamp + offset - 1 });
+        await sleep(150);
+        send({ chartTime: fixture.snapshot.timestamp + offset });
+        await sleep(250);
+        const before = `${name}-${index}-retained`, after = `${name}-${index}-full`;
+        const animated = `${name}-${index}-animated`;
+        await capture(animated, false, false);
+        // Compare an ordinary parent redraw separately from retained animation.
+        send({ inspectLayout: `${before}-reuse` });
+        await sleep(250);
+        await capture(before, false, false);
+        send({ fullPaint: true });
+        await sleep(250);
+        await capture(after, false, false);
+        for (const picture of [animated, before]) {
+        const scoped = compareCompositedCaptures(picture, after, `${before}-reuse`);
+        events.push({ event: "pixel-comparison", label: picture, ...scoped });
+        // An unchanged parent can keep the composited charts. Their floating
+        // blend allows `chartRounding` code values (two, three under a hover
+        // tint); static ink outside their clips allows one. On the software
+        // rasterizer, a foreground composed from its own 8-bit image differs
+        // from one drawn straight into the frame by two at antialiased edges
+        // (a tooltip corner over a tinted cell).
+        const inkRounding = softwareRendering ? 2 : 1;
+        assert(scoped.maxChannelDelta <= Math.max(chartRounding, inkRounding) && scoped.maxOutsideCharts <= inkRounding,
+          `${picture}: retained rendering differs from a full paint: ${JSON.stringify(scoped)}`);
+        }
+      }
+      if (process.argv.includes("--require-chart-layers")) {
+        const layers = events.slice(settled).filter((event) => event.event === "gpu-chart-layers" && event.images > 0);
+        if (process.env.GOODGOOD_GPUI_DISABLE_CHART_BACKDROP_CACHE) {
+          assert.equal(layers.length, 0, `${name}: expected the in-scene control`);
+        } else {
+          assert(layers.length > 0, `${name}: missing filled chart visuals`);
+          assert(layers.every(e => e.opaqueImages === e.images),
+            `${name}: a filled chart was presented as a transparent layer`);
+          assert(layers.every(e => e.imageBytes <= e.untrimmedImageBytes),
+            `${name}: trimmed chart surfaces exceeded their full-height size`);
+          if (hover) assert(layers.some(e => e.foregroundBytes > 0), `${name}: static foreground was not cached`);
+          // A complete paint can install its tree immediately now that images
+          // and bars are marked before presentation. A pending scan uses the
+          // flat-frame handoff; both rebuild from the forced complete paint.
+          const handoff = events.slice(settled).some(e => e.event === "gpu-chart-handoff" && layers.some(l => l.revision === e.revision));
+          assert(handoff || new Set(layers.map(e => e.revision)).size > 1,
+            `${name}: neither a complete-frame handoff nor a fresh tree was presented`);
+        }
+      }
+    }
+    const steps = events.filter((event) => event.event === "ui-chart-step");
+    assert.equal(steps.length, expectedSteps);
+    // The first two requests prepare the backdrop. The third is captured and
+    // must use retained presentation.
+    const measuredSteps = steps.filter((_, index) => index % 3 === 2);
+    assert(measuredSteps.every((event) => event.retained), "a captured frame did not exercise retained presentation");
+    const chartLayers = events.some((event) => event.event === "gpu-chart-layers" && event.images > 0);
+    if (process.env.GOODGOOD_GPUI_DISABLE_CHART_LAYERS) assert(!chartLayers, "disabled chart visuals were presented");
+    if (!process.env.GOODGOOD_GPUI_DISABLE_PREFIX_COMPOSITION)
+      assert(chartLayers || events.some((event) => event.event === "gpu-scene-cache" && event.composed),
+        "comparison did not exercise a retained composition path");
+  } else {
+    for (const page of [
+      "processes",
+      "performance",
+      "services",
+      "startup",
+      "network",
+      "history",
+      "settings",
+    ]) {
+      send({ page });
+      await sleep(650);
+      await capture(page);
+    }
+    for (const [name, state] of [
+      ["processes-light", { page: "processes", theme: "light" }],
+      ["processes-en-light", { language: "en-US" }],
+      ["processes-en-dark", { theme: "dark" }],
+      ["sorted-name", { clickHeader: "name" }],
+      ["sorted-name-reversed", { clickHeader: "name" }],
+      ["sorted-cpu", { clickHeader: "cpu" }],
+      ["expanded-app", { foldRow: 0 }],
+      ["selected-process", { selectRow: 0 }],
+      ["process-menu", { rowMenu: 1 }],
+      ["logical-cores", { dismiss: true, page: "performance", cpuMode: "logical" }],
+      ["logical-p-cores", { coreFilter: "p" }],
+      ["logical-e-cores", { coreFilter: "e" }],
+      ["logical-all-cores", { coreFilter: "all" }],
+      ["cpu-telemetry", { cpuMode: "details" }],
+      ["task-dialog", { dialog: "task" }],
+      ["file-lock-dialog", { dismiss: true, dialog: "filelock" }],
+      ["welcome-dialog", { dismiss: true, dialog: "onboarding", args: { step: 0 } }],
+      ["settings-hotkey", { dismiss: true, page: "settings", settingsSection: "hotkey" }],
+      ["settings-rules", { settingsSection: "rules" }],
+      ["settings-update", { settingsSection: "update" }],
+      ["settings-startup", { settingsSection: "startup" }],
+      ["settings-permission", { settingsSection: "privilege" }],
+      ["settings-motion", { settingsSection: "motion" }],
+      ["settings-data", { settingsSection: "data" }],
+      ["about", { page: "about" }],
+      ["memory", { device: "memory" }],
+      ...fixture.snapshot.hardware.disks.map((d, i) => [`disk-${i}`, { device: `disk:${d.info.index}` }]),
+      ...fixture.snapshot.hardware.gpus.map((g, i) => [`gpu-${i}`, { device: `gpu:${g.info.id}` }]),
+      ...fixture.snapshot.hardware.nics.map((n, i) => [`nic-${i}`, { device: `nic:${n.info.id}` }]),
+      ...fixture.snapshot.hardware.batteries.map((b, i) => [`battery-${i}`, { device: `bat:${b.info.id}` }]),
+      ["processes-tree", { page: "processes", view: "tree" }],
+      ["processes-list", { view: "list" }],
+      ["processes-side", { view: "apps", navPosition: "side", navExpanded: true }],
+      ["numbers-wide", { page: "processes", view: "list", navPosition: "top", details: false, fontSize: 13, uiScale: 100 }],
+      ["numbers-large", { fontSize: 20 }],
+      ["numbers-small", { fontSize: 11 }],
+      ["numbers-zoom", { fontSize: 13, uiScale: 125 }],
+      ["numbers-zoom-large", { fontSize: 20, uiScale: 150 }],
+      ["numbers-reset", { fontSize: 13, uiScale: 100, details: true, view: "apps" }],
+    ]) {
+      send(state);
+      // Fixed snapshots still animate newly placed load bars for one interval.
+      // Wait past that interval so cross-build captures sample the same endpoint.
+      await sleep(1200);
+      await capture(name);
+    }
+    send({ page: "processes", language: "ko-KR", theme: "light", navPosition: "top" });
+    resizeLogical(metadata.window.minWidth, metadata.window.minHeight);
+    await sleep(800);
+    await capture("narrow");
+    send({ page: "performance", device: "cpu", cpuMode: "overall" });
+    await sleep(800);
+    await capture("narrow-performance");
+    resizeLogical(1600, 1000);
+    await sleep(800);
+    await capture("large-performance");
+    resizeLogical(...COMPLETE_WINDOW);
+    await sleep(800);
+    for (const [name, state] of overviewStates) {
+      send(state);
+      await sleep(700);
+      send({ pointerOutside: true, inspectLayout: `complete-${name}` });
+    }
+    await sleep(350);
+  }
+} finally {
+  if (!exited) {
+    child.stdin.write("stop\n");
+    for (let i = 0; i < 240 && !exited; i++) await sleep(50);
+  }
+  writeFileSync(
+    resolve(output, "events.json"),
+    JSON.stringify({ identifier, events, stderr: error, exitCode }, null, 2),
+  );
+  if (exited) cleanupTestProfile(identifier);
+}
+if (exitCode !== 0 || error || events.some((e) => e.event === "focusViolation"))
+  throw Error(`Native validation failed: ${error}`);
+for (const event of events.filter((e) => e.event === "ui-caption" && !e.label.endsWith("-dialog"))) {
+  assert(event.dragPoints > 0, `${event.label}: empty title bar lost its native drag region`);
+  assert(event.actionsAreClient, `${event.label}: search box or page bar controls were classified as draggable caption`);
+  assert(event.stretchDrags, `${event.label}: the page bar's empty stretch does not drag the window`);
+  assert(event.minimize && event.maximize && event.close, `${event.label}: native caption controls were lost`);
+}
+if (!live && !retained && !snapshots && !chartScroll && !chartGap && !preview && !interactions && !scrollCopy) {
+  for (const [label, sort, descending] of [["sorted-name", "name", false], ["sorted-name-reversed", "name", true], ["sorted-cpu", "cpu", true]]) {
+    const state = events.find((event) => event.event === "ui-render-counts" && event.label === label);
+    assert(state && state.sort === sort && state.descending === descending, `${label}: clicking the full header did not sort`);
+  }
+  const defaults = events.filter((event) => event.event === "ui-layout" && /^(performance|memory|disk-\d+|gpu-\d+|nic-\d+|battery-\d+)$/.test(event.label));
+  assert(defaults.length >= 3, "default-size overview layouts missing");
+  for (const view of defaults) assert(view.performanceScrollY <= 1, `${view.label}: overview scrolls by ${view.performanceScrollY}px in the default window`);
+  const [completeWidth, completeHeight] = COMPLETE_WINDOW;
+  for (const [name] of overviewStates) {
+    const view = events.find((event) => event.event === "ui-layout" && event.label === `complete-${name}`);
+    assert(view, `${name}: overview layout missing`);
+    // A screen smaller than the window would clamp it and void the check.
+    assert(Math.abs(view.width - completeWidth) <= 1 && Math.abs(view.height - completeHeight) <= 1, `${name}: window is ${view.width} × ${view.height}, not ${completeWidth} × ${completeHeight}`);
+    assert(view.performanceScrollY <= 1, `${name}: overview scrolls by ${view.performanceScrollY}px in a ${completeWidth} × ${completeHeight} window`);
+  }
+  const narrow = events.find((event) => event.event === "ui-layout" && event.label === "narrow-performance");
+  assert(narrow?.performanceScrollY > 0, "minimum-size overview must scroll instead of overlapping its content");
+}
+console.log(`Native validation passed: ${identifier}; foreground violations: 0`);

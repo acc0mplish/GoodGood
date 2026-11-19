@@ -1,0 +1,112 @@
+{
+  "loadingProcesses": "Lecture des processus…",
+  "nav": {
+    "expand": "Développer la navigation",
+    "collapse": "Réduire la navigation",
+    "resize": "Redimensionner la navigation"
+  },
+  "page": {
+    "processes": "Processus",
+    "performance": "Performances",
+    "services": "Services",
+    "startup": "Démarrage",
+    "network": "Connexions",
+    "history": "Historique",
+    "components": "Composants",
+    "settings": "Paramètres",
+    "about": "À propos"
+  },
+  "pageTitle": "{page} (Ctrl+{key})",
+  "elevation": {
+    "admin": "Administrateur",
+    "adminHint": "GoodGood s’exécute en tant qu’administrateur et peut afficher et terminer presque tous les processus",
+    "service": "Service privilégié",
+    "serviceHint": "GoodGood s’exécute en tant qu’utilisateur standard ; le service privilégié effectue ce qui nécessite des droits d’administrateur",
+    "standard": "Utilisateur standard",
+    "standardHint": "Certains processus système nécessitent des droits d’administrateur pour lire ou terminer"
+  },
+  "interval": {
+    "label": "Fréquence d’actualisation",
+    "option": "Toutes les {seconds} s"
+  },
+  "background": {
+    "confirm": {
+      "minimized": {
+        "title": "Actualiser plus souvent en mode réduit ?",
+        "body": "Tandis que sa fenêtre est réduite, GoodGood échantillonnera chaque processus et capteur toutes les {seconds} s. Les intervalles inférieurs à 5 secondes augmentent sensiblement l’utilisation et la consommation d’énergie du CPU, en particulier sur batterie. L’historique et les règles fonctionnent correctement avec la durée par défaut de 5 secondes."
+      },
+      "tray": {
+        "title": "Actualiser plus souvent dans la zone de notification ?",
+        "body": "Lorsqu’il est masqué dans la zone de notification, GoodGood collecte les données de tous les processus et du matériel toutes les {seconds} s. Un intervalle inférieur à 5 secondes augmente nettement l’utilisation du CPU et la consommation d’énergie, surtout sur batterie. L’historique et les règles fonctionnent avec l’intervalle par défaut de 5 secondes."
+      },
+      "accept": "Utiliser {seconds} s quand même"
+    },
+    "notice": {
+      "minimized": "Lorsque la fenêtre est réduite, l’intervalle passe de {from} s à {to} s pour limiter la consommation en arrière-plan.",
+      "tray": "Dans la zone de notification, l’intervalle passe de {from} s à {to} s pour limiter la consommation en arrière-plan.",
+      "adjust": "Ajuster",
+      "quiet": "Ne plus rappeler"
+    }
+  },
+  "pause": "Suspendre l’actualisation",
+  "resume": "Reprendre l’actualisation",
+  "more": {
+    "label": "Autres actions",
+    "runTask": "Exécuter une nouvelle tâche…",
+    "fileLock": "Rechercher les processus utilisant un fichier…",
+    "fileLockDetail": "Ou déposer des fichiers"
+  },
+  "details": {
+    "label": "Volet Détails",
+    "mode": {
+      "open": "Toujours afficher",
+      "auto": "Afficher lorsqu’un processus est sélectionné",
+      "closed": "Masquer"
+    },
+    "current": "Volet Détails : {mode}",
+    "next": "Cliquez pour « {mode} » ; clic droit pour choisir"
+  },
+  "search": {
+    "processes": "Rechercher un nom, PID, un chemin ou un service",
+    "clear": "Effacer la recherche"
+  },
+  "viewMode": {
+    "apps": {
+      "label": "Applications"
+    },
+    "tree": {
+      "label": "Arborescence"
+    },
+    "list": {
+      "label": "Liste"
+    }
+  },
+  "status": {
+    "threads": "Threads",
+    "handles": "Handles",
+    "cached": "En cache",
+    "pagedPool": "Pool paginé",
+    "uptime": "Durée de fonctionnement",
+    "orderHeld": "Tri suspendu",
+    "orderHeldHint": "Le pointeur est sur la liste des processus : les lignes restent en place et les valeurs continuent d’être actualisées. Elles sont triées de nouveau dès que le pointeur quitte la liste.",
+    "paused": "Actualisation suspendue",
+    "holdHint": "Maintenez Ctrl enfoncée sur les pages Processus et Performances pour suspendre brièvement",
+    "interval": "Actualisation toutes les {seconds} s",
+    "version": "v{version}",
+    "versionHint": "GoodGood {version} · {build}\nCliquez pour voir les nouveautés de cette version ; faites un clic droit pour copier le numéro de version"
+  },
+  "star": {
+    "title": "Attribuer une étoile à GoodGood sur GitHub",
+    "body": "GoodGood est gratuit et open source. Une étoile sur GitHub aide d’autres personnes à le découvrir et encourage son développement.",
+    "open": "Ajouter une étoile sur GitHub",
+    "quiet": "Ne plus rappeler",
+    "off": "Le rappel d’étoile est désactivé. Il peut être réactivé dans les paramètres.",
+    "settings": "Ouvrir les paramètres"
+  },
+  "portable": {
+    "title": "Vous utilisez la version portable",
+    "body": "Elle ne propose ni mises à jour intégrées, ni raccourci dans le menu Démarrer, ni entrée de désinstallation, et ne met pas à jour le service privilégié ni le remplacement du Gestionnaire des tâches avec GoodGood. La version installée est recommandée pour un usage quotidien ; les paramètres et l’historique actuels sont conservés.",
+    "website": "Télécharger depuis le site Web",
+    "github": "Télécharger depuis GitHub"
+  }
+}

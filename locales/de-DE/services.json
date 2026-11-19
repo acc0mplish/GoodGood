@@ -1,0 +1,48 @@
+{
+  "state": {
+    "running": "Wird ausgeführt",
+    "stopped": "Beendet",
+    "startPending": "Wird gestartet",
+    "stopPending": "Wird beendet",
+    "paused": "Angehalten",
+    "pausePending": "Wird angehalten",
+    "continuePending": "Wird fortgesetzt"
+  },
+  "startType": {
+    "auto": "Automatisch",
+    "autoDelayed": "Automatisch (verzögerter Start)",
+    "manual": "Manuell",
+    "disabled": "Deaktiviert",
+    "boot": "Start",
+    "system": "System"
+  },
+  "filter": {
+    "all": "Alle",
+    "running": "Wird ausgeführt",
+    "stopped": "Beendet"
+  },
+  "search": "Nach Dienstname, Beschreibung oder PID suchen",
+  "control": {
+    "start": "Dienst starten",
+    "stop": "Dienst beenden",
+    "restart": "Dienst neu starten",
+    "openConsoleTitle": "Windows-Diensteverwaltung öffnen"
+  },
+  "menu": {
+    "startType": "Starttyp: {type}",
+    "copyName": "Dienstnamen kopieren"
+  },
+  "copied": {
+    "name": "Dienstname"
+  },
+  "column": {
+    "display": "Dienst",
+    "startType": "Starttyp",
+    "description": "Beschreibung"
+  },
+  "loading": "Dienste werden gelesen…",
+  "noMatch": "Keine passenden Dienste",
+  "clearFilter": "Filter zurücksetzen",
+  "summary": "{running} von {total} Diensten werden ausgeführt",
+  "manageHint": "Die meisten Dienste können nur verwaltet werden, wenn der privilegierte Dienst aktiviert ist oder wenn GoodGood als Administrator ausgeführt wird."
+}

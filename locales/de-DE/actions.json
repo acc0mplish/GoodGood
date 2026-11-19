@@ -1,0 +1,147 @@
+{
+  "endAll": "Alle beenden",
+  "end": {
+    "title": "{name} beenden?",
+    "body": "PID {pid}. Nicht gespeicherte Daten gehen verloren.",
+    "done": "{name} wurde beendet."
+  },
+  "endGroup": {
+    "body": {
+      "one": "{count} Prozess von {name} wird beendet. Nicht gespeicherte Daten gehen verloren.",
+      "other": "Alle {count} Prozesse von {name} werden beendet. Nicht gespeicherte Daten gehen verloren."
+    },
+    "done": {
+      "one": "{count} Prozess von {name} wurde beendet.",
+      "other": "{count} Prozesse von {name} wurden beendet."
+    },
+    "partial": "{error} (nicht beendet: {count})"
+  },
+  "endTree": {
+    "title": "Prozessstruktur von {name} beenden?",
+    "body": {
+      "one": "Der Prozess mit PID {pid} und sein untergeordneter Prozess werden beendet. Nicht gespeicherte Daten gehen verloren.",
+      "other": "Der Prozess mit PID {pid} und seine {count} untergeordneten Prozesse werden beendet. Nicht gespeicherte Daten gehen verloren."
+    },
+    "bodyAlone": "Der Prozess mit PID {pid} hat keine untergeordneten Prozesse. Es wird nur dieser Prozess beendet.",
+    "done": {
+      "one": "{count} Prozess wurde beendet.",
+      "other": "{count} Prozesse wurden beendet."
+    },
+    "partial": {
+      "one": "Beendete Prozesse: {count}; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet).",
+      "other": "Beendete Prozesse: {count}; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet)."
+    },
+    "unchecked": "{count} Prozesse beendet; {failed} nicht beendet, davon {unchecked} mit ungeprüftem kritischem Status."
+  },
+  "error": {
+    "accessDenied": "{name} konnte nicht beendet werden: Zugriff verweigert. Den privilegierten Dienst in den Einstellungen aktivieren oder GoodGood als Administrator ausführen. Geschützte Prozesse können weiterhin eingeschränkt sein.",
+    "notFound": "{name} wurde bereits beendet.",
+    "critical": "{name} ist ein kritischer Systemprozess. Das Beenden würde Windows zum Absturz bringen; die Aktion wurde blockiert.",
+    "refused": "{name} kann nicht beendet werden.",
+    "serviceOutdated": "{name} konnte nicht beendet werden: Zugriff verweigert. Die Version des privilegierten Dienstes ist inkompatibel. Den Dienst aktualisieren und erneut versuchen.",
+    "generic": "{name} konnte nicht beendet werden: {error}",
+    "criticalityUnknown": "Es konnte nicht geprüft werden, ob {name} ein kritischer Systemprozess ist. Das Beenden wurde blockiert."
+  },
+  "priority": {
+    "confirmTitle": "Priorität von {name} auf Echtzeit setzen?",
+    "confirmBody": "Echtzeitprozesse werden vor Systemaufgaben ausgeführt. Wenn sie die gesamte Prozessorzeit belegen, können Maus und Tastatur nicht mehr reagieren.",
+    "confirm": "Auf Echtzeit setzen",
+    "failed": "Die Priorität von {name} konnte nicht geändert werden",
+    "downgraded": "Für die Echtzeitpriorität sind Administratorrechte erforderlich, daher wurde stattdessen „Hoch“ eingestellt.",
+    "partial": {
+      "one": "Priorität bei {count} Prozess geändert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet).",
+      "other": "Priorität bei {count} Prozessen geändert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet)."
+    },
+    "done": "Die Priorität von {name} wurde auf {priority} gesetzt."
+  },
+  "ioPriority": {
+    "failed": "Die I/O-Priorität von {name} konnte nicht geändert werden. {error}",
+    "error": {
+      "accessDenied": "Zugriff verweigert. Aktivieren Sie den privilegierten Dienst in den Einstellungen oder führen Sie GoodGood als Administrator aus. Die I/O-Priorität geschützter Prozesse lässt sich möglicherweise weiterhin nicht ändern.",
+      "refused": "Die I/O-Priorität von {name} kann nicht geändert werden.",
+      "serviceOutdated": "Zugriff verweigert. Die Version des privilegierten Dienstes ist nicht kompatibel; aktualisieren Sie den Dienst und versuchen Sie es erneut.",
+      "notFound": "{name} wurde bereits beendet."
+    },
+    "partial": {
+      "one": "I/O-Priorität von {count} Prozess geändert; nicht geändert: {failed}. {error}",
+      "other": "I/O-Priorität von {count} Prozessen geändert; nicht geändert: {failed}. {error}"
+    },
+    "done": "Die I/O-Priorität von {name} wurde auf „{priority}“ gesetzt."
+  },
+  "memoryPriority": {
+    "failed": "Die Speicherpriorität von {name} konnte nicht geändert werden. {error}",
+    "error": {
+      "accessDenied": "Zugriff verweigert. Aktivieren Sie den privilegierten Dienst in den Einstellungen oder führen Sie GoodGood als Administrator aus; geschützte Prozesse bleiben möglicherweise unerreichbar.",
+      "refused": "Die Speicherpriorität von {name} kann nicht geändert werden.",
+      "serviceOutdated": "Zugriff verweigert. Die Version des privilegierten Dienstes ist nicht kompatibel; aktualisieren Sie den Dienst und versuchen Sie es erneut.",
+      "notFound": "{name} wurde bereits beendet."
+    },
+    "partial": {
+      "one": "Speicherpriorität von {count} Prozess geändert; nicht geändert: {failed}. {error}",
+      "other": "Speicherpriorität von {count} Prozessen geändert; nicht geändert: {failed}. {error}"
+    },
+    "done": "Die Speicherpriorität von {name} wurde auf „{priority}“ gesetzt."
+  },
+  "efficiency": {
+    "on": {
+      "failed": "Der Effizienzmodus konnte für {name} nicht aktiviert werden",
+      "partial": {
+        "one": "Effizienzmodus für {count} Prozess aktiviert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet).",
+        "other": "Effizienzmodus für {count} Prozesse aktiviert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet)."
+      },
+      "done": "Effizienzmodus für {name} aktiviert."
+    },
+    "off": {
+      "failed": "Der Effizienzmodus für {name} konnte nicht deaktiviert werden",
+      "partial": {
+        "one": "Effizienzmodus für {count} Prozess deaktiviert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet).",
+        "other": "Effizienzmodus für {count} Prozesse deaktiviert; fehlgeschlagen: {failed} (Zugriff verweigert oder bereits beendet)."
+      },
+      "done": "Effizienzmodus für {name} deaktiviert."
+    }
+  },
+  "suspend": {
+    "title": "{name} anhalten?",
+    "body": "Alle Threads von PID {pid} werden angehalten, bis der Prozess fortgesetzt wird. Seine Fenster reagieren nicht mehr und Netzwerkverbindungen können ablaufen; manche Programme (Spiele, Apps mit Anti-Cheat oder Selbstschutz) können dadurch fehlschlagen.",
+    "bodyGroup": {
+      "one": "{count} Prozess von {name} wird angehalten, bis er fortgesetzt wird. Seine Fenster reagieren nicht mehr und Netzwerkverbindungen können ablaufen; manche Programme (Spiele, Apps mit Anti-Cheat oder Selbstschutz) können dadurch fehlschlagen.",
+      "other": "Alle {count} Prozesse von {name} werden angehalten, bis sie fortgesetzt werden. Ihre Fenster reagieren nicht mehr und Netzwerkverbindungen können ablaufen; manche Programme (Spiele, Apps mit Anti-Cheat oder Selbstschutz) können dadurch fehlschlagen."
+    },
+    "confirm": "Anhalten",
+    "error": {
+      "accessDenied": "Zugriff verweigert. Aktivieren Sie den privilegierten Dienst in den Einstellungen oder führen Sie GoodGood als Administrator aus; geschützte Prozesse bleiben möglicherweise unerreichbar.",
+      "refused": "{name} kann nicht angehalten oder fortgesetzt werden.",
+      "serviceOutdated": "Zugriff verweigert. Die Version des privilegierten Dienstes ist nicht kompatibel; aktualisieren Sie den Dienst und versuchen Sie es erneut.",
+      "critical": "{name} ist ein kritischer Systemprozess. Das Anhalten würde Windows einfrieren; die Aktion wurde blockiert.",
+      "stillSuspended": "{name} ist möglicherweise noch angehalten: Einige Threads konnten nicht fortgesetzt oder ihr Zustand nicht gelesen werden. Versuchen Sie es erneut."
+    },
+    "on": {
+      "failed": "{name} konnte nicht angehalten werden",
+      "partial": {
+        "one": "{count} Prozess angehalten; nicht angehalten: {failed}. {error}",
+        "other": "{count} Prozesse angehalten; nicht angehalten: {failed}. {error}"
+      },
+      "done": "{name} angehalten."
+    },
+    "off": {
+      "failed": "{name} konnte nicht fortgesetzt werden",
+      "partial": {
+        "one": "{count} Prozess fortgesetzt; nicht fortgesetzt: {failed}. {error}",
+        "other": "{count} Prozesse fortgesetzt; nicht fortgesetzt: {failed}. {error}"
+      },
+      "done": "{name} fortgesetzt."
+    }
+  },
+  "ruleScope": {
+    "title": "Eine Regel für alle Prozesse mit diesem Namen hinzufügen?",
+    "body": "Regeln verwenden den Namen der ausführbaren Datei {name}. Die Regel gilt für alle Prozesse mit diesem Namen, unabhängig von Host und Installationspfad.",
+    "confirm": "Weiter zu den Regeleinstellungen"
+  },
+  "copied": "{what} wurde kopiert.",
+  "staleProcess": "Die Informationen zur Prozessinstanz sind veraltet. Aktualisieren Sie die Daten und versuchen Sie es erneut.",
+  "copyWhat": {
+    "path": "Pfad",
+    "name": "Name",
+    "version": "Versionsnummer"
+  }
+}

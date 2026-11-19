@@ -1,0 +1,38 @@
+{
+  "location": {
+    "hkcuRun": "Registry (current user)",
+    "hklmRun": "Registry (all users)",
+    "hklmRun32": "Registry (all users, 32-bit)",
+    "userFolder": "Startup folder (current user)",
+    "commonFolder": "Startup folder (all users)",
+    "package": "App package (current user)"
+  },
+  "menu": {
+    "copyCommand": "Copy command"
+  },
+  "copied": {
+    "command": "command"
+  },
+  "search": "Search name, publisher or command",
+  "column": {
+    "publisher": "Publisher",
+    "location": "Location"
+  },
+  "missing": {
+    "label": "File missing",
+    "title": "The program this command points to no longer exists; this item can be disabled"
+  },
+  "toggle": {
+    "enable": "Enable {name}",
+    "disable": "Disable {name}"
+  },
+  "blocked": {
+    "managed": "This app does not allow manual changes to this startup task.",
+    "unavailable": "The state of this startup task could not be read. No changes were made."
+  },
+  "unavailable": "Unavailable",
+  "loading": "Reading startup apps…",
+  "noMatch": "No matching startup apps",
+  "summary": "{enabled} of {total} enabled",
+  "note": "Disabling uses the same switch as Startup apps in Task Manager and can be undone. Items for all users need administrator rights."
+}

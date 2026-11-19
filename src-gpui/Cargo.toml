@@ -1,0 +1,51 @@
+[package]
+name = "goodgood"
+description = "GoodGood native desktop task manager"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+default-run = "goodgood"
+
+[lib]
+name = "goodgood_native"
+
+[dependencies]
+goodgood-core = { path = "../crates/goodgood-core" }
+goodgood-service = { path = "../crates/goodgood-service" }
+goodgood-app = { path = "../crates/goodgood-app" }
+gpui-kit = { version = "=0.10.0", features = ["profiler"] }
+anyhow = "1"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+tiny-skia = "0.12.0"
+image = { version = "0.25.10", default-features = false }
+windows.workspace = true
+# `#[implement]` (the taskbar monitor's DirectWrite text renderer) names it.
+windows-core = "0.62"
+raw-window-handle = "0.6"
+smol = "2"
+log = { version = "0.4", features = ["std"] }
+base64 = "0.23.1"
+minisign-verify = "0.3"
+semver = "1"
+sha2 = "0.11.1"
+url = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "stream", "system-proxy"] }
+futures-util = "0.3"
+time = { version = "0.3", features = ["parsing", "local-offset"] }
+rfd = "0.18"
+
+[dev-dependencies]
+gpui_test = { package = "gpui-pre", version = "=0.3.12", features = ["test-support"] }
+
+[target.'cfg(windows)'.dev-dependencies]
+gpui_windows = { package = "gpui-pre-windows", version = "=0.3.12", features = ["test-support"] }
+
+[build-dependencies]
+embed-resource = "3"
+serde_json = "1"

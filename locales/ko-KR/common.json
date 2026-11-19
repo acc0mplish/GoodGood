@@ -1,0 +1,73 @@
+{
+  "cancel": "취소",
+  "close": "닫기",
+  "enable": "사용",
+  "disable": "사용 안 함",
+  "enabled": "사용 중",
+  "disabled": "사용 안 함",
+  "on": "켜짐",
+  "off": "꺼짐",
+  "start": "시작",
+  "stop": "중지",
+  "restart": "다시 시작",
+  "expand": "펼치기",
+  "collapse": "접기",
+  "none": "없음",
+  "name": "이름",
+  "status": "상태",
+  "filterColumn": "{column} 기준으로 필터링",
+  "command": "명령",
+  "copyName": "이름 복사",
+  "copyPath": "경로 복사",
+  "openFileLocation": "파일 위치 열기",
+  "goToProcess": "프로세스로 이동",
+  "endProcess": "작업 끝내기",
+  "endProcessTree": "프로세스 트리 끝내기",
+  "efficiencyMode": "효율성 모드",
+  "privilegedService": "권한 있는 서비스",
+  "listSeparator": ", ",
+  "resource": {
+    "cpu": "CPU",
+    "memory": "메모리",
+    "disk": "디스크",
+    "network": "네트워크",
+    "gpu": "GPU",
+    "battery": "배터리",
+    "temperature": "온도"
+  },
+  "languageSystem": "Windows와 동일",
+  "keys": {
+    "space": "스페이스"
+  },
+  "edit": {
+    "cut": "잘라내기",
+    "copy": "복사",
+    "paste": "붙여넣기",
+    "selectAll": "모두 선택"
+  },
+  "marks": {
+    "pin": "맨 위에 고정",
+    "unpin": "고정 해제",
+    "pinned": "고정됨",
+    "addNote": "메모 추가",
+    "editNote": "메모 편집",
+    "deleteNote": "메모 삭제",
+    "note": "메모",
+    "placeholder": "용도를 간단히 입력",
+    "save": "저장"
+  },
+  "languageName": {
+    "koKR": "한국어",
+    "enUS": "English",
+    "esES": "Español",
+    "deDE": "Deutsch",
+    "jaJP": "日本語",
+    "frFR": "Français",
+    "ruRU": "Русский"
+  },
+  "build": {
+    "development": "개발 빌드",
+    "test": "베타",
+    "stable": "안정판"
+  }
+}

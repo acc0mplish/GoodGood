@@ -1,0 +1,236 @@
+<div align="center">
+
+<img src="resources/logo.svg" width="112" height="112" alt="GoodGood のロゴ">
+
+# GoodGood
+
+**高速でモダンな、情報豊富な Windows タスク マネージャー**
+
+[한국어](README.md) · [English](README.en.md) · [Español](README.es.md) · [Deutsch](README.de.md) · **日本語** · [Français](README.fr.md) · [Русский](README.ru.md)
+
+[![公式サイトとデモ](https://img.shields.io/static/v1?label=%F0%9F%8C%90+%E5%85%AC%E5%BC%8F%E3%82%B5%E3%82%A4%E3%83%88%E3%81%A8%E3%83%87%E3%83%A2&message=goodgoodtask.com&color=2563eb&style=for-the-badge)](https://goodgoodtask.com/ja/)
+
+[公式サイト](https://goodgoodtask.com/ja/)では、インストールせずにブラウザー上で画面を操作し、機能ガイドを体験できます。
+
+[![最新バージョン](https://img.shields.io/github/v/release/Ray-lea/GoodGood?include_prereleases=&sort=semver&label=%E6%9C%80%E6%96%B0%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3&color=2f80ed)](https://github.com/Ray-lea/GoodGood/releases)
+[![ダウンロード](https://img.shields.io/github/downloads/Ray-lea/GoodGood/total?label=%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89&color=2ea44f)](https://github.com/Ray-lea/GoodGood/releases)
+[![動作環境](https://img.shields.io/static/v1?label=%E5%8B%95%E4%BD%9C%E7%92%B0%E5%A2%83&message=Windows+10+%2F+11+x64&color=0078D4)](#system-requirements)
+[![ライセンス](https://img.shields.io/static/v1?label=%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9&message=AGPL-3.0-or-later&color=A42E2B&logo=gnu&logoColor=white)](LICENSE)
+
+<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily" alt="Ray-lea/GoodGood | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/310031?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-310031" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/310031/daily?language=Rust" alt="Ray-lea/GoodGood | Trendshift Rust" width="250" height="55"/></a>
+
+[機能](#features) · [ダウンロード](#download) · [ソースからのビルド](#build-from-source) · [ショートカット](#keyboard-shortcuts) · [ドキュメント](#documentation)
+
+</div>
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/screenshot-en-dark.png">
+  <img src="docs/images/screenshot-en-light.png" alt="アプリを名前順に並べた GoodGood のプロセス画面。各プロセスのリソース使用量と、直近 1 分間の CPU、メモリ、ディスク、ネットワーク、GPU のグラフを表示。">
+</picture>
+
+<sub>プレビュー画像は英語表示です。</sub>
+
+<br>
+
+GoodGood は Rust から Windows のネイティブ API を直接呼び出し、GPUI Kit のネイティブ コンポーネントで画面を構築しています。グラフはディスプレイのリフレッシュ レートに合わせて滑らかに動きます。名前は、ギリシャ神話に登場する百の目を持つ巨人アルゴス（GoodGood Panoptes）に由来します。
+
+<a id="star-history"></a>
+
+## ⭐ GitHub Star の推移
+
+GoodGood が日常の作業に役立った際は、GitHub で Star を付けていただけると、プロジェクトの支援や認知拡大につながります。
+
+<a href="https://www.star-history.com/#Ray-lea/GoodGood&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date&theme=dark">
+    <img src="https://api.star-history.com/svg?repos=Ray-lea/GoodGood&type=Date" alt="GoodGood の GitHub Star 数の推移">
+  </picture>
+</a>
+
+<a id="features"></a>
+
+## ✨ 機能
+
+<table>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/processes-ja-dark.svg"><img src="docs/images/features/processes-ja-light.svg" width="390" alt="プロセス ページでアプリ別表示からプロセス ツリーに切り替え、code を検索して Visual Studio Code と子プロセスに絞り込む"></picture><br><b>プロセス</b>：アプリ別、プロセス ツリー、一覧で表示。検索、並べ替え、ツリー全体の終了に対応</td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/performance-ja-dark.svg"><img src="docs/images/features/performance-ja-light.svg" width="390" alt="パフォーマンス ページに CPU の使用率、速度、温度、消費電力と、P コア・E コアごとのグラフが表示される"></picture><br><b>パフォーマンス</b>：CPU のコア別負荷、速度、温度、消費電力に加え、メモリ、ディスク、ネットワーク、GPU</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/history-ja-dark.svg"><img src="docs/images/features/history-ja-light.svg" width="390" alt="履歴ページの 7 日間のグラフで 2 つの時刻をクリックし、それぞれの時点で最もビジーなプロセスが下に表示される"></picture><br><b>履歴</b>：7 日間のグラフ上の時刻をクリックすると、その時点で最もビジーなプロセスを表示</td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/files-ja-dark.svg"><img src="docs/images/features/files-ja-light.svg" width="390" alt="スプレッドシートをウィンドウにドロップすると、使用中の Excel とエクスプローラーがダイアログに表示され、その一方を終了する"></picture><br><b>ファイルの使用状況</b>：ファイルやフォルダーをウィンドウにドロップすると、使用中のプロセスを一覧表示</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/rules-ja-dark.svg"><img src="docs/images/features/rules-ja-light.svg" width="390" alt="HandBrake を右クリックして優先度を低に設定し、続けて効率モードを有効にする"></picture><br><b>右クリック メニュー</b>：優先度の設定、効率モードの有効化、起動のたびに適用するルールの追加</td>
+<td width="50%" valign="top"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/features/ports-ja-dark.svg"><img src="docs/images/features/ports-ja-light.svg" width="390" alt="接続ページで 8080 を検索し、ポートを待ち受けるプロセスと接続中のプロセスを見つけて接続を閉じる"></picture><br><b>接続とポート</b>：ポート番号で接続と関連プロセスを検索し、切断できます</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>サービスとスタートアップ</b><br>サービスの開始・停止とスタートアップの種類の変更、スタートアップ アプリの有効化・無効化</td>
+<td width="50%" valign="top"><b>通知領域への常駐</b><br><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Esc</kbd> でいつでも表示・非表示。非表示中は少ないリソースで動作</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><b>タスク マネージャーの置き換え</b><br><a href="docs/architecture/task-manager.md">Windows タスク マネージャーを置き換え</a>、<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Esc</kbd> で開けます。新しいタスクの実行とエクスプローラーの再起動にも対応</td>
+<td width="50%" valign="top"><b>外観と言語</b><br>Mica 背景。アクセント カラーとライト・ダーク テーマは Windows に連動。7 言語に対応</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><b>アプリ内更新</b><br>安定版とベータ版のチャネル、バックグラウンドでのダウンロード、アプリ内での更新内容の確認</td>
+<td width="50%" valign="top"><b>権限</b><br>標準ユーザー権限で全プロセスを表示。特権サービスと管理者としての起動は任意</td>
+</tr>
+</table>
+
+<sub>README の表示領域と画像形式の制約により、上記のデモはプログラムの画面をもとに簡略化して再描画したもので、表示しているプロセスとデータは例です。参考用であり、実際の画面と機能はプログラムを基準とします。</sub>
+
+<a id="download"></a>
+
+## 📦 ダウンロード
+
+最新の安定版と SHA-256 チェックサムは、[公式ダウンロード ページ](https://goodgoodtask.com/ja/download/)から取得できます。すべてのバージョンは [GitHub Releases](https://github.com/Ray-lea/GoodGood/releases) にあります。
+
+| ファイル | 内容 |
+|---|---|
+| `GoodGood_<version>_x64-setup.exe` | **インストーラー版（推奨）。** 全ユーザー向けに `Program Files` へインストールします。インストールと更新には管理者の承認が必要です。アプリ内更新に対応します。 |
+| `GoodGood_<version>_x64.exe` | **ポータブル版。** 単一の実行ファイルから起動し、設定と履歴をインストーラー版と共有します。自動更新には対応していません。 |
+| `SHA256SUMS.txt` | 配布ファイルの SHA-256 チェックサム。 |
+
+[コード署名ポリシー](#code-signing-policy) · [プライバシー ポリシー（英語）](PRIVACY.md#english)
+
+<a id="system-requirements"></a>
+
+## 💻 動作環境
+
+- **OS**：Windows 10 22H2（ビルド 19045）以降、Windows 11 を含む。x64 のみ対応。
+- **グラフィックス**：DirectX 11 に対応したグラフィックス デバイスとドライバー。
+
+確認済みの Windows バージョン、機能差、権限要件は、[互換性の説明](docs/guide/hardware-data.md#시스템-호환-범위)を参照してください。
+
+<a id="build-from-source"></a>
+
+## 🔧 ソースからのビルド
+
+必要な環境：
+
+- Rust `stable-x86_64-pc-windows-msvc` ツールチェーン（1.100.0 以降）。
+- Node.js 26.13.1 以降の 26.x、または 24.22.3 以降の 24.x LTS、および pnpm 12.18.0。
+- Visual Studio Build Tools の「C++ によるデスクトップ開発」ワークロード。
+
+リポジトリのルート ディレクトリで PowerShell から実行します。
+
+```powershell
+.\start.bat           # 開発モード：Rust とリソースの変更時に再ビルド・再起動。失敗時は既存のインスタンスを維持
+.\start.bat build     # リリース ビルド：target\release\goodgood.exe を生成
+```
+
+コードのチェック、インストーラーの作成、キャッシュの削除は、[開発ガイド](docs/development/README.md)を参照してください。
+
+<a id="keyboard-shortcuts"></a>
+
+## 🔑 キーボード ショートカット
+
+| 操作 | キー |
+|---|---|
+| ページの切り替え | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| プロセスの検索 | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
+| 更新の一時停止 | <kbd>Ctrl</kbd> を押している間は停止し、離すと再開（プロセス・パフォーマンス ページ） |
+| 詳細を開く | <kbd>Enter</kbd> |
+| タスクの終了 | <kbd>Alt</kbd>+<kbd>E</kbd> または <kbd>Delete</kbd>。<kbd>Shift</kbd>+<kbd>Delete</kbd> は確認を省略 |
+| ウィンドウの表示・非表示（グローバル） | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Esc</kbd> |
+
+全一覧は **設定 → キーボード ショートカット → ショートカットを表示** から確認できます。詳しい操作は、[利用ガイド](docs/guide/README.md)を参照してください。
+
+<a id="documentation"></a>
+
+## 📚 ドキュメント
+
+詳細ドキュメントは韓国語です。[オンライン ドキュメント](https://goodgoodtask.com/docs/)では、安定版と開発版の説明を閲覧できます。
+
+| ドキュメント | 内容 |
+|---|---|
+| [利用ガイド](docs/guide/README.md) | 画面と操作、通知領域とショートカット、設定、ハードウェア データの取得元と制限 |
+| [開発ガイド](docs/development/README.md) | 環境とコマンド、ビルドとキャッシュ、性能の基準と測定方法 |
+| [アーキテクチャ](docs/architecture/README.md) | システム構成、データ フロー、技術構成、各モジュールの役割 |
+| [設計](docs/design/README.md) | 設計方針、グラフのアニメーション、ウィンドウの外観とマテリアル |
+| [既知の問題](docs/known-issues.md) | 現行バージョンの制限事項 |
+| [更新履歴](changelog/ja-JP.md) | 各バージョンの詳細な変更内容 |
+
+<a id="contributing"></a>
+
+## 🤝 貢献
+
+Issue や Pull Request を歓迎します。セキュリティ上の問題は、セキュリティ アドバイザリのページから非公開で報告してください。
+
+<a id="roadmap"></a>
+
+## 🧭 ロードマップ
+
+完了した項目と全体計画は、[ロードマップ](docs/roadmap.md)にまとめています。現在進行中、または予定している主な項目は次のとおりです。
+
+- [ ] **ハードウェア センサーの拡充**：公式 PawnIO ドライバーを利用して、コンシューマー向けハードウェアの対応範囲を拡大。[現在の対応範囲](docs/guide/hardware-data.md)を参照。
+- [ ] **ショートカットの拡張**：左右の修飾キーの区別、修飾キーのみの組み合わせ、通常キー 2 つの組み合わせに対応。
+
+<a id="code-signing-policy"></a>
+
+## 🔐 コード署名ポリシー
+
+無料のコード署名サービスは [SignPath.io](https://about.signpath.io/)、証明書は [SignPath Foundation](https://signpath.org/) から提供されています。
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+
+テスト署名は導入済みです。現在の正式リリースには Windows Authenticode 署名がありません。正式署名の有効化後は、このリポジトリのソースから GitHub Actions でビルドする GoodGood 本体、タスク マネージャー補助プログラム、アンインストーラー、インストーラーが対象になります。同梱する第三者のプログラムは元の署名を維持します。
+
+- **コードの管理とレビュー**：[@Ray-lea](https://github.com/Ray-lea)。コードの保守と外部からの貢献のレビューを担当します。
+- **署名の承認**：[@Ray-lea](https://github.com/Ray-lea)。正式署名のリクエストを毎回手動で承認します。
+- **プライバシー ポリシー**：[English](PRIVACY.md#english) · [한국어](PRIVACY.md#한국어)。既定で有効な更新確認、プロキシへの切り替え、必要時の PawnIO ダウンロード、任意のフィードバック、第三者によるデータの取り扱いを説明しています。
+
+アプリ内更新では、独立した Minisign リリース キーでインストーラーとバージョン番号を検証します。Windows Authenticode は実行ファイルの署名者を確認するための仕組みです。
+
+<a id="acknowledgements"></a>
+
+## 🙏 謝辞
+
+GoodGood は次のオープンソース プロジェクトを利用しています。
+
+| プロジェクト | 用途 |
+|---|---|
+| [GPUI Kit](https://gpui-kit.com/) | ネイティブなデスクトップ部品、ウィンドウ、表、グラフ |
+| [windows-rs](https://github.com/microsoft/windows-rs) | Windows ネイティブ API の Rust バインディング |
+| [Biome](https://biomejs.dev/)、[NSIS](https://nsis.sourceforge.io/) | 開発時のチェックと Windows 向けパッケージ作成 |
+| [serde](https://serde.rs/)、[reqwest](https://github.com/seanmonstar/reqwest) などの Rust crate | シリアル化、ネットワーク通信などの基盤機能 |
+| [PawnIO](https://pawnio.eu/)、[PawnIO.Modules](https://github.com/namazso/PawnIO.Modules) | 任意のカーネル センサーに使う署名済みドライバーとデータ収集モジュール |
+| [ZenStates-Core](https://github.com/irusanov/ZenStates-Core)、[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)、[GNR-SMU](https://github.com/Kyworn/gnr-smu) | AMD SMU テーブルなど、CPU レジスター構成の参考資料 |
+| [Intel IGCL](https://github.com/intel/drivers.gpu.control-library)、[AMD ADL](https://github.com/GPUOpen-LibrariesAndSDKs/display-library) | GPU テレメトリ インターフェース |
+
+第三者コンポーネントとライセンス表記の全一覧は [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) にあります。
+
+[LINUX DO](https://linux.do/) コミュニティの支援に感謝します。
+
+<!-- supporters:start · node scripts/supporters.mjs -->
+<p align="center">
+  <a href="https://github.com/bronyaicu" target="_blank" rel="noopener"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/supporters/bronyaicu-ja-dark.svg"><img src="docs/images/supporters/bronyaicu-ja-light.svg" width="720" alt="プロジェクト支援 &amp; スペシャルサンクス：bronyaicu"></picture></a>
+</p>
+<!-- supporters:end -->
+
+<a id="license"></a>
+
+## 📄 ライセンス
+
+GoodGood は、[GNU Affero General Public License](LICENSE) バージョン 3、または任意のそれ以降のバージョン（`AGPL-3.0-or-later`）で公開する自由ソフトウェアです。
+
+<a href="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors?repo_id=1415551131&limit=30" target="_blank" style="display: block" align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=dark" width="655" height="auto">
+    <img alt="Active Contributors of Ray-lea/GoodGood - Last 28 days" src="https://next.ossinsight.io/widgets/official/compose-recent-active-contributors/thumbnail.png?repo_id=1415551131&limit=30&image_size=auto&color_scheme=light" width="655" height="auto">
+  </picture>
+</a>
+
+<!-- Made with [OSS Insight](https://ossinsight.io/) -->
+
+<div align="center">
+<br>
+<sub>GoodGood · Windows 用タスク マネージャー · © 2026 GoodGood contributors</sub>
+</div>

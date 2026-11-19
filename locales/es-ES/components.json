@@ -1,0 +1,220 @@
+{
+  "sections": {
+    "tray": "Bandeja del sistema",
+    "desktop": "Monitor de escritorio",
+    "taskbar": "Monitor en la barra de tareas",
+    "planned": "Más componentes"
+  },
+  "tray": {
+    "icon": {
+      "title": "Icono de la bandeja",
+      "desc": "Tendencia muestra las últimas muestras de CPU en columnas, Proporción ilumina una cuadrícula de puntos según el uso actual y Cifra muestra el porcentaje. A partir del 80 % se vuelven ámbar.",
+      "logo": "Icono de la aplicación",
+      "load": "Tendencia",
+      "share": "Proporción",
+      "number": "Cifra"
+    },
+    "card": {
+      "title": "Tarjeta al pasar el puntero",
+      "desc": "Muestra las lecturas en tiempo real de CPU, memoria, GPU y red mientras el puntero está sobre el icono. Desactivada, aparece la información sobre herramientas del sistema."
+    },
+    "menu": {
+      "title": "Clic derecho en el icono",
+      "desc": "El panel rápido muestra lecturas en tiempo real, los procesos más activos y las acciones habituales; el menú solo muestra las acciones habituales.",
+      "panel": "Panel rápido",
+      "menu": "Menú"
+    },
+    "moved": {
+      "title": "Bandeja y componentes",
+      "desc": "El icono de la bandeja, el panel rápido, lo que ocurre al cerrar la ventana y la actualización en la bandeja están ahora en la página Componentes.",
+      "open": "Abrir Componentes"
+    }
+  },
+  "metrics": {
+    "title": "Lecturas mostradas",
+    "desc": "Las lecturas elegidas se muestran en el orden siguiente. Con varias GPU, discos o adaptadores de red, se pueden elegir para cada dispositivo. Si no se elige ningún dispositivo, las lecturas de GPU corresponden a la GPU con más memoria dedicada; las velocidades de disco y de red son totales, y la actividad y la temperatura de disco muestran el valor más alto de todos los discos.",
+    "group": {
+      "cpu": "CPU",
+      "memory": "Memoria",
+      "gpu": "GPU",
+      "disk": "Disco",
+      "network": "Red",
+      "other": "Otros"
+    },
+    "all": {
+      "disk": "Todos los discos",
+      "diskDetail": "Suma, actividad/temp. máximas",
+      "network": "Todos los adaptadores de red",
+      "networkDetail": "Velocidad total"
+    },
+    "gpuMemory": "{memory} dedicados",
+    "gpuMain": "{memory} · GPU principal",
+    "diskNumber": "Disco {index}",
+    "absent": "No conectado"
+  },
+  "metric": {
+    "cpu": {
+      "name": "CPU",
+      "short": "CPU",
+      "option": "Uso"
+    },
+    "cpuTemperature": {
+      "name": "Temperatura de CPU",
+      "short": "CPU",
+      "option": "Temperatura"
+    },
+    "cpuClock": {
+      "name": "Frecuencia de CPU",
+      "short": "CPU",
+      "option": "Frecuencia"
+    },
+    "cpuPower": {
+      "name": "Potencia de CPU",
+      "short": "CPU",
+      "option": "Potencia"
+    },
+    "memory": {
+      "name": "Memoria",
+      "short": "RAM",
+      "option": "Porcentaje"
+    },
+    "memoryUsed": {
+      "name": "Memoria en uso",
+      "short": "RAM",
+      "option": "En uso"
+    },
+    "gpu": {
+      "name": "GPU",
+      "short": "GPU",
+      "option": "Uso"
+    },
+    "gpuTemperature": {
+      "name": "Temperatura de GPU",
+      "short": "GPU",
+      "option": "Temperatura"
+    },
+    "gpuMemory": {
+      "name": "Memoria de GPU",
+      "short": "VRAM",
+      "option": "Memoria"
+    },
+    "gpuClock": {
+      "name": "Frecuencia de GPU",
+      "short": "GPU",
+      "option": "Frecuencia"
+    },
+    "gpuPower": {
+      "name": "Potencia de GPU",
+      "short": "GPU",
+      "option": "Potencia"
+    },
+    "gpuFan": {
+      "name": "Ventilador de GPU",
+      "short": "Vent.",
+      "option": "Ventilador"
+    },
+    "disk": {
+      "name": "Disco",
+      "option": "Lectura/escritura"
+    },
+    "diskActive": {
+      "name": "Actividad del disco",
+      "short": "Disco",
+      "option": "Actividad"
+    },
+    "diskTemperature": {
+      "name": "Temperatura del disco",
+      "short": "Disco",
+      "option": "Temperatura"
+    },
+    "network": {
+      "name": "Red",
+      "option": "Recepción/envío"
+    },
+    "battery": {
+      "name": "Batería",
+      "short": "Bat.",
+      "option": "Nivel de carga"
+    },
+    "uptime": {
+      "name": "Tiempo activo",
+      "short": "Activo",
+      "option": "Tiempo activo"
+    },
+    "read": "L",
+    "write": "E",
+    "onDevice": "{device} {metric}"
+  },
+  "desktop": {
+    "title": "Monitor de escritorio",
+    "desc": "Muestra las lecturas elegidas en una pequeña ventana del escritorio. Arrástrela para moverla, haga doble clic para abrir GoodGood o clic derecho para abrir el menú. Mientras está visible, utiliza la «Frecuencia de actualización».",
+    "topmost": {
+      "title": "Siempre visible",
+      "desc": "Se muestra por encima de las demás ventanas."
+    },
+    "locked": {
+      "title": "Bloquear posición",
+      "desc": "Al bloquearla, no se puede arrastrar."
+    },
+    "clickThrough": {
+      "title": "Dejar pasar los clics",
+      "desc": "Los clics y arrastres llegan a la ventana de debajo. Una vez activada, esta opción solo se puede desactivar en esta página."
+    },
+    "opacity": {
+      "title": "Opacidad",
+      "desc": "Opacidad de toda la ventana."
+    },
+    "menu": {
+      "open": "Abrir GoodGood",
+      "topmost": "Siempre visible",
+      "locked": "Bloquear posición",
+      "settings": "Configuración de componentes…",
+      "hide": "Desactivar el monitor de escritorio"
+    }
+  },
+  "taskbar": {
+    "title": "Monitor en la barra de tareas",
+    "desc": "Muestra las lecturas elegidas en la barra de tareas de la pantalla principal. Un clic muestra u oculta la ventana; un clic derecho abre un panel para cambiar el estilo y las lecturas mostradas. Mientras está visible, utiliza la «Frecuencia de actualización».",
+    "place": {
+      "title": "Posición",
+      "desc": "«Lado izquierdo» solo se aplica a la barra de tareas de Windows 11 con los botones centrados. En otros casos, el monitor aparece junto a la bandeja.",
+      "tray": "Junto a la bandeja",
+      "start": "Lado izquierdo"
+    },
+    "style": {
+      "title": "Estilo",
+      "desc": "Etiquetas: nombres y valores en dos filas. Curvas: una tarjeta por lectura, con su nombre y su valor sobre su curva reciente. Cápsulas: una cápsula redondeada por lectura en una fila, marcada con un punto del color del dispositivo. Cifras grandes: un nombre pequeño en el color del dispositivo sobre una cifra grande. Las curvas, las cápsulas y las cifras grandes necesitan espacio para dos filas de texto; en una barra de tareas más baja se muestran como etiquetas.",
+      "labels": "Etiquetas",
+      "curves": "Curvas",
+      "capsules": "Cápsulas",
+      "figures": "Cifras grandes"
+    },
+    "panel": {
+      "settings": "Configuración de componentes…",
+      "hide": "Desactivar el monitor en la barra de tareas"
+    }
+  },
+  "planned": {
+    "state": "Previsto",
+    "island": {
+      "title": "Isla dinámica",
+      "desc": "Lecturas en tiempo real y notificaciones en una cápsula en la parte superior de la pantalla."
+    }
+  },
+  "panel": {
+    "label": "Panel rápido de GoodGood",
+    "open": "Abrir GoodGood",
+    "busiest": "Más activos",
+    "update": "La versión {version} está lista",
+    "updateHint": "Ver las novedades e instalar",
+    "install": "Actualizar",
+    "settings": "Configuración de la bandeja",
+    "quit": "Salir de GoodGood"
+  },
+  "card": {
+    "click": "Clic: mostrar u ocultar la ventana",
+    "rightPanel": "Clic derecho: abrir el panel rápido",
+    "rightMenu": "Clic derecho: abrir el menú",
+    "update": "Versión {version}"
+  }
+}

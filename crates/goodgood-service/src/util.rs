@@ -1,0 +1,146 @@
+use goodgood_core::tr;
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
+
+pub type Result<T> = std::result::Result<T, u32>;
+pub const UNSAFE_PATH: u32 = 0x2000_0001;
+pub const OTHER_OWNER: u32 = 0x2000_0002;
+pub const INCOMPATIBLE: u32 = 0x2000_0003;
+pub const FOREIGN_SERVICE: u32 = 0x2000_0004;
+/// The task manager replacement held up a service update or removal: GoodGood's
+/// own value is not restored yet.
+pub const TASK_MANAGER_ACTIVE: u32 = 0x2000_0005;
+/// The same, because another program's configuration holds taskmgr.exe's
+/// entry and GoodGood does not overwrite it.
+pub const TASK_MANAGER_CONFLICT: u32 = 0x2000_0006;
+/// An enabled replacement could not be brought to the new build, so the
+/// service update stopped before changing the service.
+pub const TASK_MANAGER_FOLLOW: u32 = 0x2000_0007;
+pub const ADMIN_OUTDATED: u32 = 0x2000_0008;
+
+pub fn message(code: u32) -> String {
+    match code {
+        UNSAFE_PATH => tr!("service.unsafePath"),
+        OTHER_OWNER => tr!("service.otherOwner"),
+        INCOMPATIBLE => tr!("service.incompatible"),
+        FOREIGN_SERVICE => tr!("service.foreignService"),
+        TASK_MANAGER_ACTIVE => tr!("service.taskManagerActive"),
+        TASK_MANAGER_CONFLICT => tr!("service.taskManagerConflict"),
+        TASK_MANAGER_FOLLOW => tr!("service.taskManagerFollow"),
+        ADMIN_OUTDATED => tr!("admin.outdated"),
+        1223 => tr!("service.canceled"),
+        1460 => tr!("service.timeout"),
+        _ => tr!(
+            "service.osError",
+            error = std::io::Error::from_raw_os_error(code as i32),
+            code = code
+        ),
+    }
+}
+
+pub fn win(e: windows::core::Error) -> u32 {
+    let code = e.code().0 as u32;
+    if code >> 16 == 0x8007 {
+        code & 0xffff
+    } else {
+        code
+    }
+}
+
+#[track_caller]
+pub fn stage<T>(name: &'static str, result: Result<T>) -> Result<T> {
+    if let Err(code) = &result {
+        goodgood_core::diagnostics::warn(name, goodgood_core::diagnostics::code(*code));
+    }
+    result
+}
+
+#[track_caller]
+pub fn file_stage<T>(name: &'static str, path: &std::path::Path, result: Result<T>) -> Result<T> {
+    if let Err(code) = &result {
+        goodgood_core::diagnostics::warn(
+            name,
+            format!(
+                "{}; path={}",
+                goodgood_core::diagnostics::code(*code),
+                log_path(path)
+            ),
+        );
+    }
+    result
+}
+
+/// `diagnostics::path` with every account SID folder replaced by `<SID>`:
+/// administrator runtime directories are named after the account's SID, and
+/// the log is attached to public bug reports.
+pub fn log_path(path: &std::path::Path) -> String {
+    use std::path::{Component, PathBuf};
+    let sid = |name: &std::ffi::OsStr| {
+        name.to_str().is_some_and(|name| {
+            name.get(..4)
+                .is_some_and(|p| p.eq_ignore_ascii_case("S-1-"))
+                && name[4..].bytes().all(|b| b.is_ascii_digit() || b == b'-')
+        })
+    };
+    let redacted: PathBuf = path
+        .components()
+        .map(|part| match part {
+            Component::Normal(name) if sid(name) => std::ffi::OsStr::new("<SID>"),
+            part => part.as_os_str(),
+        })
+        .collect();
+    goodgood_core::diagnostics::path(&redacted)
+}
+
+pub fn io(e: std::io::Error) -> u32 {
+    e.raw_os_error().unwrap_or(31) as u32
+}
+
+pub fn wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(Some(0)).collect()
+}
+
+/// A GUID as `CoCreateGuid` names files and folders here, without braces.
+pub fn valid_guid(value: &str) -> bool {
+    value.len() == 36
+        && value.bytes().enumerate().all(|(i, c)| {
+            if [8, 13, 18, 23].contains(&i) {
+                c == b'-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        })
+}
+
+pub struct Handle(pub HANDLE);
+unsafe impl Send for Handle {}
+unsafe impl Sync for Handle {}
+impl Drop for Handle {
+    fn drop(&mut self) {
+        if !self.0.is_invalid() {
+            unsafe {
+                let _ = CloseHandle(self.0);
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn non_win32_hresult_is_not_misreported_as_access_denied() {
+        for (hresult, expected) in [
+            (0x80070005u32, 5),
+            (0x80070715, 1813),
+            (0x80004005, 0x80004005),
+            (0xc0000022, 0xc0000022),
+        ] {
+            assert_eq!(
+                win(windows::core::Error::from_hresult(windows::core::HRESULT(
+                    hresult as i32
+                ))),
+                expected
+            );
+        }
+    }
+}

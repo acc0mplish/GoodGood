@@ -1,0 +1,113 @@
+.curve {
+  position: relative;
+  pointer-events: none;
+}
+/* The server's drawing of the curve, shown until the worker's canvas has
+   drawn (or where there is no worker). */
+.curve-clip {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0);
+}
+.curve-track {
+  position: absolute;
+  inset: 0 auto 0 0;
+}
+/* The worker's canvas (Curve.tsx): on whole device pixels around the box,
+   with room for the readout's dots. Once it has drawn, the server's drawing
+   underneath gives way. */
+.curve-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.curve[data-live] .curve-clip,
+.curve[data-live] .curve-dot {
+  display: none;
+}
+/* The colour the readout dots' ring takes, read by the script. */
+.curve-ring {
+  display: none;
+  color: var(--a-flyout);
+}
+.curve-track svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The hover readout (charts.rs `readout`): a line at the pointer, a dot on each
+   series, and a tip beside the line that turns to the left past the middle. */
+.curve.is-readout {
+  pointer-events: auto;
+}
+.curve-readout {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.curve-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--x) * 100%);
+  width: 1px;
+  background: color-mix(in srgb, var(--a-ink) 30%, transparent);
+}
+.curve-dot {
+  position: absolute;
+  top: 0;
+  left: calc(var(--x) * 100%);
+  will-change: transform;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--a-flyout);
+  border-radius: 50%;
+  box-sizing: content-box;
+  translate: calc(0.5px - 50%) -50%;
+}
+.curve-tip {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: calc(var(--x) * 100% + 10px);
+  display: flex;
+  flex-direction: column;
+  padding: 5px 9px;
+  border: 1px solid var(--a-stroke-strong);
+  border-radius: 6px;
+  background: var(--a-flyout);
+  color: var(--a-ink);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.curve-tip.is-flipped {
+  right: calc((1 - var(--x)) * 100% + 10px);
+  left: auto;
+}
+.curve-age {
+  color: var(--a-ink-2);
+}
+.curve-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.curve-row b {
+  margin-left: auto;
+  padding-left: 8px;
+  font-weight: 600;
+}
+.curve-swatch {
+  width: 12px;
+  height: 0;
+  border-top: 2px solid currentColor;
+}
+.curve-swatch.is-dashed {
+  border-top-style: dashed;
+}

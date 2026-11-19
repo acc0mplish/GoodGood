@@ -1,0 +1,73 @@
+{
+  "cancel": "Abbrechen",
+  "close": "Schließen",
+  "enable": "Aktivieren",
+  "disable": "Deaktivieren",
+  "enabled": "Aktiviert",
+  "disabled": "Deaktiviert",
+  "on": "Ein",
+  "off": "Aus",
+  "start": "Starten",
+  "stop": "Beenden",
+  "restart": "Neu starten",
+  "expand": "Erweitern",
+  "collapse": "Reduzieren",
+  "none": "Keine",
+  "name": "Name",
+  "status": "Status",
+  "filterColumn": "Nach „{column}“ filtern",
+  "command": "Befehl",
+  "copyName": "Namen kopieren",
+  "copyPath": "Pfad kopieren",
+  "openFileLocation": "Dateipfad öffnen",
+  "goToProcess": "Zum Prozess wechseln",
+  "endProcess": "Task beenden",
+  "endProcessTree": "Prozessstruktur beenden",
+  "efficiencyMode": "Effizienzmodus",
+  "privilegedService": "Privilegierter Dienst",
+  "listSeparator": ", ",
+  "resource": {
+    "cpu": "CPU",
+    "memory": "Arbeitsspeicher",
+    "disk": "Datenträger",
+    "network": "Netzwerk",
+    "gpu": "GPU",
+    "battery": "Akku",
+    "temperature": "Temperatur"
+  },
+  "languageSystem": "Wie Windows",
+  "keys": {
+    "space": "Leertaste"
+  },
+  "edit": {
+    "cut": "Ausschneiden",
+    "copy": "Kopieren",
+    "paste": "Einfügen",
+    "selectAll": "Alles auswählen"
+  },
+  "marks": {
+    "pin": "Oben anheften",
+    "unpin": "Lösen",
+    "pinned": "Angeheftet",
+    "addNote": "Notiz hinzufügen",
+    "editNote": "Notiz bearbeiten",
+    "deleteNote": "Notiz löschen",
+    "note": "Notiz",
+    "placeholder": "Kurze Beschreibung des Zwecks",
+    "save": "Speichern"
+  },
+  "languageName": {
+    "koKR": "한국어",
+    "enUS": "English",
+    "esES": "Español",
+    "deDE": "Deutsch",
+    "jaJP": "日本語",
+    "frFR": "Français",
+    "ruRU": "Русский"
+  },
+  "build": {
+    "development": "Entwicklungsversion",
+    "test": "Beta",
+    "stable": "Stabil"
+  }
+}

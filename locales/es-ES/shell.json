@@ -1,0 +1,112 @@
+{
+  "loadingProcesses": "Leyendo procesos…",
+  "nav": {
+    "expand": "Ampliar navegación",
+    "collapse": "Contraer navegación",
+    "resize": "Cambiar el tamaño de la navegación"
+  },
+  "page": {
+    "processes": "Procesos",
+    "performance": "Rendimiento",
+    "services": "Servicios",
+    "startup": "Inicio",
+    "network": "Conexiones",
+    "history": "Historial",
+    "components": "Componentes",
+    "settings": "Configuración",
+    "about": "Acerca de"
+  },
+  "pageTitle": "{page} (Ctrl+{key})",
+  "elevation": {
+    "admin": "Administrador",
+    "adminHint": "GoodGood se ejecuta como administrador y puede ver y finalizar casi todos los procesos",
+    "service": "Servicio privilegiado",
+    "serviceHint": "GoodGood se ejecuta como usuario estándar; el servicio privilegiado realiza lo que necesita derechos de administrador",
+    "standard": "Usuario estándar",
+    "standardHint": "Se necesitan permisos de administrador para leer la información de algunos procesos del sistema o finalizarlos"
+  },
+  "interval": {
+    "label": "Frecuencia de actualización",
+    "option": "Cada {seconds} s"
+  },
+  "background": {
+    "confirm": {
+      "minimized": {
+        "title": "¿Actualizar más a menudo mientras está minimizado?",
+        "body": "Mientras su ventana esté minimizada, GoodGood muestreará cada proceso y sensor cada {seconds} s. Los intervalos inferiores a 5 segundos aumentan notablemente el uso y el consumo de energía del CPU, especialmente con la batería. El historial y las reglas funcionan bien en los 5 segundos predeterminados."
+      },
+      "tray": {
+        "title": "¿Actualizar más a menudo en la bandeja?",
+        "body": "Mientras está oculto en la bandeja, GoodGood toma muestras de todos los procesos y datos de hardware cada {seconds} s. Los intervalos inferiores a 5 segundos aumentan notablemente el uso de CPU y el consumo de energía, especialmente al usar la batería. El historial y las reglas funcionan con el intervalo predeterminado de 5 segundos."
+      },
+      "accept": "Usar {seconds} s de todos modos"
+    },
+    "notice": {
+      "minimized": "Mientras la ventana está minimizada, el intervalo de actualización pasa de {from} s a {to} s para reducir el consumo en segundo plano.",
+      "tray": "Mientras GoodGood permanece en la bandeja, el intervalo de actualización pasa de {from} s a {to} s para reducir el consumo en segundo plano.",
+      "adjust": "Ajustar",
+      "quiet": "No volver a avisar"
+    }
+  },
+  "pause": "Pausar actualizaciones",
+  "resume": "Reanudar actualizaciones",
+  "more": {
+    "label": "Más acciones",
+    "runTask": "Ejecutar nueva tarea…",
+    "fileLock": "Buscar procesos usando un archivo…",
+    "fileLockDetail": "O soltar archivos"
+  },
+  "details": {
+    "label": "Panel de detalles",
+    "mode": {
+      "open": "Mostrar siempre",
+      "auto": "Mostrar cuando se selecciona un proceso",
+      "closed": "Ocultar"
+    },
+    "current": "Panel de detalles: {mode}",
+    "next": "Haga clic para cambiar a «{mode}» o haga clic derecho para elegir directamente"
+  },
+  "search": {
+    "processes": "Buscar nombre, PID, ruta o servicio",
+    "clear": "Borrar búsqueda"
+  },
+  "viewMode": {
+    "apps": {
+      "label": "Aplicaciones"
+    },
+    "tree": {
+      "label": "Árbol"
+    },
+    "list": {
+      "label": "Lista"
+    }
+  },
+  "status": {
+    "threads": "Subprocesos",
+    "handles": "Identificadores",
+    "cached": "En caché",
+    "pagedPool": "Bloque paginado",
+    "uptime": "Tiempo activo",
+    "orderHeld": "Ordenación en pausa",
+    "orderHeldHint": "El puntero está sobre la lista de procesos: las filas mantienen su posición y los valores se siguen actualizando. Se vuelven a ordenar cuando el puntero sale de la lista.",
+    "paused": "Actualizaciones pausadas",
+    "holdHint": "Mantenga pulsada Ctrl en las páginas Procesos y Rendimiento para pausar brevemente",
+    "interval": "Actualiza cada {seconds} s",
+    "version": "v{version}",
+    "versionHint": "GoodGood {version} · {build}\nHaga clic para ver las novedades de esta versión; haga clic derecho para copiar el número de versión"
+  },
+  "star": {
+    "title": "Dar una estrella a GoodGood en GitHub",
+    "body": "GoodGood es gratuito y de código abierto. Una estrella en GitHub ayuda a que más personas lo descubran e impulsa su desarrollo.",
+    "open": "Dar estrella en GitHub",
+    "quiet": "No volver a avisar",
+    "off": "El recordatorio de estrella se ha desactivado. Puede volver a activarse en Configuración.",
+    "settings": "Abrir Configuración"
+  },
+  "portable": {
+    "title": "Esta es la versión portátil",
+    "body": "No incluye actualizaciones integradas, acceso directo en el menú Inicio ni entrada de desinstalación, y no actualiza el servicio privilegiado ni la sustitución del Administrador de tareas junto con GoodGood. Para el uso diario se recomienda la versión instalada; la configuración y el historial actuales se conservan.",
+    "website": "Descargar desde el sitio web",
+    "github": "Descargar desde GitHub"
+  }
+}

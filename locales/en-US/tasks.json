@@ -1,0 +1,43 @@
+{
+  "title": "Run new task",
+  "description": "Open an app, folder or document. Startup arguments are supported.",
+  "command": "Open",
+  "placeholder": "explorer.exe or an app path",
+  "browse": "Browse…",
+  "administrator": "Run as administrator",
+  "administratorHint": "Requires Windows authorization. Canceling it leaves the task unstarted.",
+  "standardHint": "When unchecked, the task runs with standard permissions.",
+  "run": "Run",
+  "running": "Starting…",
+  "waiting": "Waiting for Windows to finish starting the task or request authorization.",
+  "started": "New task submitted.",
+  "code": "Error code: {code}",
+  "explorer": {
+    "title": "Restart Windows Explorer",
+    "restart": "Restart",
+    "confirm": "The desktop and taskbar will briefly disappear. Explorer windows and file operations in progress may be affected.",
+    "restarting": "Restarting Windows Explorer…",
+    "done": "Windows Explorer restarted. The desktop and taskbar are ready.",
+    "recover": "Run Windows Explorer",
+    "error": {
+      "stale": "Windows Explorer has exited or changed. Refresh the list and try again.",
+      "unsupported": "This Explorer instance does not support a safe restart. It was not closed.",
+      "permission": "The current desktop's Explorer could not be accessed. It was not closed.",
+      "prepare": "The Explorer restart environment could not be prepared. It was not closed.",
+      "shutdown": "Windows Explorer did not finish restarting. Try again shortly.",
+      "restore": "Windows Explorer has not recovered. Choose Run Windows Explorer to open it again.",
+      "busy": "Windows Explorer is already restarting. Try again shortly."
+    }
+  },
+  "error": {
+    "invalid": "Enter a valid app name, path or command, up to 8192 characters.",
+    "cancelled": "Windows authorization was canceled. The task was not started.",
+    "notFound": "The app or path could not be found. Check the input or choose Browse.",
+    "accessDenied": "Windows denied the launch. Check the access permissions.",
+    "standardUnavailable": "The standard-permission launch environment could not be prepared.",
+    "elevationRequired": "This app requires administrator permissions. Select Run as administrator and retry.",
+    "noAssociation": "No application is associated with this item.",
+    "busy": "Another launch request is still in progress. Try again shortly.",
+    "os": "Windows could not start this task."
+  }
+}

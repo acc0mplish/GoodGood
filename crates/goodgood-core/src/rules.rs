@@ -1,0 +1,193 @@
+//! Rules that give programs a priority or efficiency mode as they start: the
+//! engine checks every new process instance against the rules once, and every
+//! running one again whenever the rules change.
+
+use std::collections::{HashMap, HashSet};
+
+use serde::{Deserialize, Serialize};
+
+use crate::actions::{self, ActionError, Priority};
+use crate::process::ProcessRow;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessRule {
+    pub id: String,
+    /// Executable file name, matched case-insensitively (`chrome.exe`).
+    pub name: String,
+    pub enabled: bool,
+    pub priority: Option<Priority>,
+    /// `Some(true)` turns efficiency mode on, `Some(false)` off.
+    pub efficiency: Option<bool>,
+}
+
+/// What a rule has done since GoodGood started (or since it was last edited).
+#[derive(Debug, Clone, Copy, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuleStats {
+    pub applied: u32,
+    /// Processes it could not change without administrator rights.
+    pub denied: u32,
+    /// Transport or other unexpected errors; never silently replayed.
+    pub failed: u32,
+}
+
+#[derive(Default)]
+pub struct RuleEngine {
+    rules: Vec<ProcessRule>,
+    /// Active rule (index into `rules`) by lowercase executable name.
+    by_name: HashMap<String, usize>,
+    /// Process instances already checked.
+    seen: HashSet<(u32, i64)>,
+    stats: HashMap<String, RuleStats>,
+    /// Check every process on the next call, not just new ones.
+    recheck: bool,
+}
+
+impl RuleEngine {
+    pub fn set_rules(&mut self, rules: Vec<ProcessRule>) {
+        self.by_name.clear();
+        for (i, r) in rules.iter().enumerate() {
+            if r.enabled && (r.priority.is_some() || r.efficiency.is_some()) {
+                // The first rule for a name wins.
+                self.by_name
+                    .entry(r.name.trim().to_lowercase())
+                    .or_insert(i);
+            }
+        }
+        // An edited rule starts counting again.
+        let old: HashMap<&str, &ProcessRule> =
+            self.rules.iter().map(|r| (r.id.as_str(), r)).collect();
+        self.stats.retain(|id, _| {
+            rules.iter().any(|r| {
+                &r.id == id
+                    && old.get(id.as_str()).is_some_and(|o| {
+                        o.name == r.name
+                            && o.enabled == r.enabled
+                            && o.priority == r.priority
+                            && o.efficiency == r.efficiency
+                    })
+            })
+        });
+        self.rules = rules;
+        self.recheck = true;
+    }
+
+    /// Applies the rules to processes that started since the last call (to all
+    /// of them right after the rules changed).
+    pub fn apply(&mut self, processes: &[ProcessRow]) {
+        self.apply_with(
+            processes
+                .iter()
+                .map(|p| (p.pid, p.create_time, p.name.as_ref())),
+            apply_rule,
+        );
+    }
+
+    /// The host can execute matched rules outside the sampling thread and
+    /// route them through a privileged service without changing matching.
+    pub fn apply_with<'a>(
+        &mut self,
+        processes: impl IntoIterator<Item = (u32, i64, &'a str)>,
+        mut execute: impl FnMut(&ProcessRule, u32, i64) -> Result<(), ActionError>,
+    ) {
+        if self.by_name.is_empty() {
+            // Nothing to do; adding a rule rechecks everything anyway.
+            self.seen.clear();
+            self.recheck = false;
+            return;
+        }
+        let processes = processes.into_iter();
+        let mut seen = HashSet::with_capacity(processes.size_hint().0);
+        let mut name = String::new();
+        for (pid, created, process_name) in processes {
+            let key = (pid, created);
+            seen.insert(key);
+            if !self.recheck && self.seen.contains(&key) {
+                continue;
+            }
+            name.clear();
+            if process_name.is_ascii() {
+                name.push_str(process_name);
+                name.make_ascii_lowercase();
+            } else {
+                // Match the full-string mapping used for stored rules, including
+                // context-sensitive letters such as Greek final sigma.
+                name = process_name.to_lowercase();
+            }
+            let Some(&i) = self.by_name.get(&name) else {
+                continue;
+            };
+            let rule = &self.rules[i];
+            let result = execute(rule, pid, created);
+            let stats = self.stats.entry(rule.id.clone()).or_default();
+            match result {
+                Ok(()) => stats.applied += 1,
+                Err(ActionError::AccessDenied) => stats.denied += 1,
+                Err(ActionError::NotFound) => {}
+                Err(_) => stats.failed += 1,
+            }
+        }
+        self.seen = seen;
+        self.recheck = false;
+    }
+
+    pub fn stats(&self) -> HashMap<String, RuleStats> {
+        self.stats.clone()
+    }
+
+    /// A different executor (service started/stopped/restarted) starts a fresh
+    /// accounting period and retries processes denied under the old rights.
+    pub fn reset_executor(&mut self) {
+        self.stats.clear();
+        self.recheck = true;
+    }
+}
+
+pub fn apply_rule(rule: &ProcessRule, pid: u32, create_time: i64) -> Result<(), ActionError> {
+    // Efficiency mode first: turning it on also lowers the priority, which an
+    // explicit priority in the same rule then overrides.
+    if let Some(on) = rule.efficiency {
+        actions::set_efficiency_mode(pid, create_time, on)?;
+    }
+    if let Some(priority) = rule.priority {
+        actions::set_priority(pid, create_time, priority)?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ProcessRule, RuleEngine};
+
+    #[test]
+    fn unicode_case_variants_match_stored_rules_once_per_process() {
+        for (saved, running) in [
+            ("EDITOR.EXE", "editor.exe"),
+            ("РЕДАКТОР.EXE", "Редактор.exe"),
+            ("ÉDITEUR.EXE", "éditeur.exe"),
+            ("ΟΣ-1.EXE", "ος-1.exe"),
+        ] {
+            let mut engine = RuleEngine::default();
+            engine.set_rules(vec![ProcessRule {
+                id: "rule".into(),
+                name: saved.into(),
+                enabled: true,
+                priority: None,
+                efficiency: Some(true),
+            }]);
+            let mut applied = Vec::new();
+            for _ in 0..2 {
+                engine.apply_with(
+                    [(1, 1, saved), (2, 2, running), (3, 3, "unrelated.exe")],
+                    |_, pid, _| {
+                        applied.push(pid);
+                        Ok(())
+                    },
+                );
+            }
+            assert_eq!(applied, [1, 2], "{saved} / {running}");
+            assert_eq!(engine.stats()["rule"].applied, 2);
+        }
+    }
+}

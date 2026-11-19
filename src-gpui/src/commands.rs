@@ -1,0 +1,1245 @@
+use std::collections::HashMap;
+use std::os::windows::process::CommandExt;
+use std::time::Duration;
+
+use crate::native_runtime::State;
+
+use goodgood_core::actions::{
+    self, ActionError, IoPriority, MemoryPriority, Priority, TreeKillReport,
+};
+use goodgood_core::connections::{self, Connection};
+use goodgood_core::details::{self, ProcessDetails};
+use goodgood_core::filelock::{self, LockReport};
+use goodgood_core::history::{self, HistoryMoment, HistoryPoint, HistoryUsage};
+use goodgood_core::rules::{ProcessRule, RuleStats};
+use goodgood_core::services::{ServiceAction, ServiceInfo, StartType};
+use goodgood_core::startup::{self, StartupItem};
+use goodgood_core::tr;
+use goodgood_service::{Operation, Reply, Routed, ServiceStatus};
+use serde::Serialize;
+
+use crate::hotkey::HotkeyError;
+use crate::sampler::Control;
+use crate::settings::{
+    BACKGROUND_INTERVALS, Language, MONITOR_OPACITIES, Reading, SettingsStore, SettingsView,
+    TaskbarPlace, TaskbarStyle, Theme, TrayIcon, TrayMenu, UpdateChannel, UpdateRoute,
+};
+use crate::updater::{self, UpdateStatus};
+use crate::{AppState, HistoryDir, shell};
+
+pub(crate) mod autostart;
+
+pub fn desktop_shell() -> Option<crate::explorer::Identity> {
+    crate::explorer::current()
+}
+
+pub fn restart_explorer(pid: u32, create_time: i64) -> Result<(), crate::explorer::RestartError> {
+    crate::explorer::restart(pid, create_time)
+}
+
+pub fn run_task(
+    app: crate::native_runtime::Host,
+    command: String,
+    elevated: bool,
+) -> Result<(), crate::tasks::TaskError> {
+    let owner = app
+        .get_window("main")
+        .and_then(|w| w.hwnd().ok())
+        .map_or(0, |h| h.0 as usize);
+    crate::tasks::launch(owner, command, elevated)
+}
+
+/// Opens Control Panel's User Accounts, as Task Manager's "Manage user
+/// accounts" does. Started with the desktop's rights also when GoodGood is
+/// elevated: Control Panel asks for elevation where a change needs it.
+pub fn open_user_accounts(app: crate::native_runtime::Host) -> Result<(), crate::tasks::TaskError> {
+    let owner = app
+        .get_window("main")
+        .and_then(|w| w.hwnd().ok())
+        .map_or(0, |h| h.0 as usize);
+    crate::tasks::launch(
+        owner,
+        "control.exe /name Microsoft.UserAccounts".into(),
+        false,
+    )
+}
+
+/// Signs a user out of the sessions the process list showed for them. Acts
+/// with GoodGood's own rights: another user's session needs an elevated GoodGood.
+pub fn sign_out_user(
+    state: State<'_, AppState>,
+    user: String,
+    domain: String,
+    sessions: Vec<u32>,
+) -> Result<(), ActionError> {
+    let result = action_result(
+        "sign out user",
+        "local",
+        goodgood_core::sessions::sign_out(&user, &domain, &sessions),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn task_manager_status() -> Result<goodgood_service::taskmgr::Status, String> {
+    goodgood_service::taskmgr::status()
+}
+
+pub fn open_native_task_manager() -> Result<(), String> {
+    goodgood_service::taskmgr::open_native()
+}
+
+pub fn manage_task_manager(action: String) -> Result<goodgood_service::taskmgr::Status, String> {
+    goodgood_service::taskmgr::manage(&action).map_err(|failure| {
+        log::warn!(
+            "task manager {} failed {}",
+            goodgood_core::diagnostics::action(&action),
+            failure.log()
+        );
+        failure.message
+    })
+}
+
+pub fn task_manager_ready(app: crate::native_runtime::Host) {
+    for completion in goodgood_service::taskmgr::ready::complete() {
+        if completion.should_show() {
+            shell::show_main(&app);
+            crate::TASKMGR_COMPLETED.store(true, std::sync::atomic::Ordering::Release);
+        }
+        completion.acknowledge();
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppInfo {
+    /// The release version, for comparisons.
+    version: &'static str,
+    /// The version shown: a build that is not of a release adds its commit
+    /// (`build-support/build-version.rs`).
+    build: &'static str,
+    build_kind: goodgood_app::config::BuildKind,
+    windows: Option<&'static str>,
+    elevated: bool,
+    /// Relaunched by the installer of an update.
+    updated: bool,
+    /// Started by the task manager replacement: the system may be struggling,
+    /// so the UI holds back what is not urgent.
+    task_manager: bool,
+    /// The standalone exe of a release or test build, which the interface
+    /// tells what it lacks beside the installed version. Not a development
+    /// build: it is no download either.
+    portable: bool,
+}
+
+pub fn app_info(app: crate::native_runtime::Host) -> AppInfo {
+    let state = app.state::<AppState>();
+    AppInfo {
+        version: env!("CARGO_PKG_VERSION"),
+        build: env!("GOODGOOD_VERSION"),
+        build_kind: goodgood_app::config::build_kind(
+            env!("GOODGOOD_VERSION"),
+            cfg!(debug_assertions),
+        ),
+        windows: crate::diagnostics::windows_version(),
+        elevated: state.elevated,
+        updated: std::env::args().any(|a| a == updater::UPDATED_ARG),
+        task_manager: state.task_manager_start,
+        portable: !cfg!(debug_assertions) && updater::status(&app).portable,
+    }
+}
+
+pub fn set_interval(state: State<'_, AppState>, ms: u64) {
+    let ms = ms.clamp(250, 10_000);
+    state
+        .sampler
+        .send(Control::SetInterval(Duration::from_millis(ms)));
+}
+
+pub fn set_paused(state: State<'_, AppState>, paused: bool) {
+    state.sampler.send(Control::SetPaused(paused));
+}
+
+pub fn process_details(pid: u32, path: Option<String>) -> ProcessDetails {
+    details::query(pid, path.as_deref())
+}
+
+pub fn disk_details(index: u32) -> goodgood_core::hardware::disk_details::DiskDetails {
+    goodgood_service::disk_details(index)
+}
+
+/// Runs `operation` in the privileged service when one runs for this account,
+/// else `local` with GoodGood's own rights. `replied` takes the service's answer,
+/// None for one this host does not expect.
+fn privileged<T>(
+    state: &AppState,
+    operation: Operation,
+    replied: impl FnOnce(Reply) -> Option<T>,
+    local: impl FnOnce() -> Result<T, ActionError>,
+) -> Result<T, ActionError> {
+    let operation = match &operation {
+        Operation::Terminate { .. } => ("terminate process", operation),
+        Operation::Priority { .. } => ("set process priority", operation),
+        Operation::Efficiency { .. } => ("set process efficiency", operation),
+        Operation::IoPriority { .. } => ("set process I/O priority", operation),
+        Operation::MemoryPriority { .. } => ("set process memory priority", operation),
+        Operation::Suspend { .. } => ("suspend or resume process", operation),
+        Operation::ControlService { .. } => ("control Windows service", operation),
+        Operation::ServiceStartType { .. } => ("set service start type", operation),
+        Operation::CloseConnection { .. } => ("close TCP connection", operation),
+        _ => ("privileged operation", operation),
+    };
+    if state.elevated {
+        return action_result(operation.0, "local elevated", local());
+    }
+    let routed = goodgood_service::route(operation.1).map_err(ActionError::Os);
+    let routed = action_result(operation.0, "service routing", routed)?;
+    let source = match &routed {
+        Routed::Absent => "local fallback (no service)",
+        Routed::Outdated => "local fallback (incompatible service)",
+        Routed::Replied(_) => "privileged service",
+    };
+    action_result(operation.0, source, settle(routed, replied, local))
+}
+
+fn action_result<T>(
+    operation: &'static str,
+    source: &'static str,
+    result: Result<T, ActionError>,
+) -> Result<T, ActionError> {
+    if let Err(error) = &result {
+        goodgood_core::diagnostics::warn(
+            operation,
+            format!("source={source}; {}", error.diagnostic()),
+        );
+    }
+    result
+}
+
+/// What an operation comes to once the service has `routed` it.
+fn settle<T>(
+    routed: Routed,
+    replied: impl FnOnce(Reply) -> Option<T>,
+    local: impl FnOnce() -> Result<T, ActionError>,
+) -> Result<T, ActionError> {
+    match routed {
+        Routed::Absent => local(),
+        Routed::Outdated => {
+            if !OUTDATED_LOGGED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+                log::warn!("privileged service: incompatible protocol; acting with own rights");
+            }
+            outdated(local())
+        }
+        Routed::Replied(reply) => match *reply {
+            Reply::Error(e) => Err(e),
+            reply => replied(reply).ok_or_else(|| ActionError::Os(tr!("host.serviceReply"))),
+        },
+    }
+}
+
+static OUTDATED_LOGGED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The outdated service refused the operation without running it, so it ran
+/// here: where GoodGood's own rights fall short, updating the service helps, and
+/// the UI offers it.
+fn outdated<T>(result: Result<T, ActionError>) -> Result<T, ActionError> {
+    result.map_err(|e| match e {
+        ActionError::AccessDenied => ActionError::ServiceOutdated,
+        e => e,
+    })
+}
+
+fn done(reply: Reply) -> Option<()> {
+    matches!(reply, Reply::Done).then_some(())
+}
+
+fn terminate(state: &AppState, pid: u32, create_time: i64, force: bool) -> Result<(), ActionError> {
+    if pid == std::process::id() {
+        return Err(ActionError::Refused);
+    }
+    crate::explorer::check_termination(pid)?;
+    privileged(
+        state,
+        Operation::Terminate { pid, create_time },
+        done,
+        || actions::terminate(pid, create_time, force),
+    )
+}
+
+pub fn kill_process(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    force: bool,
+) -> Result<(), ActionError> {
+    let result = terminate(&state, pid, create_time, force);
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn kill_process_tree(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+) -> Result<TreeKillReport, ActionError> {
+    crate::explorer::check_termination(pid)?;
+    let result = actions::terminate_tree_with(pid, create_time, |pid, created| {
+        terminate(&state, pid, created, false)
+    });
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_priority(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    priority: Priority,
+) -> Result<Priority, ActionError> {
+    let result = privileged(
+        &state,
+        Operation::Priority {
+            pid,
+            create_time,
+            priority,
+        },
+        |reply| match reply {
+            Reply::Priority(p) => Some(p),
+            _ => None,
+        },
+        || actions::set_priority(pid, create_time, priority),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_efficiency_mode(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    on: bool,
+) -> Result<(), ActionError> {
+    let result = privileged(
+        &state,
+        Operation::Efficiency {
+            pid,
+            create_time,
+            on,
+        },
+        done,
+        || actions::set_efficiency_mode(pid, create_time, on),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_io_priority(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    priority: IoPriority,
+) -> Result<(), ActionError> {
+    let result = privileged(
+        &state,
+        Operation::IoPriority {
+            pid,
+            create_time,
+            priority,
+        },
+        done,
+        || actions::set_io_priority(pid, create_time, priority).map(|_| ()),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_memory_priority(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    priority: MemoryPriority,
+) -> Result<(), ActionError> {
+    let result = privileged(
+        &state,
+        Operation::MemoryPriority {
+            pid,
+            create_time,
+            priority,
+        },
+        done,
+        || actions::set_memory_priority(pid, create_time, priority).map(|_| ()),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_suspended(
+    state: State<'_, AppState>,
+    pid: u32,
+    create_time: i64,
+    suspend: bool,
+) -> Result<(), ActionError> {
+    let result = privileged(
+        &state,
+        Operation::Suspend {
+            pid,
+            create_time,
+            suspend,
+        },
+        done,
+        || actions::set_suspended(pid, create_time, suspend),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+/// Opens Explorer with the file selected.
+pub fn reveal_in_explorer(path: String) -> Result<(), String> {
+    if !std::path::Path::new(&path).exists() {
+        return Err(tr!("host.fileMissing"));
+    }
+    // Windows paths cannot contain `"`, so quoting is safe; explorer needs the
+    // `/select,"path"` form verbatim, hence raw_arg.
+    std::process::Command::new("explorer.exe")
+        .raw_arg(format!("/select,\"{path}\""))
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+fn settings_view(app: &crate::native_runtime::Host) -> SettingsView {
+    let store = app.state::<SettingsStore>();
+    SettingsView {
+        settings: store.get(),
+        autostart: app.autolaunch().is_enabled().unwrap_or(false),
+        hotkey_error: crate::hotkey::error(app),
+        default_hotkey: crate::settings::DEFAULT_HOTKEY,
+    }
+}
+
+pub fn get_settings(app: crate::native_runtime::Host) -> SettingsView {
+    autostart::repair_once(&app.package_info().name);
+    settings_view(&app)
+}
+
+pub fn privileged_service_status() -> Result<ServiceStatus, String> {
+    goodgood_service::status()
+}
+
+pub fn manage_privileged_service(
+    state: State<'_, AppState>,
+    action: String,
+) -> Result<ServiceStatus, String> {
+    let status = goodgood_service::manage(&action).inspect_err(|e| {
+        log::warn!(
+            "privileged service {} failed: {}",
+            goodgood_core::diagnostics::action(&action),
+            goodgood_core::diagnostics::failure(e)
+        )
+    })?;
+    state.sampler.send(Control::Refresh);
+    Ok(status)
+}
+
+/// Switches the language of all text; the tray follows at once and the UI
+/// redraws on `goodgood-language`.
+pub fn set_language(
+    app: crate::native_runtime::Host,
+    language: Language,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.language = language)
+        .map_err(|e| e.to_string())?;
+    crate::catalog::set_locale(language.resolve());
+    shell::apply_language(&app);
+    Ok(settings_view(&app))
+}
+
+pub fn set_theme(app: crate::native_runtime::Host, theme: Theme) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.theme = theme)
+        .map_err(|e| e.to_string())?;
+    shell::apply_theme(&app, theme);
+    Ok(settings_view(&app))
+}
+
+/// The administrator start's state, for settings and onboarding.
+pub fn administrator_status(app: crate::native_runtime::Host) -> goodgood_service::admin::Status {
+    crate::admin::status(&app)
+}
+
+/// Turns the administrator start on or off (`admin::set_mode`).
+pub fn set_administrator_mode(
+    app: crate::native_runtime::Host,
+    enabled: bool,
+    defer: bool,
+    repair: Option<bool>,
+) -> Result<goodgood_service::admin::Status, String> {
+    crate::admin::set_mode(&app, enabled, defer, repair)
+}
+
+/// Applies a deferred administrator start change.
+pub fn apply_administrator_mode(app: crate::native_runtime::Host) -> Result<(), String> {
+    crate::admin::apply_mode(&app)
+}
+
+/// Records that the onboarding of `version` was completed or skipped.
+pub fn complete_onboarding(
+    app: crate::native_runtime::Host,
+    version: u32,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.onboarding = s.onboarding.max(version))
+        .map_err(|e| e.to_string())?;
+    Ok(settings_view(&app))
+}
+
+/// Whether the first start of a new version shows what it changed.
+pub fn set_whats_new(
+    app: crate::native_runtime::Host,
+    enabled: bool,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.whats_new = enabled)
+        .map_err(|e| e.to_string())?;
+    Ok(settings_view(&app))
+}
+
+/// Draws the interface with the graphics card or, turned off, with the
+/// system's software rasterizer. The open windows change renderer in place.
+pub fn set_hardware_acceleration(
+    app: crate::native_runtime::Host,
+    enabled: bool,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.hardware_acceleration = enabled)
+        .map_err(|e| e.to_string())?;
+    log::info!("hardware acceleration set; enabled={enabled}");
+    gpui_kit::gpui::set_windows_software_rendering(!enabled);
+    Ok(settings_view(&app))
+}
+
+/// Records that the first start of this version has been dealt with, so what
+/// it changed does not show again.
+pub fn note_version_seen(app: crate::native_runtime::Host) -> Result<SettingsView, String> {
+    let store = app.state::<SettingsStore>();
+    let version = env!("CARGO_PKG_VERSION");
+    if store.get().seen_version != version {
+        store
+            .update(|s| s.seen_version = version.into())
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(settings_view(&app))
+}
+
+pub fn set_close_to_tray(
+    app: crate::native_runtime::Host,
+    value: bool,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.close_to_tray = value)
+        .map_err(|e| e.to_string())?;
+    Ok(settings_view(&app))
+}
+
+/// The tray icon's look, its hover card and what a right click opens; each
+/// one given changes, and the icon follows at once.
+pub fn set_tray(
+    app: crate::native_runtime::Host,
+    icon: Option<TrayIcon>,
+    card: Option<bool>,
+    menu: Option<TrayMenu>,
+) -> Result<SettingsView, String> {
+    let saved = app
+        .state::<SettingsStore>()
+        .update(|s| {
+            if let Some(icon) = icon {
+                s.tray_icon = icon;
+            }
+            if let Some(card) = card {
+                s.tray_card = card;
+            }
+            if let Some(menu) = menu {
+                s.tray_menu = menu;
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    shell::apply_tray(&saved);
+    Ok(settings_view(&app))
+}
+
+/// A monitor's readings as asked for: each once, in the order given.
+fn distinct(metrics: Vec<Reading>) -> Vec<Reading> {
+    let mut kept = Vec::with_capacity(metrics.len());
+    for metric in metrics {
+        if !kept.contains(&metric) {
+            kept.push(metric);
+        }
+    }
+    kept
+}
+
+/// The desktop monitor's settings; each one given changes. The interface
+/// shows, hides or rearranges the monitor's window from the settings
+/// returned.
+#[allow(clippy::too_many_arguments)]
+pub fn set_desktop_monitor(
+    app: crate::native_runtime::Host,
+    enabled: Option<bool>,
+    metrics: Option<Vec<Reading>>,
+    topmost: Option<bool>,
+    locked: Option<bool>,
+    click_through: Option<bool>,
+    opacity: Option<u8>,
+    position: Option<[i32; 2]>,
+) -> Result<SettingsView, String> {
+    if opacity.is_some_and(|value| !MONITOR_OPACITIES.contains(&value)) {
+        return Err(tr!("app.invalidRequest"));
+    }
+    app.state::<SettingsStore>()
+        .update(|s| {
+            let monitor = &mut s.desktop_monitor;
+            if let Some(enabled) = enabled {
+                monitor.enabled = enabled;
+            }
+            if let Some(metrics) = metrics {
+                monitor.metrics = distinct(metrics);
+            }
+            if let Some(topmost) = topmost {
+                monitor.topmost = topmost;
+            }
+            if let Some(locked) = locked {
+                monitor.locked = locked;
+            }
+            if let Some(click_through) = click_through {
+                monitor.click_through = click_through;
+            }
+            if let Some(opacity) = opacity {
+                monitor.opacity = opacity;
+            }
+            if let Some(position) = position {
+                monitor.position = Some(position);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(settings_view(&app))
+}
+
+/// The taskbar monitor's settings; each one given changes, and the monitor
+/// follows at once.
+pub fn set_taskbar_monitor(
+    app: crate::native_runtime::Host,
+    enabled: Option<bool>,
+    metrics: Option<Vec<Reading>>,
+    place: Option<TaskbarPlace>,
+    style: Option<TaskbarStyle>,
+) -> Result<SettingsView, String> {
+    let saved = app
+        .state::<SettingsStore>()
+        .update(|s| {
+            let monitor = &mut s.taskbar_monitor;
+            if let Some(enabled) = enabled {
+                monitor.enabled = enabled;
+            }
+            if let Some(metrics) = metrics {
+                monitor.metrics = distinct(metrics);
+            }
+            if let Some(place) = place {
+                monitor.place = place;
+            }
+            if let Some(style) = style {
+                monitor.style = style;
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    shell::apply_taskbar_monitor(&app, &saved.taskbar_monitor);
+    Ok(settings_view(&app))
+}
+
+/// How often to sample while minimized and while in the tray, ms; takes
+/// effect at once.
+pub fn set_background_intervals(
+    app: crate::native_runtime::Host,
+    state: State<'_, AppState>,
+    minimized: u64,
+    tray: u64,
+) -> Result<SettingsView, String> {
+    if ![minimized, tray]
+        .iter()
+        .all(|ms| BACKGROUND_INTERVALS.contains(ms))
+    {
+        return Err(tr!("host.invalidInterval"));
+    }
+    let saved = app
+        .state::<SettingsStore>()
+        .update(|s| {
+            s.minimized_interval = minimized;
+            s.tray_interval = tray;
+        })
+        .map_err(|e| e.to_string())?;
+    state.sampler.send(saved.background_intervals());
+    Ok(settings_view(&app))
+}
+
+/// Replaces the show/hide hotkey and turns it on. On failure the old one
+/// stays.
+pub fn set_hotkey(
+    app: crate::native_runtime::Host,
+    hotkey: String,
+) -> Result<SettingsView, HotkeyError> {
+    crate::hotkey::set(&app, &hotkey)?;
+    Ok(settings_view(&app))
+}
+
+/// Turns the hotkey on or off, keeping the combination.
+pub fn set_hotkey_enabled(
+    app: crate::native_runtime::Host,
+    enabled: bool,
+) -> Result<SettingsView, HotkeyError> {
+    crate::hotkey::set_enabled(&app, enabled)?;
+    Ok(settings_view(&app))
+}
+
+/// Frees the hotkey while the settings page records a new one.
+pub fn suspend_hotkey(app: crate::native_runtime::Host) {
+    crate::hotkey::suspend(&app);
+}
+
+/// Registers the saved hotkey again: after recording, or to retry one that
+/// another program held.
+pub fn resume_hotkey(app: crate::native_runtime::Host) -> SettingsView {
+    crate::hotkey::resume(&app);
+    settings_view(&app)
+}
+
+pub fn set_autostart(
+    app: crate::native_runtime::Host,
+    enabled: bool,
+) -> Result<SettingsView, String> {
+    let launcher = app.autolaunch();
+    if !enabled {
+        launcher.disable().map_err(|e| e.to_string())?;
+    } else if let Some(path) = goodgood_service::admin::launcher(&app.config().identifier) {
+        autostart::enable_admin(&app, &path)?;
+    } else if autostart::running_as_copy() {
+        // Enabling as usual would name this copy of the task manager replacement.
+        autostart::enable_installed(&app.package_info().name)?;
+    } else {
+        launcher.enable().map_err(|e| e.to_string())?;
+    }
+    Ok(settings_view(&app))
+}
+
+/// Replaces the process rules and applies them to running processes at once.
+pub fn set_rules(
+    app: crate::native_runtime::Host,
+    state: State<'_, AppState>,
+    rules: Vec<ProcessRule>,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.rules = rules.clone())
+        .map_err(|e| e.to_string())?;
+    state.rules.set_rules(rules);
+    state.sampler.send(Control::Refresh);
+    Ok(settings_view(&app))
+}
+
+pub fn rule_stats(state: State<'_, AppState>) -> HashMap<String, RuleStats> {
+    state.rules.stats()
+}
+
+// ---- History --------------------------------------------------------------------
+
+/// Unix ms of the first and last recorded frame.
+pub fn history_range(dir: State<'_, HistoryDir>) -> Option<(i64, i64)> {
+    history::range(&dir.0)
+}
+
+pub fn history_series(
+    dir: State<'_, HistoryDir>,
+    from: i64,
+    to: i64,
+    buckets: usize,
+) -> Vec<HistoryPoint> {
+    history::series(&dir.0, from, to, buckets.min(4096))
+}
+
+pub fn history_moment(dir: State<'_, HistoryDir>, ts: i64) -> Option<HistoryMoment> {
+    history::moment(&dir.0, ts)
+}
+
+pub fn history_usage(dir: State<'_, HistoryDir>) -> HistoryUsage {
+    let mut usage = history::usage(&dir.0);
+    usage.bytes = usage
+        .bytes
+        .saturating_add(goodgood_core::watch::WatchRecorder::storage_bytes(&dir.0));
+    usage
+}
+
+/// Explicit observation runs on the sampler, where its file and instance handle live.
+pub fn watch_process(
+    state: State<'_, AppState>,
+    dir: State<'_, HistoryDir>,
+    action: goodgood_core::watch::WatchAction,
+) -> Result<Option<goodgood_core::watch::WatchView>, String> {
+    use goodgood_core::watch::WatchError;
+    let (tx, rx) = std::sync::mpsc::channel();
+    state
+        .sampler
+        .send(Control::Watch(dir.0.clone(), action, tx));
+    let result = rx
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .map_err(|_| tr!("history.watch.error.unavailable"))?;
+    result.map_err(|error| {
+        goodgood_core::i18n::text(match error {
+            WatchError::Identity => "history.watch.error.identity",
+            WatchError::Access => "history.watch.error.access",
+            WatchError::Existing => "history.watch.error.existing",
+            WatchError::Missing => "history.watch.error.missing",
+            WatchError::Storage => "history.watch.error.storage",
+            WatchError::Invalid => "history.watch.error.invalid",
+        })
+    })
+}
+
+/// Starts or stops recording; what is already recorded stays until it expires.
+pub fn set_history_enabled(
+    app: crate::native_runtime::Host,
+    state: State<'_, AppState>,
+    dir: State<'_, HistoryDir>,
+    enabled: bool,
+) -> Result<SettingsView, String> {
+    app.state::<SettingsStore>()
+        .update(|s| s.history = enabled)
+        .map_err(|e| e.to_string())?;
+    state
+        .sampler
+        .send(Control::SetHistoryDir(enabled.then(|| dir.0.clone())));
+    Ok(settings_view(&app))
+}
+
+static SENSOR_CHANGE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// The explicit switch action may request UAC; startup never does. Persist
+/// only after the driver is ready, so cancellation/failure leaves it off.
+pub fn set_kernel_sensors(
+    app: crate::native_runtime::Host,
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<SettingsView, String> {
+    use std::sync::atomic::Ordering;
+    if SENSOR_CHANGE.swap(true, Ordering::AcqRel) {
+        return Err(tr!("sensorSetup.busy"));
+    }
+    struct Change;
+    impl Drop for Change {
+        fn drop(&mut self) {
+            SENSOR_CHANGE.store(false, Ordering::Release);
+        }
+    }
+    let _change = Change;
+    if enabled {
+        goodgood_service::driver::ensure_ready().inspect_err(|error| {
+            goodgood_core::diagnostics::warn(
+                "kernel sensor preparation failed",
+                format!(
+                    "{}; PawnIO state after failure: {}",
+                    goodgood_core::diagnostics::failure(error),
+                    goodgood_service::driver::diagnostic_status()
+                ),
+            );
+        })?;
+    }
+    app.state::<SettingsStore>()
+        .update(|s| s.kernel_sensors = enabled)
+        .map_err(|e| e.to_string())?;
+    state.sampler.send(Control::SetKernelSensors(enabled));
+    Ok(settings_view(&app))
+}
+
+/// Deletes all recorded history.
+pub fn clear_history(state: State<'_, AppState>, dir: State<'_, HistoryDir>) -> Result<(), String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    state.sampler.send(Control::ClearHistory(dir.0.clone(), tx));
+    match rx.recv_timeout(Duration::from_secs(10)) {
+        Ok(result) => result.map_err(|e| {
+            goodgood_core::diagnostics::file_failure("history clear", &dir.0, &e);
+            e.to_string()
+        }),
+        Err(error) => {
+            goodgood_core::diagnostics::warn("history clear", format!("sampler_reply={error:?}"));
+            Err(tr!("host.samplerStalled"))
+        }
+    }
+}
+
+pub fn quit(app: crate::native_runtime::Host) {
+    app.exit(0);
+}
+
+// ---- Updates --------------------------------------------------------------------
+
+pub fn update_status(app: crate::native_runtime::Host) -> UpdateStatus {
+    updater::status(&app)
+}
+
+/// Starts a check; progress arrives as `update-status` events.
+pub fn check_update(app: crate::native_runtime::Host) -> UpdateStatus {
+    let handle = app.clone();
+    crate::async_runtime::spawn(async move { updater::check(&handle).await });
+    updater::status(&app)
+}
+
+/// Runs the downloaded installer; GoodGood exits and the installer relaunches it.
+pub fn install_update(app: crate::native_runtime::Host) -> Result<(), updater::InstallError> {
+    updater::install(&app)
+}
+
+pub fn set_update_settings(
+    app: crate::native_runtime::Host,
+    check: bool,
+    channel: UpdateChannel,
+    route: UpdateRoute,
+    proxy: String,
+) -> Result<SettingsView, String> {
+    let proxy = updater::normalize_proxy(&proxy)?;
+    let store = app.state::<SettingsStore>();
+    let previous = store.get().update_channel;
+    store
+        .update(|s| {
+            s.update_check = check;
+            s.update_channel = channel;
+            s.update_route = route;
+            s.update_proxy = proxy;
+        })
+        .map_err(|e| e.to_string())?;
+    // A downloaded update belongs to the old channel; look at the new one now.
+    if previous != channel {
+        updater::reset(&app);
+        let handle = app.clone();
+        crate::async_runtime::spawn(async move { updater::check(&handle).await });
+    }
+    Ok(settings_view(&app))
+}
+
+pub fn open_release_page(version: String) -> Result<(), String> {
+    updater::open_release_page(&version)
+}
+
+pub fn open_sensor_driver_page() -> Result<(), String> {
+    crate::shell::open_url("https://pawnio.eu/")
+}
+
+/// Opens the same project homepage shown in Settings and the installer.
+pub fn open_homepage() -> Result<(), String> {
+    crate::shell::open_url(
+        goodgood_app::config::manifest()["homepage"]
+            .as_str()
+            .expect("project homepage"),
+    )
+}
+
+/// Opens the source repository, where releases and issues are too.
+pub fn open_repository() -> Result<(), String> {
+    crate::shell::open_url(updater::REPO)
+}
+
+/// The website's page at `path` in the language `locale`: Korean at the
+/// root, every other language under its own folder.
+fn website_page(homepage: &str, locale: goodgood_core::i18n::Locale, path: &str) -> String {
+    use goodgood_core::i18n::Locale;
+    let folder = match locale {
+        Locale::KoKr => "",
+        Locale::EnUs => "/en",
+        Locale::EsEs => "/es",
+        Locale::DeDe => "/de",
+        Locale::JaJp => "/ja",
+        Locale::FrFr => "/fr",
+        Locale::RuRu => "/ru",
+    };
+    format!("{}{folder}{path}", homepage.trim_end_matches('/'))
+}
+
+fn homepage() -> &'static str {
+    goodgood_app::config::manifest()["homepage"]
+        .as_str()
+        .expect("project homepage")
+}
+
+/// Opens the website's download page in the interface language: where a
+/// portable copy is sent for the installer.
+pub fn open_download_page() -> Result<(), String> {
+    crate::shell::open_url(&website_page(
+        homepage(),
+        goodgood_core::i18n::locale(),
+        "/download/",
+    ))
+}
+
+/// The address of one of the pages the About page's link cards lead to, by
+/// the name the interface gives it; `None` for any other name, so the
+/// interface can only open these.
+fn project_page(homepage: &str, locale: goodgood_core::i18n::Locale, page: &str) -> Option<String> {
+    let repository = updater::REPO;
+    Some(match page {
+        "download" => website_page(homepage, locale, "/download/"),
+        "changelog" => website_page(homepage, locale, "/changelog/"),
+        // The guide is written in Korean alone; the website's own
+        // navigation links it from every language.
+        "guide" => format!("{}/docs/guide/", homepage.trim_end_matches('/')),
+        // The issue forms, with the questions forum and the guide among them.
+        "issues" => format!("{repository}/issues/new/choose"),
+        "discussions" => format!("{repository}/discussions"),
+        "releases" => format!("{repository}/releases"),
+        _ => return None,
+    })
+}
+
+/// Opens one of the project's pages named by `project_page`.
+pub fn open_project_page(page: String) -> Result<(), String> {
+    let url = project_page(homepage(), goodgood_core::i18n::locale(), &page)
+        .ok_or_else(|| format!("unknown project page {page}"))?;
+    crate::shell::open_url(&url)
+}
+
+/// Opens the newest release on GitHub, with the installer among its files.
+pub fn open_latest_release() -> Result<(), String> {
+    crate::shell::open_url(&format!("{}/releases/latest", updater::REPO))
+}
+
+/// Opens the folder with `goodgood.log`, for attaching to bug reports.
+pub fn open_log_dir(app: crate::native_runtime::Host) -> Result<(), String> {
+    let dir = app
+        .path()
+        .app_log_dir()
+        .map_err(|e| e.to_string())?
+        .join("diagnostics");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    std::process::Command::new("explorer.exe")
+        .arg(&dir)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+// ---- Services -----------------------------------------------------------------
+
+pub fn list_services(state: State<'_, AppState>) -> Result<Vec<ServiceInfo>, ActionError> {
+    action_result("list Windows services", "local", state.services.list())
+}
+
+pub fn control_service(
+    state: State<'_, AppState>,
+    name: String,
+    action: ServiceAction,
+) -> Result<(), ActionError> {
+    let result = privileged(
+        &state,
+        Operation::ControlService {
+            name: name.clone(),
+            action,
+        },
+        |reply| {
+            done(reply)?;
+            state.services.invalidate(&name);
+            Some(())
+        },
+        || state.services.control(&name, action),
+    );
+    state.sampler.send(Control::Refresh);
+    result
+}
+
+pub fn set_service_start_type(
+    state: State<'_, AppState>,
+    name: String,
+    start_type: StartType,
+) -> Result<(), ActionError> {
+    privileged(
+        &state,
+        Operation::ServiceStartType {
+            name: name.clone(),
+            start_type,
+        },
+        |reply| {
+            done(reply)?;
+            state.services.invalidate(&name);
+            Some(())
+        },
+        || state.services.set_start_type(&name, start_type),
+    )
+}
+
+/// Opens the Windows Services console, for what GoodGood does not cover.
+pub fn open_services_console() -> Result<(), String> {
+    std::process::Command::new("mmc.exe")
+        .arg("services.msc")
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+// ---- Startup ------------------------------------------------------------------
+
+pub fn list_startup(state: State<'_, AppState>) -> Vec<StartupItem> {
+    startup::list(&state.meta)
+}
+
+pub fn set_startup_enabled(id: String, enabled: bool) -> Result<(), ActionError> {
+    action_result(
+        if enabled {
+            "enable startup item"
+        } else {
+            "disable startup item"
+        },
+        "local",
+        startup::set_enabled(&id, enabled),
+    )
+}
+
+// ---- Connections ----------------------------------------------------------------
+
+pub fn list_connections() -> Vec<Connection> {
+    connections::list()
+}
+
+pub fn close_connection(
+    state: State<'_, AppState>,
+    local_address: String,
+    local_port: u16,
+    remote_address: String,
+    remote_port: u16,
+) -> Result<(), ActionError> {
+    privileged(
+        &state,
+        Operation::CloseConnection {
+            local_address: local_address.clone(),
+            local_port,
+            remote_address: remote_address.clone(),
+            remote_port,
+        },
+        done,
+        || connections::close_tcp(&local_address, local_port, &remote_address, remote_port),
+    )
+}
+
+// ---- File locks -----------------------------------------------------------------
+
+pub fn find_lockers(paths: Vec<String>) -> Result<LockReport, ActionError> {
+    let base = filelock::find_lockers(&paths);
+    action_result(
+        "find file locks",
+        "Restart Manager and handle scan",
+        LockReport::combine(base, goodgood_service::find_handle_lockers(paths)),
+    )
+}
+
+/// Native file or folder picker.
+pub fn pick_path(
+    _app: crate::native_runtime::Host,
+    folder: bool,
+    task: Option<bool>,
+) -> Option<String> {
+    let dialog = rfd::FileDialog::new().set_title(if folder {
+        tr!("host.pickFolder")
+    } else if task.unwrap_or(false) {
+        tr!("host.pickTask")
+    } else {
+        tr!("host.pickFile")
+    });
+    let picked = if folder {
+        dialog.pick_folder()
+    } else {
+        dialog.pick_file()
+    };
+    picked.map(|p| p.to_string_lossy().into_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn denied() -> Result<(), ActionError> {
+        Err(ActionError::AccessDenied)
+    }
+
+    #[test]
+    fn a_denial_while_the_service_is_outdated_asks_for_its_update() {
+        assert!(matches!(
+            settle(Routed::Outdated, done, denied),
+            Err(ActionError::ServiceOutdated)
+        ));
+        // Other failures and success are what they are.
+        assert!(matches!(
+            settle(Routed::Outdated, done, || Err(ActionError::NotFound)),
+            Err(ActionError::NotFound)
+        ));
+        assert!(matches!(settle(Routed::Outdated, done, || Ok(())), Ok(())));
+    }
+
+    #[test]
+    fn other_denials_stay_plain() {
+        // Without a service, updating one would not help.
+        assert!(matches!(
+            settle(Routed::Absent, done, denied),
+            Err(ActionError::AccessDenied)
+        ));
+        // The service itself was denied (a protected process, say).
+        let replied = Routed::Replied(Box::new(Reply::Error(ActionError::AccessDenied)));
+        assert!(matches!(
+            settle(replied, done, || unreachable!("acted locally")),
+            Err(ActionError::AccessDenied)
+        ));
+    }
+
+    #[test]
+    fn the_download_page_follows_the_interface_language() {
+        use goodgood_core::i18n::Locale;
+        // The website keeps Korean at its root.
+        assert_eq!(
+            website_page("https://goodgoodtask.com", Locale::KoKr, "/download/"),
+            "https://goodgoodtask.com/download/"
+        );
+        assert_eq!(
+            website_page("https://goodgoodtask.com/", Locale::JaJp, "/download/"),
+            "https://goodgoodtask.com/ja/download/"
+        );
+        // Every other language has a folder of its own, named apart.
+        let pages = Locale::ALL
+            .iter()
+            .map(|locale| website_page("https://goodgoodtask.com", *locale, "/download/"))
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(pages.len(), Locale::ALL.len());
+        assert!(pages.contains("https://goodgoodtask.com/en/download/"));
+    }
+
+    #[test]
+    fn the_link_cards_open_only_their_own_pages() {
+        use goodgood_core::i18n::Locale;
+        let page = |locale, name| project_page("https://goodgoodtask.com/", locale, name);
+        assert_eq!(
+            page(Locale::EnUs, "changelog").as_deref(),
+            Some("https://goodgoodtask.com/en/changelog/")
+        );
+        assert_eq!(
+            page(Locale::KoKr, "download").as_deref(),
+            Some("https://goodgoodtask.com/download/")
+        );
+        // The guide has one language: every interface opens the same page.
+        assert_eq!(page(Locale::JaJp, "guide"), page(Locale::KoKr, "guide"));
+        assert_eq!(
+            page(Locale::KoKr, "guide").as_deref(),
+            Some("https://goodgoodtask.com/docs/guide/")
+        );
+        for name in ["issues", "discussions", "releases"] {
+            let address = page(Locale::DeDe, name).expect("repository page");
+            assert!(
+                address.starts_with(&format!("{}/", updater::REPO)),
+                "{address}"
+            );
+        }
+        // Nothing else, so a request cannot name an address of its own.
+        assert_eq!(page(Locale::KoKr, "https://example.com"), None);
+        assert_eq!(page(Locale::KoKr, ""), None);
+    }
+}

@@ -1,0 +1,1003 @@
+/* Inner pages: download. The app's mark and the release up top, the two
+   packages side by side, the first steps, then notes, requirements and checks. */
+
+/* The head of the download and changelog pages as the page opens: the title
+   and the lead are there at once (faded in, they would hold back the page's
+   first paint), the mark grows in and the release facts and actions rise in
+   after them. */
+@media (prefers-reduced-motion: no-preference) {
+  .dl-hero > .cta-mark {
+    animation: mark-in 760ms var(--ease) both;
+  }
+  :is(.dl-meta, .cl-facts, .cl-actions) {
+    animation: head-in 560ms var(--ease) 120ms both;
+  }
+  .cl-actions {
+    animation-delay: 200ms;
+  }
+}
+@keyframes head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+.dl-hero {
+  display: grid;
+  justify-items: center;
+  padding: clamp(48px, 7vw, 88px) 0 clamp(36px, 4vw, 52px);
+  text-align: center;
+}
+.dl-hero h1 {
+  margin-top: 18px;
+  font-size: clamp(2.25rem, 1.5rem + 2.2vw, 3.5rem);
+}
+.dl-lead {
+  max-width: 36em;
+  margin-top: 14px;
+  color: var(--ink-2);
+  font-size: 1.125rem;
+  text-wrap: pretty;
+}
+.dl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.dl-meta li {
+  display: inline-flex;
+  transition: border-color 160ms ease;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+.dl-meta li:hover {
+  border-color: var(--stroke-2);
+}
+.dl-meta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.dl-meta svg {
+  color: var(--ink-3);
+}
+.dl-meta a svg {
+  color: inherit;
+}
+
+.packages {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.package {
+  container: download-package / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+  padding: clamp(24px, 2.6vw, 34px);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(24px);
+  transition:
+    border-color 200ms ease,
+    transform 320ms var(--ease),
+    box-shadow 320ms var(--ease);
+}
+.package:hover {
+  border-color: var(--stroke-2);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.45);
+}
+.package.is-primary {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--stroke));
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%),
+    var(--surface);
+}
+.package-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.package-head h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  font-size: clamp(1.5rem, 1.25rem + 0.8vw, 1.875rem);
+}
+.package-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--stroke-2);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.package-icon svg {
+  transition: transform 420ms var(--ease);
+}
+.package:hover .package-icon svg {
+  transform: translateY(-2px) rotate(-4deg);
+}
+.package.is-primary .package-icon {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-text);
+}
+.package-badge {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.package-points {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-2);
+}
+@container download-package (max-width: 400px) {
+  .package-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 14px; }
+  .package-badge { grid-column: 2; justify-self: start; margin-left: 0; }
+}
+.package-points li {
+  display: flex;
+  gap: 10px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .package:hover .package-points svg {
+    animation: point-tick 420ms var(--ease) both;
+  }
+  .package:hover .package-points li:nth-child(2) svg {
+    animation-delay: 60ms;
+  }
+  .package:hover .package-points li:nth-child(3) svg {
+    animation-delay: 120ms;
+  }
+}
+@keyframes point-tick {
+  40% {
+    transform: scale(1.25);
+  }
+}
+.package-points svg {
+  flex: none;
+  margin-top: 0.2em;
+  color: var(--series-net);
+}
+/* One row as wide as its label and the file's size, at the start of the card
+   as its text is. A label too long for the card wraps inside the button
+   rather than widening it, and a narrow card gives the button its whole
+   width to press. */
+.package-get {
+  align-self: flex-start;
+  max-width: 100%;
+  min-width: min(100%, 220px);
+  height: auto;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 8px 22px;
+  white-space: normal;
+}
+.package-get .dl-label { min-width: 0; overflow-wrap: anywhere; }
+.package-get .package-size { white-space: nowrap; }
+@container download-package (max-width: 400px) {
+  .package-get { align-self: stretch; }
+}
+.package-size {
+  padding-left: 10px;
+  border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  opacity: 0.8;
+  font-size: 0.875rem;
+}
+.package-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+.package-file details summary {
+  color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
+}
+.package-file details summary::-webkit-details-marker {
+  display: none;
+}
+.package-file details summary:hover,
+.package-file details[open] summary {
+  color: var(--ink-2);
+}
+.package-file details[open] {
+  flex-basis: 100%;
+}
+.package-hash {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.package-hash code {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.copy-button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-2);
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.copy-button:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.copy-button.is-done {
+  color: var(--series-net);
+}
+
+/* The first steps after downloading, numbered along a line. */
+.dl-steps {
+  margin-top: clamp(72px, 9vw, 120px);
+}
+.dl-steps header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+.dl-steps h2 {
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
+}
+.dl-steps header p {
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+}
+.dl-steps ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dl-steps li {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 24px 24px 26px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition:
+    border-color 200ms ease,
+    transform 320ms var(--ease);
+}
+.dl-steps li:hover {
+  border-color: var(--stroke-2);
+  transform: translateY(-2px);
+}
+.dl-steps li p {
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+}
+.dl-steps h3 {
+  font-size: 1.125rem;
+}
+.dl-step-number {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+.dl-steps li:hover .dl-step-number {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Notes of this release and the earlier ones beside the requirements and checks. */
+.dl-more {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: clamp(72px, 9vw, 120px);
+}
+.dl-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.dl-more h2 {
+  margin: 0 0 12px;
+  font-size: 1.375rem;
+}
+.dl-notes-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.dl-history-title {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--stroke);
+  font-size: 1rem;
+}
+.dl-history {
+  display: grid;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.dl-history li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+  font-size: 0.9375rem;
+}
+.dl-history a::after {
+  content: "→";
+  display: inline-block;
+  margin-left: 6px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 160ms ease,
+    transform 220ms var(--ease);
+}
+.dl-history a:hover::after {
+  opacity: 1;
+  transform: none;
+}
+.dl-history li + li {
+  border-top: 1px solid var(--stroke);
+}
+.dl-history a {
+  min-width: 64px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.dl-history a:hover {
+  color: var(--accent-text);
+}
+.dl-history time {
+  color: var(--ink-3);
+}
+.dl-history-note {
+  margin-top: 10px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+.dl-fine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 0 4px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+}
+.dl-fine a {
+  color: var(--ink-2);
+}
+.dl-fine a:hover {
+  color: var(--accent-text);
+}
+@media (max-width: 960px) {
+  .dl-steps ol,
+  .dl-more {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 860px) {
+  .packages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Changelog: the version index beside the releases, each release a section
+   with its groups of entries; new features as cards, the rest as lists. */
+.cl-head {
+  display: grid;
+  justify-items: center;
+  padding: clamp(48px, 7vw, 88px) 0 clamp(40px, 5vw, 64px);
+  text-align: center;
+}
+.cl-head h1 {
+  font-size: clamp(2.25rem, 1.5rem + 2.2vw, 3.5rem);
+}
+.cl-facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 18px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-3);
+  font-size: 0.875rem;
+}
+.cl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+.cl-body {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: start;
+}
+.cl-nav {
+  position: sticky;
+  top: calc(var(--header) + 40px);
+}
+.cl-nav ol {
+  position: relative;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* The line, filled in the accent down to the release being read, where a dot
+   rests; the dot slides along it as the reading moves on. */
+.cl-nav::before,
+.cl-nav-fill {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 4.5px;
+  width: 1px;
+  background: var(--stroke-2);
+}
+.cl-nav-fill {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  transform-origin: top;
+  transition: transform 420ms var(--ease);
+}
+.cl-nav-dot {
+  position: absolute;
+  top: 0;
+  left: 1px;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--bg);
+  border-radius: 50%;
+  background: var(--accent);
+  box-sizing: content-box;
+  box-shadow: 0 0 0 4px var(--glow);
+  transition: transform 420ms var(--ease);
+  pointer-events: none;
+}
+.cl-nav a {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  padding: 7px 10px 7px 24px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+.cl-nav a::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 1px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--bg);
+  border-radius: 50%;
+  background: var(--ink-3);
+  box-sizing: content-box;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.cl-nav a:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.cl-nav a[aria-current] {
+  color: var(--ink);
+}
+.cl-nav:not([data-ready]) a[aria-current]::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--glow);
+}
+.cl-nav a[data-read]::before {
+  background: color-mix(in srgb, var(--accent) 55%, var(--ink-3));
+}
+.cl-nav b {
+  font-weight: 600;
+}
+.cl-nav span {
+  grid-column: 1 / -1;
+  color: var(--ink-3);
+  font-size: 0.75rem;
+}
+.cl-nav small {
+  align-self: center;
+  color: var(--ink-3);
+  font-size: 0.6875rem;
+}
+.cl-main {
+  display: grid;
+  gap: 28px;
+  min-width: 0;
+}
+.cl-list {
+  display: grid;
+  min-width: 0;
+}
+
+/* The kinds of entries to show, as a segmented control with a sliding pill. */
+.cl-filter {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  justify-self: start;
+  max-width: 100%;
+  padding: 3px;
+  overflow-x: auto;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: var(--surface);
+  scroll-margin-top: calc(var(--header) + 24px);
+  scrollbar-width: none;
+}
+.cl-filter button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.cl-filter button:hover,
+.cl-filter button[aria-checked="true"] {
+  color: var(--ink);
+}
+.cl-filter button[data-kind]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kind, var(--ink-3));
+}
+.cl-filter [data-kind="feature"] {
+  --kind: var(--series-net);
+}
+.cl-filter [data-kind="fix"] {
+  --kind: var(--series-cpu);
+}
+.cl-filter [data-kind="performance"] {
+  --kind: var(--series-io);
+}
+.cl-filter [data-kind="breaking"] {
+  --kind: var(--series-gpu);
+}
+.cl-filter [data-kind="upgrade"] {
+  --kind: var(--series-mem);
+}
+.cl-filter small {
+  color: var(--ink-3);
+  font-size: 0.75rem;
+}
+/* Before the script has measured the pill, the chosen option has its own face. */
+.cl-filter:not(:has(.cl-filter-pill)) button[aria-checked="true"],
+.cl-filter-pill {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--stroke-2);
+}
+.cl-filter-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: 999px;
+  transition:
+    transform 340ms var(--ease),
+    width 340ms var(--ease);
+}
+
+.cl-release {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  padding: 0 0 clamp(48px, 6vw, 72px);
+  scroll-margin-top: calc(var(--header) + 32px);
+}
+/* A rule between releases; with some hidden by the filter, between the shown ones. */
+.cl-release:not([hidden]) ~ .cl-release {
+  padding-top: clamp(40px, 5vw, 56px);
+  border-top: 1px solid var(--stroke);
+}
+.cl-release-head {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+/* A link to the release, offered beside its date under the pointer. */
+.cl-copy {
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  border-color: transparent;
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    color 120ms ease,
+    background-color 120ms ease;
+}
+.cl-release-head:hover .cl-copy,
+.cl-copy:focus-visible,
+.cl-copy.is-done {
+  opacity: 1;
+}
+@media (hover: none) {
+  .cl-copy {
+    opacity: 1;
+  }
+}
+/* A release chosen in the index lights up as the page arrives at it. */
+@media (prefers-reduced-motion: no-preference) {
+  .cl-release.is-arrived .cl-release-head h2 a {
+    animation: cl-arrive 1.6s var(--ease);
+  }
+  .cl-release.is-arrived .cl-release-head::before {
+    content: "";
+    position: absolute;
+    top: 0.35em;
+    bottom: 0.35em;
+    left: -18px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform-origin: top;
+    animation: cl-arrive-bar 1.6s var(--ease) both;
+  }
+}
+@keyframes cl-arrive {
+  from {
+    color: var(--accent-text);
+  }
+}
+@keyframes cl-arrive-bar {
+  from {
+    opacity: 1;
+    transform: scaleY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.cl-release-head h2 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
+  letter-spacing: -0.01em;
+}
+.cl-release-head h2 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+.cl-release-head time {
+  color: var(--ink-3);
+  font-size: 0.9375rem;
+}
+.cl-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-left: auto;
+  font-size: 0.8125rem;
+}
+.cl-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.cl-links a:hover {
+  color: var(--accent-text);
+}
+.cl-release.is-withdrawn .cl-release-head h2 a {
+  color: var(--ink-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.cl-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--series-io) 40%, var(--stroke));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--series-io) 8%, transparent);
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+.cl-notice svg {
+  flex: none;
+  color: var(--series-io);
+}
+/* A release's notice, intro and groups stand as far apart as the release's
+   own parts; a group's badge then keeps clear of what is above it. */
+.release-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.cl-intro {
+  color: var(--ink);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+.cl-group {
+  --kind: var(--ink-3);
+  display: grid;
+  gap: 12px;
+}
+.cl-group.is-feature {
+  --kind: var(--series-net);
+}
+.cl-group.is-fix {
+  --kind: var(--series-cpu);
+}
+.cl-group.is-performance {
+  --kind: var(--series-io);
+}
+.cl-group.is-breaking {
+  --kind: var(--series-gpu);
+}
+.cl-group.is-upgrade {
+  --kind: var(--series-mem);
+}
+.cl-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+}
+.cl-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 11px 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kind) 14%, transparent);
+  color: color-mix(in srgb, var(--kind) 70%, var(--ink));
+  font-weight: 600;
+}
+.cl-kind::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kind);
+}
+.cl-group h3 small {
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+.cl-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cl-cards li {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  transition:
+    border-color 200ms ease,
+    transform 320ms var(--ease);
+}
+.cl-cards li:hover {
+  border-color: color-mix(in srgb, var(--kind) 40%, var(--stroke-2));
+  transform: translateY(-2px);
+}
+.cl-cards b {
+  color: var(--ink);
+}
+.cl-cards span {
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.cl-items {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cl-items li {
+  position: relative;
+  padding: 8px 0 8px 20px;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+.cl-items li::before {
+  content: "";
+  position: absolute;
+  top: 1.05em;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kind);
+  transition: transform 220ms var(--ease);
+}
+.cl-items li {
+  transition: color 160ms ease;
+}
+.cl-items li:hover {
+  color: var(--ink);
+}
+.cl-items li:hover::before {
+  transform: scale(1.5);
+}
+.cl-items b {
+  margin-right: 0.5em;
+  color: var(--ink);
+}
+.cl-list a:not(.cl-release-head a),
+.dl-release a {
+  color: var(--accent-text);
+}
+.dl-release {
+  display: grid;
+  gap: 18px;
+  margin-top: 10px;
+}
+.cl-list code,
+.dl-release code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: 0.86em;
+}
+@media (max-width: 960px) {
+  .cl-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  /* The index becomes a row of versions that scrolls sideways. */
+  .cl-nav {
+    position: static;
+    margin: 0 calc(-1 * var(--pad));
+    padding: 0 var(--pad);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .cl-nav ol {
+    display: flex;
+    gap: 6px;
+  }
+  .cl-nav::before,
+  .cl-nav-fill,
+  .cl-nav-dot,
+  .cl-nav a[data-read]::before {
+    display: none;
+  }
+  .cl-nav a {
+    display: inline-flex;
+    padding: 6px 12px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .cl-nav a::before,
+  .cl-nav span {
+    display: none;
+  }
+  .cl-nav a[aria-current] {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--stroke));
+  }
+  .cl-release.is-arrived .cl-release-head::before {
+    left: -12px;
+  }
+  .cl-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cl-links {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

@@ -1,0 +1,79 @@
+#[cfg(feature = "capture")]
+use anyhow::Context as _;
+
+#[cfg(windows)]
+mod clock_hook;
+#[cfg(all(windows, feature = "capture"))]
+mod frames;
+#[cfg(windows)]
+mod latency;
+#[cfg(feature = "capture")]
+mod pixels;
+#[cfg(feature = "capture")]
+mod preview;
+#[cfg(all(windows, feature = "capture"))]
+mod record;
+#[cfg(all(windows, target_arch = "x86_64"))]
+mod stacks;
+#[cfg(windows)]
+mod windows;
+
+fn unix_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64
+}
+
+fn main() -> anyhow::Result<()> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    match args.first().map(String::as_str) {
+        #[cfg(feature = "capture")]
+        Some("compare") => pixels::compare(&args[1], &args[2])?,
+        #[cfg(feature = "capture")]
+        Some("crop") => pixels::crop(&args[1..])?,
+        #[cfg(feature = "capture")]
+        Some("sheet") => pixels::sheet(&args[1..])?,
+        #[cfg(feature = "capture")]
+        Some("frame-contrast") => {
+            pixels::frame_contrast(args.get(1).context("recording directory required")?)?
+        }
+        #[cfg(feature = "capture")]
+        Some("track-chart") => {
+            pixels::track_chart(args.get(1).context("recording directory required")?)?
+        }
+        #[cfg(windows)]
+        Some("run") => windows::run(&args[1..])?,
+        #[cfg(windows)]
+        Some("inspect") => windows::inspect(args[1].parse()?)?,
+        #[cfg(windows)]
+        Some("startup") => windows::startup(&args[1..])?,
+        #[cfg(windows)]
+        Some("latency") => latency::run(&args[1], args.get(2).map_or(Ok(20), |s| s.parse())?)?,
+        #[cfg(all(windows, feature = "capture"))]
+        Some("capture" | "capture-preview" | "capture-flyout") => windows::capture(
+            args.get(1).context("window PID required")?.parse()?,
+            args.get(2).context("PNG path required")?,
+            if args[0] == "capture-preview" {
+                Some((
+                    args.get(3).context("inactive SDR capture required")?,
+                    args.get(4).context("active SDR capture required")?,
+                ))
+            } else {
+                None
+            },
+            args[0] == "capture-flyout",
+        )?,
+        #[cfg(all(windows, feature = "capture"))]
+        Some("capture-window") => windows::capture_class(
+            args.get(1).context("window PID required")?.parse()?,
+            args.get(2).context("PNG path required")?,
+            args.get(3).context("window class required")?,
+            args.get(4).map_or("", String::as_str),
+        )?,
+        _ => anyhow::bail!(
+            "usage: goodgood-window-probe run EXE [ARGS] | capture PID PNG | capture-flyout PID PNG | capture-window PID PNG CLASS [TITLE] | capture-preview PID PNG INACTIVE ACTIVE | compare LEFT RIGHT | crop IN OUT X Y W H [SCALE] | sheet OUT X Y W H COLUMNS SCALE IN... | frame-contrast DIRECTORY | track-chart DIRECTORY"
+        ),
+    }
+    Ok(())
+}

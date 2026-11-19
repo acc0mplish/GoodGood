@@ -1,0 +1,96 @@
+{
+  "deselect": "Deselect",
+  "resize": "Resize the details pane",
+  "overview": {
+    "title": "This PC",
+    "hide": "Hide PC specifications",
+    "show": "Show PC specifications",
+    "copy": "Copy PC specifications as text",
+    "copyWhat": "PC specifications",
+    "copyPart": "{kind}: {name}",
+    "selectTip": "Click an app or process in the list to see its details here; click it again to deselect it.",
+    "closeTip": "The details pane stays open by default. Click {icon} at the top right of the window to collapse it.",
+    "tips": "Tips",
+    "tipsCollapse": "Collapse tips",
+    "tipsExpand": "Expand tips",
+    "cpu": "Processor",
+    "cores": {
+      "one": "{count} core",
+      "other": "{count} cores"
+    },
+    "hybrid": " ({performance} P-cores + {efficiency} E-cores)",
+    "hybridLp": " ({performance} P-cores + {efficiency} E-cores + {lowPower} LP E-cores)",
+    "hybridLpOnly": " ({performance} P-cores + {lowPower} LP E-cores)",
+    "threads": {
+      "one": "{count} thread",
+      "other": "{count} threads"
+    },
+    "base": "Base {speed}",
+    "slots": "{used} of {total} slots used",
+    "disk": "Storage",
+    "gpu": "Graphics",
+    "vram": "{size} dedicated memory",
+    "sharedMemory": "Uses shared memory",
+    "battery": "Battery",
+    "designed": "Design capacity {capacity}",
+    "health": "Health {percent}%"
+  },
+  "exited": {
+    "title": "Process has exited",
+    "hint": "Select another process in the list to see its details."
+  },
+  "group": {
+    "count": {
+      "one": "{count} process",
+      "other": "{count} processes"
+    },
+    "earliest": "First started",
+    "members": "Processes ({count})",
+    "open": "Show the details of PID {pid}"
+  },
+  "services": "Running services ({count})",
+  "section": {
+    "process": "Process",
+    "resources": "Resources",
+    "location": "File location",
+    "commandLine": "Command line",
+    "version": "File version"
+  },
+  "parent": "Parent process",
+  "parentLink": "{name} ({pid})",
+  "noParent": "None (PID {pid})",
+  "started": "Started",
+  "cpuTime": "CPU time",
+  "user": "User name",
+  "integrity": "Integrity",
+  "integrityLevel": {
+    "untrusted": "Untrusted",
+    "low": "Low",
+    "medium": "Medium",
+    "mediumPlus": "Medium plus",
+    "high": "High (elevated)",
+    "system": "System",
+    "protected": "Protected"
+  },
+  "architecture": "Architecture",
+  "arch": {
+    "x64": "64-bit (x64)",
+    "x86": "32-bit (x86)",
+    "arm64": "ARM64",
+    "arm": "ARM"
+  },
+  "priority": "Priority",
+  "session": "Session",
+  "privateWs": "Private working set",
+  "workingSet": "Working set",
+  "commit": "Commit size",
+  "gpuEngine": " ({engine})",
+  "gpuDedicated": "Dedicated GPU memory",
+  "gpuShared": "Shared GPU memory",
+  "netNeedsAdmin": "Run GoodGood as administrator to view",
+  "threads": "Threads",
+  "handles": "Handles",
+  "noAccess": "Couldn't open this process to read its command line and user name. Run GoodGood as administrator to view them.",
+  "product": "Product",
+  "version": "Version"
+}

@@ -61,7 +61,7 @@ test("release building retains both channels through serialization and verifies 
   }
   for (const beta of ["1.1.0-beta.1", "1.0.0"]) {
     const f = fixture(beta), upstream = new Map();
-    upstream.set("https://api.github.com/repos/Ray-lea/GoodGood/releases/latest", JSON.stringify({ tag_name: "v1.0.0", published_at: "2026-01-01T00:00:00Z" }));
+    upstream.set("https://api.github.com/repos/acc0mplish/GoodGood/releases/latest", JSON.stringify({ tag_name: "v1.0.0", published_at: "2026-01-01T00:00:00Z" }));
     for (const { version, files } of f.release.downloads) {
       for (const file of Object.values(files)) upstream.set(file.upstream, f.bodies.get(file.url));
       upstream.set(`${repo}/releases/download/v${version}/SHA256SUMS.txt`, Object.values(files).map(file => `${file.sha256}  ${file.name}\n`).join(""));

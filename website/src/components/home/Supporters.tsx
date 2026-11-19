@@ -1,7 +1,16 @@
 import type { CSSProperties } from "react";
-import supporters from "@/data/supporters.json";
+import supportersData from "@/data/supporters.json";
 import { localize } from "@/lib/site-i18n";
 import type { Language } from "@/lib/site";
+
+type Supporter = {
+  id: string;
+  name: string;
+  url: string;
+  colors: { light: string[]; dark: string[] };
+  signature?: { d: string; top: number; bottom: number; left: number; right: number };
+};
+const supporters = supportersData as Supporter[];
 
 // Project support and special thanks: one card per supporter, the last cells
 // of the open-source grid. A field of light in the colours of their avatar

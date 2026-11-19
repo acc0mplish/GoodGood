@@ -128,8 +128,10 @@ test("untranslated lines are what is left of the Korean source", () => {
   assert.deepEqual(untranslatedLines("de-DE", "- Behoben（Ｘ）"), ["- Behoben（Ｘ）"]);
   // Korean anchors of the documentation pages the entries link to.
   assert.deepEqual(untranslatedLines("fr-FR", "- [Guide](docs/guide/README.md#개요)"), []);
-  // Han characters are the language itself in Japanese, Korean is not.
-  assert.deepEqual(untranslatedLines("ja-JP", "- プロセス一覧の表示を修正しました。"), []);
+  // Han characters are the language itself in Japanese, Korean is not; the
+  // same line is foreign text in a language written without Han characters.
+  const japanese = "- プロセス一覧の表示を修正しました。";
+  assert.deepEqual(untranslatedLines("ja-JP", japanese), []);
+  assert.deepEqual(untranslatedLines("en-US", japanese), [japanese]);
   assert.deepEqual(untranslatedLines("ja-JP", draft), ["- 프로세스 목록 표시 문제를 수정했습니다."]);
-  assert.deepEqual(untranslatedLines("en-US", "- 修正處理程序清單的顯示問題。"), ["- 修正處理程序清單的顯示問題。"]);
 });

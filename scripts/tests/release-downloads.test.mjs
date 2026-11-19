@@ -72,10 +72,12 @@ test("the GitHub download guide does not enter signed in-app release notes", asy
 });
 
 const german = "# Änderungsprotokoll\n\n## 1.2.3 - 2026-11-10\n\n### Fehlerbehebungen\n\n- Beispielhafte Änderung.\n";
+// The finished Japanese translation: its heading and its item.
+const japanese = "# 更新履歴\n\n## 1.2.3 - 2026-11-10\n\n### 修正\n\n- 変更の例です。\n";
+const japaneseItem = "変更の例";
 
 test("other languages are linked at the top of the GitHub notes, as in the READMEs", async t => {
-  const ja = "# 更新履歴\n\n## 1.2.3 - 2026-11-10\n\n### 修正\n\n- 変更の例です。\n";
-  const f = await fixture(t, "1.2.3", true, { "de-DE": german, "ja-JP": ja });
+  const f = await fixture(t, "1.2.3", true, { "de-DE": german, "ja-JP": japanese });
   const [first, blank, ...rest] = f.run("notes", "1.2.3").split("\n");
   assert.equal(
     first,
@@ -85,13 +87,13 @@ test("other languages are linked at the top of the GitHub notes, as in the READM
   const body = rest.join("\n");
   assert(body.startsWith("## 한국어\n"));
   assert(!body.includes("Beispielhafte"));
-  assert(!body.includes("変更の例"));
+  assert(!body.includes(japaneseItem));
 });
 
 test("signed in-app notes carry every finished translation and leave drafts out", async t => {
-  // A draft as pnpm release writes it: the heading translated, the item not yet.
-  const ja = "# 更新履歴\n\n## 1.2.3 - 2026-11-10\n\n### 修正\n\n- 버전 변경 예시입니다.\n";
-  const f = await fixture(t, "1.2.3", true, { "de-DE": german, "ja-JP": ja });
+  // A draft as the release script writes it: the heading translated, the item not yet.
+  const draft = japanese.replace("- 変更の例です。", "- 버전 변경 예시입니다.");
+  const f = await fixture(t, "1.2.3", true, { "de-DE": german, "ja-JP": draft });
   f.run("release-notes", "1.2.3", "notes.json");
   const notes = JSON.parse(await readFile(join(f.root, "notes.json"), "utf8"));
   assert.deepEqual(Object.keys(notes.releases[0].translations).sort(), ["de-DE", "en-US"]);

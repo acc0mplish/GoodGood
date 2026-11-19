@@ -16,7 +16,7 @@ test("resource labels keep the canonical abbreviation even if the source changes
 
 test("localized abbreviations cannot return in source text, prose or translated-only GPU labels", () => {
   for (const [source, text] of [
-    ["CPU", "ЦП"], ["CPU", "ЦПУ"], ["内置显卡", "Встроенный ГП"], ["GPU", "ГПУ"],
+    ["CPU", "ЦП"], ["CPU", "ЦПУ"], ["내장 그래픽", "Встроенный ГП"], ["GPU", "ГПУ"],
     ["I/O read", "Чтение (В/В)"], ["I/O read", "Lectura de E/S"], ["I/O read", "E/A lesen"],
     ["I/O read", "Lecture d’E/S"], ["E/S", "E/S"],
   ]) assert.ok(textErrors(source, text).some(error => error.startsWith("use ")), text);

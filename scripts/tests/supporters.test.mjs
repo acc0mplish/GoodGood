@@ -65,12 +65,12 @@ test("the nickname is drawn with the script font's outlines, and set as text whe
   const word = script("bronyaicu", SCRIPT_SIZE);
   assert.match(word.d, /^M[\d.-]+ [\d.-]+(Q|L)/);
   assert.ok(word.top > SCRIPT_SIZE * 0.4 && word.bottom > SCRIPT_SIZE * 0.2, JSON.stringify(word));
-  assert.equal(script("山雀", SCRIPT_SIZE), null);
+  assert.equal(script("산새", SCRIPT_SIZE), null);
   const card = (name) =>
     supporterCard({ name, image: "data:,", palette: ["#3366cc", "#cc6677", "#33aacc", "#cc8866"], grain: "data:,", logo: "", lang: "en", theme: "dark", measure, script }).svg;
   assert.match(card("bronyaicu"), /<path transform="translate\([\d. -]+\)" d="M/);
   assert.doesNotMatch(card("bronyaicu"), />bronyaicu<\/text>/);
-  assert.match(card("山雀"), />山雀<\/text>/);
+  assert.match(card("산새"), />산새<\/text>/);
   // The tail of the y stays clear of the line of thanks under it.
   const svg = card("bronyaicu");
   const baseline = Number(/<path transform="translate\([\d.-]+ ([\d.]+)\)/.exec(svg)[1]);

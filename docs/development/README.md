@@ -1,6 +1,6 @@
 # 개발 가이드
 
-Windows 개발 환경은 Visual Studio C++ Build Tools와 stable MSVC Rust를 사용합니다. Rust 최소 버전은 [Cargo.toml](../../Cargo.toml), Node.js와 pnpm 버전은 각각 [.node-version](../../.node-version)과 [package.json](../../package.json)에 있습니다. 저장소 디렉터리에 MSVC 도구 체인 override를 설정합니다.
+Windows 개발 환경은 Visual Studio C++ Build Tools와 stable MSVC Rust를 사용합니다. Rust 최소 버전은 [Cargo.toml](../../Cargo.toml), Node.js와 bun 버전은 각각 [.node-version](../../.node-version)과 [package.json](../../package.json)에 있습니다. 저장소 디렉터리에 MSVC 도구 체인 override를 설정합니다.
 
 | 명령 | 용도 |
 |---|---|

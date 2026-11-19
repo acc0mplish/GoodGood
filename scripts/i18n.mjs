@@ -1,5 +1,5 @@
 // Checks the translations in locales/ against the source (ko-KR) catalogs and
-// the code that uses them; run by `pnpm check` and CI. See docs/development/i18n.md.
+// the code that uses them; run by `bun run check` and CI. See docs/development/i18n.md.
 //
 //   node scripts/i18n.mjs           check, exit 1 on errors
 //   node scripts/i18n.mjs --unused  also list keys nothing seems to use

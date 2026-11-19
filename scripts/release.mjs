@@ -47,7 +47,7 @@ const SECTIONS = [
   ["known", "known"], // written by hand
   ["other", "other"], // commits that predate the convention
 ];
-/** The heading `pnpm release` writes for sections of `kind` in `locale`. */
+/** The heading `bun run release` writes for sections of `kind` in `locale`. */
 const kindHeading = (kind, locale) => CHANGELOG_CONF.sections[kind][locale][0];
 
 /** Changelog entries the update dialog can show: the release and the ones before it. */
@@ -338,7 +338,7 @@ function escapeRegExp(text) {
 
 /**
  * The heading of an entry for `version` written ahead of time, with any text
- * after the dash: `pnpm release` replaces it with the dated one. Everything
+ * after the dash: `bun run release` replaces it with the dated one. Everything
  * else reads entries with changelogEntries, which needs that date.
  */
 const headingPattern = (version) =>
@@ -542,7 +542,7 @@ function cmdVerify([tag]) {
   const text = readChangelog(SOURCE);
   const problems = text === null ? [`${CHANGELOG}가 없습니다`] : changelogProblems(text, version);
   if (problems.length)
-    fail(`${CHANGELOG}는 ${tag} 릴리스에 사용할 수 없습니다(릴리스는 pnpm release를 사용합니다):\n  - ${problems.join("\n  - ")}`);
+    fail(`${CHANGELOG}는 ${tag} 릴리스에 사용할 수 없습니다(릴리스는 bun run release를 사용합니다):\n  - ${problems.join("\n  - ")}`);
   const source = readEntries().find((e) => e.version === version);
   const translationsProblems = TRANSLATIONS.flatMap((locale) => {
     const translated = readChangelog(locale);

@@ -136,7 +136,7 @@ Windows 터치스크린의 `WM_POINTER` 메시지는 GPUI `TouchEvent`로 변환
 
 README의 미리보기 그림 네 장은 `node scripts/readme-previews.mjs`로 생성하며 1600×1000 픽셀의 무손실 PNG입니다. 격리 인스턴스는 125% 인터페이스 배율로 텍스트와 아이콘을 직접 그리고 캡처 테두리에 맞추어 클라이언트 영역 크기를 보정하며 내보내기 과정은 네이티브 픽셀을 유지합니다.
 
-`pnpm test:startup`은 독립 Windows 데스크톱에서 개발 스크립트를 실행하고 기본 시작과 `--hidden`의 창 표시 상태를 확인합니다.
+`bun run test:startup`은 독립 Windows 데스크톱에서 개발 스크립트를 실행하고 기본 시작과 `--hidden`의 창 표시 상태를 확인합니다.
 
 개발 빌드의 격리 테스트는 `GOODGOOD_TEST_BACKDROP_BUILD=22000`을 설정해 Windows 11 21H2의 배경 기능 판정을 흉내 내고 `tools/window-probe/steps/backdrop-fallback.json`으로 밝은 테마와 어두운 테마의 단색 대체를 확인할 수 있습니다. 이 변수는 `--test`와 독립 테스트 식별자를 함께 가진 개발 인스턴스에만 적용되고 기존 합성 렌더링 경로를 유지합니다. `inspectLayout`은 `systemBackdrop`과 `backgroundAlpha`를 출력합니다.
 

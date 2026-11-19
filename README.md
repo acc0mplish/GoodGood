@@ -101,7 +101,7 @@ GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 �
 준비 사항:
 
 - Rust `stable-x86_64-pc-windows-msvc` 도구 체인(1.100.0 이상)
-- Node.js 26.x(26.13.1 이상, 24.x LTS는 24.22.3 이상도 지원)와 pnpm 12.18.0
+- Node.js 26.x(26.13.1 이상, 24.x LTS는 24.22.3 이상도 지원)와 bun 1.4.4
 - Visual Studio Build Tools("Desktop development with C++" 워크로드)
 
 저장소 루트에서 PowerShell로 다음 명령을 실행합니다:

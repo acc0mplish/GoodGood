@@ -76,8 +76,8 @@ BREAKING CHANGE: 업그레이드 후 설정에서 권한 있는 서비스를 다
 ### 커밋 메시지 검사
 
 ```bash
-pnpm commitlint origin/main..HEAD             # 아직 푸시하지 않은 커밋 검사
-pnpm commitlint --message "feat(ui): 새 기능"  # 메시지 하나 검사
+bun run commitlint origin/main..HEAD             # 아직 푸시하지 않은 커밋 검사
+bun run commitlint --message "feat(ui): 새 기능"  # 메시지 하나 검사
 ```
 
 ## 버전 번호
@@ -112,13 +112,13 @@ pnpm commitlint --message "feat(ui): 새 기능"  # 메시지 하나 검사
 
 1. `main`으로 이동하고 작업 트리를 깨끗하게 만든 뒤 `start.bat check`를 통과시킵니다. 첫 릴리스 전에는 [업데이트 서명 키](#업데이트-서명-키)를 준비합니다. `resources/app.json`에 공개 키가 없으면 스크립트가 릴리스를 거부합니다.
 2. 지속적 통합에서 검사를 한 번 실행합니다. [태그를 푸시하기 전에 CI에서 확인](#태그를-푸시하기-전에-ci에서-확인)을 참고합니다.
-3. 버전 번호와 각 언어의 릴리스 설명을 미리 봅니다. `pnpm release --dry-run`을 실행하면 다른 언어의 항목을 미리 쓰지 않았을 때 번역 대기 초안이 표시됩니다.
+3. 버전 번호와 각 언어의 릴리스 설명을 미리 봅니다. `bun run release --dry-run`을 실행하면 다른 언어의 항목을 미리 쓰지 않았을 때 번역 대기 초안이 표시됩니다.
 4. 릴리스 커밋과 태그를 만듭니다.
 
    ```bash
-   pnpm release              # 커밋으로 버전 추론
-   pnpm release minor        # 또는 단계 지정: major, minor, patch
-   pnpm release 1.0.0-beta.1 # 또는 버전 지정
+   bun run release              # 커밋으로 버전 추론
+   bun run release minor        # 또는 단계 지정: major, minor, patch
+   bun run release 1.0.0-beta.1 # 또는 버전 지정
    ```
 
    스크립트는 로컬에서 네 곳의 버전 번호를 맞추고 한국어 릴리스 설명과 다른 언어의 초안(소절 제목은 이미 해당 언어로 바뀐 상태)을 쓰며 `chore(release): vX.Y.Z` 커밋과 주석 태그 `vX.Y.Z`를 만듭니다. 처음 태그를 만들 때는 기본적으로 현재 버전 번호를 사용합니다.
@@ -145,7 +145,7 @@ pnpm commitlint --message "feat(ui): 새 기능"  # 메시지 하나 검사
 
 ### 태그를 푸시하기 전에 CI에서 확인
 
-태그를 푸시한 뒤에는 릴리스 단계가 먼저 검사를 실행하므로 그때 실패하면 수정한 뒤 태그를 덮어 다시 릴리스해야 합니다(위 참고). `start.bat check`에는 릴리스 빌드와 라이선스 고지 확인이 들어 있지 않고 지속적 통합의 환경(영어 Windows, 관리자 계정, 그때의 최신 stable Rust, `--locked`를 붙인 Clippy와 테스트)에서 실행되지도 않습니다. 그래서 `main`을 먼저 푸시하고 그 커밋에 대해 검사 단계를 한 번 수동으로 실행한 뒤 통과하면 `pnpm release`를 실행합니다.
+태그를 푸시한 뒤에는 릴리스 단계가 먼저 검사를 실행하므로 그때 실패하면 수정한 뒤 태그를 덮어 다시 릴리스해야 합니다(위 참고). `start.bat check`에는 릴리스 빌드와 라이선스 고지 확인이 들어 있지 않고 지속적 통합의 환경(영어 Windows, 관리자 계정, 그때의 최신 stable Rust, `--locked`를 붙인 Clippy와 테스트)에서 실행되지도 않습니다. 그래서 `main`을 먼저 푸시하고 그 커밋에 대해 검사 단계를 한 번 수동으로 실행한 뒤 통과하면 `bun run release`를 실행합니다.
 
 검사 단계는 실행 화면에서 `main`을 대상으로 수동으로 시작하고 끝날 때까지 기다립니다. 이후의 릴리스 커밋은 버전 번호와 `changelog/` 아래 변경 기록만 바꾸며 후자는 6단계에서 로컬로 확인합니다.
 

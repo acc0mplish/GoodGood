@@ -12,12 +12,12 @@ if /i "%ACTION%"=="help" goto :help
 if /i "%ACTION%"=="-h" goto :help
 if /i "%ACTION%"=="/?" goto :help
 
-where pnpm >nul 2>nul || (echo [오류] pnpm을 찾지 못했습니다. Node.js를 설치한 뒤 npm install -g pnpm을 실행하십시오.& goto :fail)
+where bun >nul 2>nul || (echo [오류] bun을 찾지 못했습니다. https://bun.sh에서 bun을 설치하십시오.& goto :fail)
 where cargo >nul 2>nul || (echo [오류] cargo를 찾지 못했습니다. https://rustup.rs에서 Rust를 먼저 설치하십시오.& goto :fail)
 
-if not exist "node_modules\.pnpm" (
+if not exist "node_modules\.bin" (
   echo [준비] 처음 실행이므로 개발 도구 의존성을 설치합니다…
-  call pnpm install --frozen-lockfile || goto :fail
+  call bun install --frozen-lockfile || goto :fail
 )
 
 if /i "%ACTION%"=="dev" goto :dev
@@ -32,22 +32,22 @@ goto :help
 set "RUST_BACKTRACE=1"
 echo [시작] GoodGood 개발판입니다. 수정하면 자동으로 다시 빌드합니다. Ctrl+C를 눌러 끝냅니다.
 echo.
-call pnpm app %2 %3 %4 %5 %6 %7 %8 %9
+call bun run app %2 %3 %4 %5 %6 %7 %8 %9
 goto :end
 
 :check
-call pnpm check || (echo. & echo [실패] 통과하지 못한 검사가 있습니다. 위의 출력을 확인하십시오.& goto :fail)
+call bun run check || (echo. & echo [실패] 통과하지 못한 검사가 있습니다. 위의 출력을 확인하십시오.& goto :fail)
 echo.
 echo [통과] 문구, 스크립트 테스트, Rust 테스트, rustfmt, Clippy가 모두 통과했습니다.
 goto :end
 
 :build
 if /i "%~2"=="installer" (
-  call pnpm bundle || goto :fail
+  call bun run bundle || goto :fail
   echo.
   echo [완료] 설치 패키지는 target\release\bundle\nsis에 있습니다
 ) else (
-  call pnpm build || goto :fail
+  call bun run build || goto :fail
   echo.
   echo [완료] target\release\goodgood.exe
 )

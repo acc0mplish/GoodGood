@@ -1,4 +1,4 @@
-# Biome formats to LF and `pnpm check` fails on CRLF files, so text files stay
+# Biome formats to LF and `bun run check` fails on CRLF files, so text files stay
 # LF in the working tree whatever core.autocrlf says.
 * text=auto eol=lf
 

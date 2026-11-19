@@ -1,5 +1,5 @@
 {
-  // rust-analyzer checks in target/rust-analyzer, the same directory `pnpm check`
+  // rust-analyzer checks in target/rust-analyzer, the same directory `bun run check`
   // uses for clippy: no duplicate check artifacts, and it never holds the build
   // lock while the native development launcher rebuilds.
   "rust-analyzer.cargo.targetDir": true,

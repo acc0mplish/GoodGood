@@ -474,7 +474,7 @@
   "{count} commits since development began on {date}.": "{date} の開発開始から {count} コミット。",
   "{recent} commits in the last {days} days, {total} in all.": "直近 {days} 日間で {recent} コミット、累計 {total}。",
   "Build from source": "ソースからビルド",
-  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and pnpm.": "Visual Studio C++ Build Tools、stable MSVC Rust、Node.js、pnpm が必要です。",
+  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and bun.": "Visual Studio C++ Build Tools、stable MSVC Rust、Node.js、bun が必要です。",
   "Development guide (Korean)": "開発ガイド（韓国語）",
   "# Writes target\\release\\goodgood.exe": "# target\\release\\goodgood.exe を生成",
   "Feedback and support": "フィードバックとサポート",

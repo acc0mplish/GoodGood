@@ -1,5 +1,0 @@
-packages:
-  - website
-# fumadocs-mdx loads esbuild through its platform package; the install script is not needed.
-allowBuilds:
-  esbuild: false

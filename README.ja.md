@@ -113,7 +113,7 @@ GoodGood が日常の作業に役立った際は、GitHub で Star を付けて�
 必要な環境：
 
 - Rust `stable-x86_64-pc-windows-msvc` ツールチェーン（1.100.0 以降）。
-- Node.js 26.13.1 以降の 26.x、または 24.22.3 以降の 24.x LTS、および pnpm 12.18.0。
+- Node.js 26.13.1 以降の 26.x、または 24.22.3 以降の 24.x LTS、および bun 1.4.4。
 - Visual Studio Build Tools の「C++ によるデスクトップ開発」ワークロード。
 
 リポジトリのルート ディレクトリで PowerShell から実行します。

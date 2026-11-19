@@ -30,7 +30,7 @@ async function main() {
   if (!/^wrangler@\d+\.\d+\.\d+$/.test(wrangler ?? ""))
     throw Error("WRANGLER must name the pinned version, e.g. wrangler@4.156.2.");
   await deployWithRetry(() => new Promise((resolve, reject) => {
-    const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["dlx", wrangler, "deploy", "--config", `website/cloudflare/${service}.jsonc`, ...extra], {
+    const child = spawn(process.platform === "win32" ? "bunx.cmd" : "bunx", [wrangler, "deploy", "--config", `website/cloudflare/${service}.jsonc`, ...extra], {
       cwd: repoRoot, windowsHide: true, shell: process.platform === "win32", stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";

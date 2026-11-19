@@ -6,9 +6,9 @@ if /i "%~1"=="help" goto :help
 if /i "%~1"=="--help" goto :help
 if "%~1"=="/?" goto :help
 if "%~1"=="-h" goto :help
-where pnpm >nul 2>&1 || goto :missing
+where bun >nul 2>&1 || goto :missing
 where git >nul 2>&1 || goto :missing
-call pnpm install --frozen-lockfile
+call bun install --frozen-lockfile
 if errorlevel 1 goto :done
 if "%~1"=="" goto :dev
 if /i "%~1"=="dev" goto :run
@@ -22,23 +22,23 @@ popd
 exit /b 2
 
 :dev
-call pnpm --dir website run dev %*
+call bun run --cwd website dev %*
 goto :done
 
 :built
 if exist "target\official-web\dist\site\index.html" if exist "target\official-web\dist\input\site.json" goto :run
-call pnpm --dir website run build
+call bun run --cwd website build
 if errorlevel 1 goto :done
 
 :run
-call pnpm --dir website run %*
+call bun run --cwd website %*
 :done
 set "result=%errorlevel%"
 popd
 exit /b %result%
 
 :missing
-echo Git과 pnpm을 설치한 뒤 start-website.bat을 실행하십시오.
+echo Git과 bun을 설치한 뒤 start-website.bat을 실행하십시오.
 popd
 exit /b 1
 

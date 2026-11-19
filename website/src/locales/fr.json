@@ -474,7 +474,7 @@
   "{count} commits since development began on {date}.": "{count} commits depuis le début du développement le {date}.",
   "{recent} commits in the last {days} days, {total} in all.": "{recent} commits ces {days} derniers jours, {total} au total.",
   "Build from source": "Compiler depuis les sources",
-  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and pnpm.": "Nécessite Visual Studio C++ Build Tools, Rust stable avec MSVC, Node.js et pnpm.",
+  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and bun.": "Nécessite Visual Studio C++ Build Tools, Rust stable avec MSVC, Node.js et bun.",
   "Development guide (Korean)": "Guide de développement (coréen)",
   "# Writes target\\release\\goodgood.exe": "# Génère target\\release\\goodgood.exe",
   "Feedback and support": "Retours et assistance",

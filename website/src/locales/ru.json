@@ -474,7 +474,7 @@
   "{count} commits since development began on {date}.": "Коммитов с начала разработки {date}: {count}.",
   "{recent} commits in the last {days} days, {total} in all.": "За последние {days} дней коммитов: {recent}; всего: {total}.",
   "Build from source": "Собрать из исходного кода",
-  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and pnpm.": "Нужны Visual Studio C++ Build Tools, стабильный Rust MSVC, Node.js и pnpm.",
+  "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and bun.": "Нужны Visual Studio C++ Build Tools, стабильный Rust MSVC, Node.js и bun.",
   "Development guide (Korean)": "Руководство разработчика (корейский)",
   "# Writes target\\release\\goodgood.exe": "# Создаёт target\\release\\goodgood.exe",
   "Feedback and support": "Обратная связь и поддержка",

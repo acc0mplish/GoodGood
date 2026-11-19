@@ -133,15 +133,15 @@ export function OpenSource({ lang, guide }: { lang: Language; guide: string }) {
         <h3>{localize(lang, en ? "Build from source" : "소스에서 빌드")}</h3>
         <p>
           {localize(lang, en
-            ? "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and pnpm."
-            : "Visual Studio C++ 빌드 도구, stable MSVC Rust, Node.js, pnpm이 필요합니다.")}
+            ? "Needs the Visual Studio C++ Build Tools, stable MSVC Rust, Node.js and bun."
+            : "Visual Studio C++ 빌드 도구, stable MSVC Rust, Node.js, bun이 필요합니다.")}
         </p>
         <pre className="terminal">
           <code>
             <span className="term-line">git clone {repo}.git</span>
             <span className="term-line">cd GoodGood</span>
             <span className="term-line">rustup override set stable-x86_64-pc-windows-msvc</span>
-            <span className="term-line">pnpm install</span>
+            <span className="term-line">bun install</span>
             <span className="term-line">start.bat build</span>
             <span className="term-out">{localize(lang, en ? "# Writes target\\release\\goodgood.exe" : "# target\\\\release\\\\goodgood.exe 생성")}</span>
           </code>

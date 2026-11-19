@@ -12,4 +12,4 @@ GPUI는 표준 권한, PerMonitorV2 DPI 인식과 Common Controls를 선언하�
 
 개발 빌드의 DirectX 셰이더는 최적화를 켜고 디버그 정보를 유지합니다. 성능 대조에는 릴리스 빌드를 사용하며 창 크기, 화질과 표시 조건을 같게 맞춥니다.
 
-의존성을 바꾼 뒤 node scripts/notices.mjs를 실행합니다. 버전 번호는 pnpm release로만 바꿉니다.
+의존성을 바꾼 뒤 node scripts/notices.mjs를 실행합니다. 버전 번호는 `bun run release`로만 바꿉니다.

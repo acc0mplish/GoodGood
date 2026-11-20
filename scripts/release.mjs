@@ -1,5 +1,5 @@
-// Release helper: Conventional Commits lint, SemVer bump, changelog and the
-// notes the release workflow publishes. Run `node scripts/release.mjs help`.
+// Release helper: Conventional Commits lint, YYYY.MM.N version bump, changelog
+// and the notes the release workflow publishes. Run `node scripts/release.mjs help`.
 
 import { execFileSync } from "node:child_process";
 import { createHash, createPublicKey, verify } from "node:crypto";
@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 // The app's own changelog parser (plain TypeScript, run by Node's type
 // stripping): the workflow publishes exactly the entries the app finds.
 import { changelogEntries, outline, strayHeadings, untranslatedLines, withTranslation } from "./lib/release-notes.ts";
+// The next YYYY.MM.N version, computed from the tags of today's month.
+import { nextRc, nextStable } from "./lib/version.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -85,10 +87,13 @@ const JSON_VERSION = /^( {2}"version": ")([^"]+)(")/m;
 
 const HELP = `사용법: node scripts/release.mjs <명령>
 
-  bump [major|minor|patch|<버전>] [--dry-run]
+  bump [<버전>|rc] [--dry-run]
       다음 버전을 계산하고 버전 번호와 ${CHANGELOG}를 갱신하며 changelog/ 아래 다른 언어 파일에
-      번역 대기 항목을 씁니다. 커밋하고 태그를 만들며 푸시하지 않습니다. 단계를 지정하지
-      않으면 이전 태그 이후의 커밋으로 추론하고 태그가 없으면 현재 버전을 릴리스합니다.
+      번역 대기 항목을 씁니다. 커밋하고 태그를 만들며 푸시하지 않습니다. 버전은 YYYY.MM.N이며
+      같은 달의 릴리스마다 N이 하나씩 오르고 달이 바뀌면 0으로 돌아갑니다(2026.11.0의 다음은
+      2026.11.1, 12월의 첫 릴리스는 2026.12.0). 버전을 지정하지 않으면 오늘 달에서 이어지는 N을,
+      rc를 지정하면 다음 안정판 후보의 사전 릴리스(-rc.1부터)를 계산합니다. 0.5.0 같은 기존
+      방식의 버전도 직접 지정할 수 있습니다.
       --dry-run은 버전 번호와 각 언어의 릴리스 설명만 출력하고 파일을 바꾸지 않습니다.
   lint <수정 범위>         범위 안의 커밋 메시지를 검사합니다. 예: origin/main..HEAD
   lint --message <텍스트>  커밋 메시지 하나를 검사합니다(예: 끌어오기 요청 제목)
@@ -231,31 +236,6 @@ function compare(a, b) {
     return x < y ? -1 : 1;
   }
   return 0;
-}
-
-/** Same rules as `npm version`: a prerelease is first promoted to its release. */
-function increment(v, level) {
-  const pre = v.pre.length > 0;
-  if (level === "major") {
-    return pre && v.minor === 0 && v.patch === 0
-      ? { ...v, pre: [] }
-      : { major: v.major + 1, minor: 0, patch: 0, pre: [] };
-  }
-  if (level === "minor") {
-    return pre && v.patch === 0 ? { ...v, pre: [] } : { ...v, minor: v.minor + 1, patch: 0, pre: [] };
-  }
-  return pre ? { ...v, pre: [] } : { ...v, patch: v.patch + 1, pre: [] };
-}
-
-function inferLevel(commits, current) {
-  let level = "patch";
-  for (const { parsed } of commits) {
-    if (parsed?.breaking) level = "major";
-    else if (parsed?.type === "feat" && level === "patch") level = "minor";
-  }
-  // SemVer §4: 0.y.z is initial development, so breaking changes bump the
-  // minor version until 1.0.0 is released explicitly.
-  return level === "major" && current.major === 0 ? "minor" : level;
 }
 
 // --- Version files ---
@@ -452,9 +432,12 @@ function cmdBump(args) {
   if (prevTag && !commits.length) fail(`${prevTag} 이후에 새 커밋이 없습니다`);
 
   let next;
-  if (!target) next = prevTag ? increment(current, inferLevel(commits, current)) : current;
-  else if (["major", "minor", "patch"].includes(target)) next = increment(current, target);
-  else next = parseVersion(target.replace(/^v/, "")) ?? fail(`올바른 유의적 버전 번호가 아닙니다: ${target}`);
+  const today = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD, local time
+  const tags = git("tag", "--list", "v*").split("\n").filter(Boolean);
+  if (!target) next = parseVersion(nextStable(tags, today));
+  else if (target === "rc") next = parseVersion(nextRc(tags, today));
+  else next = parseVersion(target.replace(/^v/, ""));
+  if (!next) fail(`올바른 버전 번호가 아닙니다: ${target ?? "(지정 없음)"}. YYYY.MM.N(예: 2026.11.0) 또는 rc를 지정합니다`);
   // Without a tag the current version has never been released, so it may be released as is.
   const order = compare(next, current);
   if (order < 0 || (order === 0 && prevTag)) {
@@ -536,7 +519,7 @@ function cmdBump(args) {
 }
 
 function cmdVerify([tag]) {
-  if (!tag?.startsWith("v") || !parseVersion(tag.slice(1))) fail(`태그가 v<유의적 버전 번호> 형식이 아닙니다: ${tag ?? "(지정 없음)"}`);
+  if (!tag?.startsWith("v") || !parseVersion(tag.slice(1))) fail(`태그가 v<버전 번호 YYYY.MM.N> 형식이 아닙니다: ${tag ?? "(지정 없음)"}`);
   const version = readVersion();
   if (version !== tag.slice(1)) fail(`${tag} 태그가 버전 번호 ${version}과 일치하지 않습니다`);
   const text = readChangelog(SOURCE);

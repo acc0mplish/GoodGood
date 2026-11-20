@@ -78,4 +78,13 @@ mod tests {
         assert_eq!(compare_version("0.4.1-beta.1", Some("0.4.1")), 2);
         assert_eq!(compare_version("0.4.1", Some("0.4.1-beta.1")), 1);
     }
+
+    #[test]
+    fn installer_compares_calver_with_historical_semver() {
+        use super::compare_version;
+        assert_eq!(compare_version("2026.11.0", Some("0.5.0")), 1);
+        assert_eq!(compare_version("2026.11.1", Some("2026.11.0")), 1);
+        assert_eq!(compare_version("2026.12.0", Some("2026.11.5")), 1);
+        assert_eq!(compare_version("2026.11.0-rc.1", Some("2026.11.0")), 2);
+    }
 }

@@ -2468,8 +2468,41 @@ impl Desktop {
 
 #[cfg(test)]
 mod tests {
-    use super::notes_in;
+    use super::{Release, between, notes_in};
     use serde_json::json;
+    #[test]
+    fn calver_headings_are_not_dropped_from_the_changelog() {
+        let releases = vec![
+            Release {
+                version: "2026.11.0".into(),
+                date: "2026-11-20".into(),
+                notes: "newest".into(),
+            },
+            Release {
+                version: "2026.11.0-rc.1".into(),
+                date: "2026-11-18".into(),
+                notes: "candidate".into(),
+            },
+            Release {
+                version: "0.5.0".into(),
+                date: "2026-09-01".into(),
+                notes: "oldest".into(),
+            },
+        ];
+        let latest = between(releases.clone(), None, "2026.11.0");
+        assert_eq!(
+            latest
+                .iter()
+                .map(|r| r.version.as_str())
+                .collect::<Vec<_>>(),
+            ["2026.11.0"]
+        );
+        let since = between(releases, Some("0.5.0"), "2026.11.0");
+        assert_eq!(
+            since.iter().map(|r| r.version.as_str()).collect::<Vec<_>>(),
+            ["2026.11.0", "2026.11.0-rc.1"]
+        );
+    }
     #[test]
     fn missing_and_blank_release_translations_follow_the_same_fallback() {
         let release = json!({"notes":"source", "translations":{"en-US":"english","fr-FR":" \n","ja-JP":"japanese"}});

@@ -1588,4 +1588,13 @@ mod tests {
         assert!(!newer("0.1.0", "0.2.0"));
         assert!(!newer("x", "0.1.0"));
     }
+
+    #[test]
+    fn versions_compare_as_calver() {
+        assert!(newer("2026.11.1", "2026.11.0"));
+        assert!(newer("2026.12.0", "2026.11.5"));
+        assert!(newer("2026.11.0", "0.5.0"));
+        assert!(!newer("2026.11.0-rc.1", "2026.11.0"));
+        assert!(!newer("2026.11.0", "2026.11.0"));
+    }
 }

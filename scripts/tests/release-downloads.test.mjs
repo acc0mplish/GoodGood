@@ -14,7 +14,7 @@ async function fixture(t, version, translated = true, others = {}) {
   });
   const repository = resolve(import.meta.dirname, "../..");
   for (const dir of ["scripts/lib", "resources", "changelog"]) await mkdir(join(root, dir), { recursive: true });
-  for (const file of ["scripts/release.mjs", "scripts/lib/release-notes.ts", "scripts/lib/release-downloads.md", "resources/changelog.json"])
+  for (const file of ["scripts/release.mjs", "scripts/lib/release-notes.ts", "scripts/lib/version.ts", "scripts/lib/release-downloads.md", "resources/changelog.json"])
     await copyFile(join(repository, file), join(root, file));
   const ko = `# 변경 기록\n\n## ${version} - 2026-11-10\n\n### 수정\n\n- 버전 변경 예시입니다.\n`;
   const en = translated ? `# Changelog\n\n## ${version} - 2026-11-10\n\n### Fixes\n\n- Example release change.\n` : "# Changelog\n";

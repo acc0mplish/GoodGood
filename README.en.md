@@ -30,7 +30,7 @@ Try the full interactive interface and guided tour right in your browser on the 
 
 <br>
 
-GoodGood queries Windows native APIs directly in Rust, with an interface built on GPUI Kit native components and charts that flow smoothly at the display's refresh rate. The project is named after Argos Panoptes, the hundred-eyed giant of Greek mythology.
+GoodGood queries Windows native APIs directly in Rust, with an interface built on GPUI Kit native components and charts that flow smoothly at the display's refresh rate. The name is “good” said twice.
 
 ## ⭐ Star history
 

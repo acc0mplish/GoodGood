@@ -32,7 +32,7 @@ Die interaktive Oberfläche und die Funktionsübersicht können auf der [offizie
 
 <br>
 
-GoodGood fragt die nativen Windows-APIs direkt über Rust ab. Die Oberfläche verwendet native Komponenten von GPUI Kit; die Diagramme bewegen sich flüssig mit der Bildwiederholrate des Displays. Namensgeber ist Argos Panoptes, der hundertäugige Riese aus der griechischen Mythologie.
+GoodGood fragt die nativen Windows-APIs direkt über Rust ab. Die Oberfläche verwendet native Komponenten von GPUI Kit; die Diagramme bewegen sich flüssig mit der Bildwiederholrate des Displays. Der Name ist das zweimal gesagte englische Wort „good“, also gut.
 
 <a id="star-history"></a>
 

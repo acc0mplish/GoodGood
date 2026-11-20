@@ -32,7 +32,7 @@ Explore la interfaz interactiva y el recorrido de funciones en el [sitio oficial
 
 <br>
 
-GoodGood consulta directamente las API nativas de Windows mediante Rust. Su interfaz utiliza componentes nativos de GPUI Kit y gráficos que se desplazan con fluidez a la frecuencia de actualización de la pantalla. El nombre procede de Argos Panoptes, el gigante de cien ojos de la mitología griega.
+GoodGood consulta directamente las API nativas de Windows mediante Rust. Su interfaz utiliza componentes nativos de GPUI Kit y gráficos que se desplazan con fluidez a la frecuencia de actualización de la pantalla. El nombre es «good» dicho dos veces, es decir, bueno.
 
 <a id="star-history"></a>
 

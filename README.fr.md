@@ -32,7 +32,7 @@ Essayez l’interface interactive et la présentation des fonctions dans le navi
 
 <br>
 
-GoodGood interroge directement les API natives de Windows en Rust. Son interface repose sur les composants natifs de GPUI Kit, avec des graphiques qui défilent à la fréquence de rafraîchissement de l’écran. Le projet tient son nom d’Argos Panoptès, le géant aux cent yeux de la mythologie grecque.
+GoodGood interroge directement les API natives de Windows en Rust. Son interface repose sur les composants natifs de GPUI Kit, avec des graphiques qui défilent à la fréquence de rafraîchissement de l’écran. Le nom est « good » répété, c’est-à-dire bon.
 
 <a id="star-history"></a>
 

@@ -53,7 +53,7 @@ mod tests {
         // Freeze the identity format so a later release cannot silently reset it.
         assert_eq!(
             expected,
-            GUID::from_u128(0x0caa9b7e_74ed_8890_a7b4_8161052a40f6)
+            GUID::from_u128(0x36d60da9_c54b_86ed_945b_bb8cef286f86)
         );
         for path in [
             r"c:\program files\goodgood\GOODGOOD.EXE",

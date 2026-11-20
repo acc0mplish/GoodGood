@@ -126,7 +126,6 @@ impl Desktop {
     /// The app and this build, then where to find help.
     fn about_overview(&mut self, cx: &mut Context<Self>) -> AnyElement {
         let p = self.palette;
-        let manifest = goodgood_app::config::manifest();
         let privilege = self.data.get("privilege").cloned().unwrap_or(Value::Null);
         let line = |text: String| {
             div()

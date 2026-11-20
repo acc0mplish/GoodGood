@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 // stripping): the workflow publishes exactly the entries the app finds.
 import { changelogEntries, outline, strayHeadings, untranslatedLines, withTranslation } from "./lib/release-notes.ts";
 // The next YYYY.MM.N version, computed from the tags of today's month.
-import { nextRc, nextStable } from "./lib/version.ts";
+import { nextRc, nextStable, parseCalver } from "./lib/version.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -436,12 +436,13 @@ function cmdBump(args) {
   const tags = git("tag", "--list", "v*").split("\n").filter(Boolean);
   if (!target) next = parseVersion(nextStable(tags, today));
   else if (target === "rc") next = parseVersion(nextRc(tags, today));
-  else next = parseVersion(target.replace(/^v/, ""));
+  else next = parseCalver(target.replace(/^v/, ""));
   if (!next) fail(`올바른 버전 번호가 아닙니다: ${target ?? "(지정 없음)"}. YYYY.MM.N(예: 2026.11.0) 또는 rc를 지정합니다`);
-  // Without a tag the current version has never been released, so it may be released as is.
+  // A tagless clone cannot tell which releases exist, so the next version must
+  // strictly exceed the files: an equal one would duplicate a published tag.
   const order = compare(next, current);
-  if (order < 0 || (order === 0 && prevTag)) {
-    fail(`새 버전 ${formatVersion(next)}은 현재 버전 ${formatVersion(current)}보다 높아야 합니다`);
+  if (order <= 0) {
+    fail(`새 버전 ${formatVersion(next)}은 현재 버전 ${formatVersion(current)}보다 높아야 합니다. 태그가 없는 복제본이라면 버전을 명시해서 지정합니다`);
   }
   const version = formatVersion(next);
   const tag = `v${version}`;

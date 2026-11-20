@@ -148,8 +148,12 @@ test("bump --dry-run names the migrated version and writes nothing", async (t) =
 
 test("bump continues the month's releases from the tags and numbers rc candidates", async (t) => {
   const f = await fixture(t, { tags: ["v2026.11.0"] });
-  assert(f.run("bump", "--dry-run").includes("버전: 0.5.0 → 2026.11.1"));
-  assert(f.run("bump", "rc", "--dry-run").includes("버전: 0.5.0 → 2026.11.1-rc.1"));
+  // The wall clock picks the month, so the expectation derives from the same
+  // functions the script uses instead of a date that goes stale next month.
+  const today = new Date().toLocaleDateString("sv-SE");
+  const tags = ["v2026.11.0"];
+  assert(f.run("bump", "--dry-run").includes(`버전: 0.5.0 → ${nextStable(tags, today)}`));
+  assert(f.run("bump", "rc", "--dry-run").includes(`버전: 0.5.0 → ${nextRc(tags, today)}`));
   for (const [file, text] of Object.entries(f.originals)) {
     assert.equal(await readFile(join(f.root, file), "utf8"), text, file);
   }

@@ -27,6 +27,7 @@ README 미리보기는 투명 효과를 사용하는 Windows 11에서 생성합�
 
 - [GPUI와 플랫폼 경계](gpui.md)
 - [빌드와 캐시](build.md)
+- [비Windows 호스트 크로스 컴파일](cross-compile.md)
 - [성능 측정](performance.md)
 - [다국어](i18n.md)
 - [커밋과 릴리스](release.md)

@@ -1,0 +1,480 @@
+{
+  "window": [
+    1240,
+    860
+  ],
+  "steps": [
+    {
+      "note": "Overlay auto-hide (Win11): the bar appears while the wheel scrolls or the pointer is over the bar, holds 1.2 s after the last of it, and fades over 250 ms. Each frame's opacity is the alpha field of the scrollbar trace lines the scrollTrace control turns on; the captures show the thumb present and gone."
+    },
+    {
+      "control": {
+        "page": "processes",
+        "view": "tree",
+        "details": false,
+        "motion": "off",
+        "preference": {
+          "processSort": {
+            "key": "pid",
+            "desc": false
+          }
+        },
+        "sample": {
+          "set": {
+            "/system/processCount": 30,
+            "/processes": [
+              {
+                "pid": 100,
+                "ppid": 0,
+                "createTime": 1,
+                "name": "proc-100.exe",
+                "description": "Proc 100",
+                "path": "C:/Examples/proc-100.exe",
+                "cpu": 4,
+                "privateWs": 104857600,
+                "appWindow": true
+              },
+              {
+                "pid": 200,
+                "ppid": 0,
+                "createTime": 2,
+                "name": "proc-200.exe",
+                "description": "Proc 200",
+                "path": "C:/Examples/proc-200.exe",
+                "cpu": 2,
+                "privateWs": 52428800
+              },
+              {
+                "pid": 300,
+                "ppid": 0,
+                "createTime": 3,
+                "name": "proc-300.exe",
+                "description": "Proc 300",
+                "path": "C:/Examples/proc-300.exe",
+                "cpu": 3,
+                "privateWs": 83886080,
+                "appWindow": true
+              },
+              {
+                "pid": 400,
+                "ppid": 0,
+                "createTime": 4,
+                "name": "proc-400.exe",
+                "description": "Proc 400",
+                "path": "C:/Examples/proc-400.exe",
+                "cpu": 1,
+                "privateWs": 20971520
+              },
+              {
+                "pid": 500,
+                "ppid": 0,
+                "createTime": 5,
+                "name": "proc-500.exe",
+                "description": "Proc 500",
+                "path": "C:/Examples/proc-500.exe",
+                "cpu": 5,
+                "privateWs": 134217728
+              },
+              {
+                "pid": 600,
+                "ppid": 0,
+                "createTime": 6,
+                "name": "proc-600.exe",
+                "description": "Proc 600",
+                "path": "C:/Examples/proc-600.exe",
+                "cpu": 2,
+                "privateWs": 73400320
+              },
+              {
+                "pid": 700,
+                "ppid": 0,
+                "createTime": 7,
+                "name": "proc-700.exe",
+                "description": "Proc 700",
+                "path": "C:/Examples/proc-700.exe",
+                "cpu": 1,
+                "privateWs": 41943040
+              },
+              {
+                "pid": 800,
+                "ppid": 0,
+                "createTime": 8,
+                "name": "proc-800.exe",
+                "description": "Proc 800",
+                "path": "C:/Examples/proc-800.exe",
+                "cpu": 6,
+                "privateWs": 157286400,
+                "appWindow": true
+              },
+              {
+                "pid": 900,
+                "ppid": 0,
+                "createTime": 9,
+                "name": "proc-900.exe",
+                "description": "Proc 900",
+                "path": "C:/Examples/proc-900.exe",
+                "cpu": 3,
+                "privateWs": 62914560
+              },
+              {
+                "pid": 1000,
+                "ppid": 0,
+                "createTime": 10,
+                "name": "proc-1000.exe",
+                "description": "Proc 1000",
+                "path": "C:/Examples/proc-1000.exe",
+                "cpu": 2,
+                "privateWs": 31457280
+              },
+              {
+                "pid": 1100,
+                "ppid": 0,
+                "createTime": 11,
+                "name": "proc-1100.exe",
+                "description": "Proc 1100",
+                "path": "C:/Examples/proc-1100.exe",
+                "cpu": 4,
+                "privateWs": 94371840
+              },
+              {
+                "pid": 1200,
+                "ppid": 0,
+                "createTime": 12,
+                "name": "proc-1200.exe",
+                "description": "Proc 1200",
+                "path": "C:/Examples/proc-1200.exe",
+                "cpu": 1,
+                "privateWs": 25165824
+              },
+              {
+                "pid": 1300,
+                "ppid": 0,
+                "createTime": 13,
+                "name": "proc-1300.exe",
+                "description": "Proc 1300",
+                "path": "C:/Examples/proc-1300.exe",
+                "cpu": 7,
+                "privateWs": 188743680
+              },
+              {
+                "pid": 1400,
+                "ppid": 0,
+                "createTime": 14,
+                "name": "proc-1400.exe",
+                "description": "Proc 1400",
+                "path": "C:/Examples/proc-1400.exe",
+                "cpu": 2,
+                "privateWs": 52428800
+              },
+              {
+                "pid": 1500,
+                "ppid": 0,
+                "createTime": 15,
+                "name": "proc-1500.exe",
+                "description": "Proc 1500",
+                "path": "C:/Examples/proc-1500.exe",
+                "cpu": 3,
+                "privateWs": 71303168
+              },
+              {
+                "pid": 1600,
+                "ppid": 0,
+                "createTime": 16,
+                "name": "proc-1600.exe",
+                "description": "Proc 1600",
+                "path": "C:/Examples/proc-1600.exe",
+                "cpu": 1,
+                "privateWs": 44040192
+              },
+              {
+                "pid": 1700,
+                "ppid": 0,
+                "createTime": 17,
+                "name": "proc-1700.exe",
+                "description": "Proc 1700",
+                "path": "C:/Examples/proc-1700.exe",
+                "cpu": 5,
+                "privateWs": 125829120,
+                "appWindow": true
+              },
+              {
+                "pid": 1800,
+                "ppid": 0,
+                "createTime": 18,
+                "name": "proc-1800.exe",
+                "description": "Proc 1800",
+                "path": "C:/Examples/proc-1800.exe",
+                "cpu": 2,
+                "privateWs": 58720256
+              },
+              {
+                "pid": 1900,
+                "ppid": 0,
+                "createTime": 19,
+                "name": "proc-1900.exe",
+                "description": "Proc 1900",
+                "path": "C:/Examples/proc-1900.exe",
+                "cpu": 3,
+                "privateWs": 81788928
+              },
+              {
+                "pid": 2000,
+                "ppid": 0,
+                "createTime": 20,
+                "name": "proc-2000.exe",
+                "description": "Proc 2000",
+                "path": "C:/Examples/proc-2000.exe",
+                "cpu": 1,
+                "privateWs": 33554432
+              },
+              {
+                "pid": 2100,
+                "ppid": 0,
+                "createTime": 21,
+                "name": "proc-2100.exe",
+                "description": "Proc 2100",
+                "path": "C:/Examples/proc-2100.exe",
+                "cpu": 4,
+                "privateWs": 104857600
+              },
+              {
+                "pid": 2200,
+                "ppid": 0,
+                "createTime": 22,
+                "name": "proc-2200.exe",
+                "description": "Proc 2200",
+                "path": "C:/Examples/proc-2200.exe",
+                "cpu": 2,
+                "privateWs": 48234496
+              },
+              {
+                "pid": 2300,
+                "ppid": 0,
+                "createTime": 23,
+                "name": "proc-2300.exe",
+                "description": "Proc 2300",
+                "path": "C:/Examples/proc-2300.exe",
+                "cpu": 6,
+                "privateWs": 146800640
+              },
+              {
+                "pid": 2400,
+                "ppid": 0,
+                "createTime": 24,
+                "name": "proc-2400.exe",
+                "description": "Proc 2400",
+                "path": "C:/Examples/proc-2400.exe",
+                "cpu": 1,
+                "privateWs": 27262976
+              },
+              {
+                "pid": 2500,
+                "ppid": 0,
+                "createTime": 25,
+                "name": "proc-2500.exe",
+                "description": "Proc 2500",
+                "path": "C:/Examples/proc-2500.exe",
+                "cpu": 3,
+                "privateWs": 79691776
+              },
+              {
+                "pid": 2600,
+                "ppid": 0,
+                "createTime": 26,
+                "name": "proc-2600.exe",
+                "description": "Proc 2600",
+                "path": "C:/Examples/proc-2600.exe",
+                "cpu": 2,
+                "privateWs": 56623104
+              },
+              {
+                "pid": 2700,
+                "ppid": 0,
+                "createTime": 27,
+                "name": "proc-2700.exe",
+                "description": "Proc 2700",
+                "path": "C:/Examples/proc-2700.exe",
+                "cpu": 1,
+                "privateWs": 22020096
+              },
+              {
+                "pid": 2800,
+                "ppid": 0,
+                "createTime": 28,
+                "name": "proc-2800.exe",
+                "description": "Proc 2800",
+                "path": "C:/Examples/proc-2800.exe",
+                "cpu": 4,
+                "privateWs": 99614720,
+                "appWindow": true
+              },
+              {
+                "pid": 2900,
+                "ppid": 0,
+                "createTime": 29,
+                "name": "proc-2900.exe",
+                "description": "Proc 2900",
+                "path": "C:/Examples/proc-2900.exe",
+                "cpu": 2,
+                "privateWs": 50331648
+              },
+              {
+                "pid": 3000,
+                "ppid": 0,
+                "createTime": 30,
+                "name": "proc-3000.exe",
+                "description": "Proc 3000",
+                "path": "C:/Examples/proc-3000.exe",
+                "cpu": 3,
+                "privateWs": 75497472
+              }
+            ]
+          }
+        }
+      },
+      "wait": 700
+    },
+    {
+      "control": {
+        "scrollTrace": 12000
+      },
+      "wait": 30,
+      "inspect": "layout",
+      "label": "top",
+      "expect": {
+        "page": "processes"
+      }
+    },
+    {
+      "control": {
+        "wheel": {
+          "x": 620,
+          "y": 400,
+          "lines": -100
+        }
+      },
+      "wait": 200,
+      "capture": "scrolling-shown"
+    },
+    {
+      "control": {
+        "wheel": {
+          "x": 620,
+          "y": 400,
+          "lines": -100
+        }
+      },
+      "wait": 2600,
+      "capture": "auto-hidden"
+    },
+    {
+      "control": {
+        "pointer": {
+          "at": [
+            1234,
+            430
+          ],
+          "event": "hover"
+        }
+      },
+      "wait": 200,
+      "capture": "hover-revealed"
+    },
+    {
+      "wait": 2600,
+      "capture": "hover-faded"
+    },
+    {
+      "control": {
+        "dialog": "whatsnew"
+      },
+      "wait": 1200,
+      "inspect": "layout",
+      "label": "whatsnew-open",
+      "expect": {
+        "dialog.kind": "whatsnew",
+        "dialog.ready": true
+      }
+    },
+    {
+      "control": {
+        "scrollTrace": 9000
+      },
+      "wait": 30
+    },
+    {
+      "control": {
+        "wheel": {
+          "x": 620,
+          "y": 550,
+          "lines": -5
+        }
+      },
+      "wait": 200,
+      "capture": "dialog-shown"
+    },
+    {
+      "wait": 2600,
+      "capture": "dialog-hidden"
+    },
+    {
+      "control": {
+        "keys": [
+          "escape"
+        ]
+      },
+      "wait": 350,
+      "inspect": "layout",
+      "label": "dialog-closed",
+      "expect": {
+        "dialog": null
+      }
+    },
+    {
+      "note": "The select popup's own bar (select-scrollbar) shows and fades the same way; 640x480 leaves neither side tall enough for all eight options, so the list scrolls."
+    },
+    {
+      "probe": "size 800 600",
+      "control": {
+        "page": "settings",
+        "scrollTrace": 9000
+      },
+      "wait": 700,
+      "note": "App min is 640x480 LOGICAL px; the probe requests PHYSICAL px. At the display scale of this run (dpiScale 1.25, see ui-conditions) 640x480 logical = 800x600 physical. Requesting 640 physical sits below the clamp and never settles."
+    },
+    {
+      "control": {
+        "clickAnchor": "settings-language"
+      },
+      "wait": 300,
+      "capture": "select-open"
+    },
+    {
+      "control": {
+        "wheel": {
+          "x": 320,
+          "y": 330,
+          "lines": -3
+        }
+      },
+      "wait": 200,
+      "capture": "select-scrolled"
+    },
+    {
+      "control": {
+        "clickAnchor": "settings-language"
+      },
+      "wait": 300,
+      "inspect": "layout",
+      "label": "select-closed",
+      "expect": {
+        "page": "settings"
+      }
+    },
+    {
+      "probe": "size 1240 860",
+      "wait": 400,
+      "capture": "regression"
+    }
+  ]
+}

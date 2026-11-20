@@ -14,6 +14,16 @@ const PAGE: f32 = 0.875;
 /// autoscroll timer, which a held spin button uses too).
 pub(in crate::frontend) const REPEAT_DELAY: Duration = Duration::from_millis(250);
 pub(in crate::frontend) const REPEAT_INTERVAL: Duration = Duration::from_millis(50);
+/// Win11's overlay bars: scrolling or pointing at the bar holds it shown this
+/// long after the last of it, then it fades away on its own.
+pub(in crate::frontend) const HOLD: Duration = Duration::from_millis(1200);
+/// The fade itself, drawn in `FADE_STEP` wakes.
+const FADE: Duration = Duration::from_millis(250);
+const FADE_STEP: Duration = Duration::from_millis(16);
+/// A fade driver's wake budget: the first wake spends the hold's remainder,
+/// then the fade's sleeps (16 ms steps, 16 of them over the 250 ms fade, the
+/// last one short) and one more to draw the hidden bar.
+const FADE_WAKES: usize = (FADE.as_millis() / FADE_STEP.as_millis()) as usize + 2;
 
 thread_local! {
     static TRACE: Cell<Option<(Instant, Duration)>> = const { Cell::new(None) };
@@ -31,6 +41,74 @@ pub(in crate::frontend) fn trace_ms() -> Option<f64> {
     (elapsed < length).then_some(elapsed.as_secs_f64() * 1000.)
 }
 
+/// The thumb's opacity: full while the pointer holds the thumb or a track
+/// press pages, then full through `HOLD` after the last reveal and `FADE`
+/// long on the way out.
+fn alpha(shown_at: Option<Instant>, active: bool, now: Instant) -> f32 {
+    if active {
+        return 1.;
+    }
+    let Some(shown) = shown_at else { return 0. };
+    let elapsed = now - shown;
+    if elapsed <= HOLD {
+        return 1.;
+    }
+    match FADE.checked_sub(elapsed - HOLD) {
+        Some(left) => left.as_secs_f32() / FADE.as_secs_f32(),
+        None => 0.,
+    }
+}
+
+/// How long until the bar next needs a frame on its own: the rest of its
+/// hold, or a fade step; `None` once it is hidden. While the pointer holds
+/// the thumb the bar needs no timed frames — every state change repaints.
+fn next_wake(shown_at: Option<Instant>, now: Instant) -> Option<Duration> {
+    let shown = shown_at?;
+    let elapsed = now - shown;
+    if elapsed < HOLD {
+        return Some(HOLD - elapsed);
+    }
+    FADE.checked_sub(elapsed - HOLD)
+        .map(|left| left.min(FADE_STEP))
+}
+
+/// Whether this frame spawns a fade driver: only a bar already on its way out
+/// (`alpha` up, no pointer hold). A held bar's driver would find itself done
+/// on its first wake, hand the frame straight back, and be respawned every
+/// frame after — the hold needs no timed frames.
+fn spawns_driver(alpha: f32, active: bool) -> bool {
+    alpha > 0. && !active
+}
+
+/// What a fade driver does on a wake.
+#[derive(Debug, PartialEq)]
+enum Fade {
+    /// Sleep this long, then draw again.
+    Wait(Duration),
+    /// Hand the drive back: replaced, out of wake budget, held by the
+    /// pointer, or faded away.
+    Done,
+}
+
+/// One wake of the fade driver that owns `epoch` while `current` is the
+/// state's, after `wakes` timers slept through.
+fn fade_step(
+    epoch: u64,
+    current: u64,
+    shown_at: Option<Instant>,
+    active: bool,
+    wakes: usize,
+    now: Instant,
+) -> Fade {
+    if epoch != current || wakes >= FADE_WAKES || active {
+        return Fade::Done;
+    }
+    match next_wake(shown_at, now) {
+        Some(wait) => Fade::Wait(wait),
+        None => Fade::Done,
+    }
+}
+
 /// What the pointer is doing with a scrollbar, kept across frames.
 #[derive(Default)]
 struct BarState {
@@ -41,6 +119,28 @@ struct BarState {
     touch_start: Option<Point<Pixels>>,
     /// While the track is held: the pointer, and the repeating page steps.
     press: Option<(Point<Pixels>, Task<()>)>,
+    /// The offset the last paint saw, to notice scrolling. `None` before the
+    /// first one, so a restored position does not flash the bar.
+    last_offset: Option<Pixels>,
+    /// When the bar was last revealed by a scroll or the pointer; `None`
+    /// while hidden.
+    shown_at: Option<Instant>,
+    /// Bumped whenever a fade driver is (re)spawned, so a stale one quits.
+    fade_epoch: u64,
+    /// The fade driver while one drives this bar, with its epoch.
+    fade: Option<(u64, Task<()>)>,
+    /// Whether the bar is shown, as the last paint judged it (the pointer's
+    /// reveal reads it to notice it was hidden).
+    visible: bool,
+}
+
+impl BarState {
+    /// The pointer is holding the bar: parked on the thumb, dragging it, or
+    /// holding a track press. A held bar stays fully shown and needs no timed
+    /// frames — every state change repaints.
+    fn active(&self) -> bool {
+        self.hovered || self.grab.is_some() || self.press.is_some()
+    }
 }
 
 /// The bar's geometry this frame.
@@ -222,6 +322,30 @@ impl Scrollbar {
             max,
         })
     }
+
+    /// Notices scrolling and returns the thumb's opacity, leaving the reveal
+    /// time and the shown judgement in `state` for the fade driver and the
+    /// pointer handlers. The first paint only takes the measure: a bar over
+    /// a restored offset shows nothing until something moves it.
+    fn reveal(&self, state: &Rc<RefCell<BarState>>) -> f32 {
+        let offset = match self.axis {
+            Axis::Vertical => -self.handle.offset().y,
+            Axis::Horizontal => -self.handle.offset().x,
+        };
+        let now = Instant::now();
+        let mut bar = state.borrow_mut();
+        match bar.last_offset {
+            None => bar.last_offset = Some(offset),
+            Some(previous) if previous != offset => {
+                bar.last_offset = Some(offset);
+                bar.shown_at = Some(now);
+            }
+            _ => {}
+        }
+        let alpha = alpha(bar.shown_at, bar.active(), now);
+        bar.visible = alpha > 0.;
+        alpha
+    }
 }
 
 impl IntoElement for Scrollbar {
@@ -236,6 +360,7 @@ pub(in crate::frontend) struct ScrollbarPrepaint {
     geometry: Geometry,
     hitbox: Hitbox,
     state: Rc<RefCell<BarState>>,
+    alpha: f32,
 }
 
 impl Element for Scrollbar {
@@ -282,6 +407,7 @@ impl Element for Scrollbar {
             let state = state.unwrap_or_default();
             (state.clone(), state)
         });
+        let alpha = self.reveal(&state);
         if let Some(ms) = trace_ms() {
             let geometry = self.geometry();
             println!(
@@ -290,7 +416,7 @@ impl Element for Scrollbar {
                 "offset":f32::from(-self.handle.offset().y),"max":f32::from(self.handle.max_offset().y),
                 "view":f32::from(self.handle.bounds().size.height),
                 "maxX":f32::from(self.handle.max_offset().x),"viewW":f32::from(self.handle.bounds().size.width),
-                "offsetX":f32::from(-self.handle.offset().x),
+                "offsetX":f32::from(-self.handle.offset().x),"alpha":alpha,
                 "thumb":geometry.map(|g| [f32::from(g.thumb.left()), f32::from(g.thumb.top()), f32::from(g.thumb.size.width), f32::from(g.thumb.size.height)])})
             );
         }
@@ -308,8 +434,14 @@ impl Element for Scrollbar {
             window.request_isolated_animation_frame();
         }
         let Some(geometry) = self.geometry() else {
-            // Nothing to scroll: a held thumb or track lets go.
-            *state.borrow_mut() = BarState::default();
+            // Nothing to scroll: a held thumb or track lets go. The epoch
+            // count survives the reset, so a driver detached before it cannot
+            // share an epoch with one spawned after and quash its slot.
+            let epoch = state.borrow().fade_epoch;
+            *state.borrow_mut() = BarState {
+                fade_epoch: epoch,
+                ..BarState::default()
+            };
             return None;
         };
         // Over the bar the content gets no hover or clicks, but the wheel still scrolls it.
@@ -318,6 +450,7 @@ impl Element for Scrollbar {
             geometry,
             hitbox,
             state,
+            alpha,
         })
     }
 
@@ -329,20 +462,18 @@ impl Element for Scrollbar {
         _: &mut Self::RequestLayoutState,
         prepaint: &mut Self::PrepaintState,
         window: &mut Window,
-        _: &mut App,
+        cx: &mut App,
     ) {
         let Some(ScrollbarPrepaint {
             geometry,
             hitbox,
             state,
+            alpha,
         }) = prepaint.take()
         else {
             return;
         };
-        let active = {
-            let state = state.borrow();
-            state.hovered || state.grab.is_some()
-        };
+        let active = state.borrow().active();
         // `border: 3px solid transparent` (2 px when active) with `border-radius:
         // 10px`, which CSS scales down to half the box's narrower side.
         let inset = px(if active { 2. } else { 3. });
@@ -356,7 +487,11 @@ impl Element for Scrollbar {
             ),
         );
         let color = thumb_color(self.dark, active);
-        if fill.size.width > px(0.) && fill.size.height > px(0.) {
+        let color = Hsla {
+            a: color.a * alpha,
+            ..color
+        };
+        if alpha > 0. && fill.size.width > px(0.) && fill.size.height > px(0.) {
             window
                 .paint_quad(gpui_kit::fill(fill, color).corner_radii((outer - inset).max(px(0.))));
         }
@@ -370,6 +505,65 @@ impl Element for Scrollbar {
                 cx.notify(scroller);
             }
         };
+        // While the thumb is on its way out (the pointer's hold needs no timed
+        // frames — every state change repaints), a driver wakes for the end of
+        // the hold and each step of the fade, drawing as it goes. It spawns the
+        // way a held track press's repeat does. A held bar spawns none.
+        if spawns_driver(alpha, active) {
+            let epoch = {
+                let mut bar = state.borrow_mut();
+                match &bar.fade {
+                    Some((held, _)) if *held == bar.fade_epoch => None,
+                    _ => {
+                        bar.fade_epoch += 1;
+                        Some(bar.fade_epoch)
+                    }
+                }
+            };
+            if let Some(epoch) = epoch {
+                let task = {
+                    let state = state.clone();
+                    window.spawn(cx, async move |cx| {
+                        let mut wakes = 0;
+                        loop {
+                            let wait = cx
+                                .update(|_, cx| {
+                                    let mut bar = state.borrow_mut();
+                                    let active = bar.active();
+                                    match fade_step(
+                                        epoch,
+                                        bar.fade_epoch,
+                                        bar.shown_at,
+                                        active,
+                                        wakes,
+                                        Instant::now(),
+                                    ) {
+                                        Fade::Wait(wait) => Some(wait),
+                                        Fade::Done => {
+                                            // A replaced driver just quits; the
+                                            // one owning the slot hands it back
+                                            // and draws the hidden bar.
+                                            if bar.fade_epoch == epoch {
+                                                bar.fade = None;
+                                                notify(cx);
+                                            }
+                                            None
+                                        }
+                                    }
+                                })
+                                .unwrap_or(None);
+                            let Some(wait) = wait else {
+                                break;
+                            };
+                            cx.background_executor().timer(wait).await;
+                            wakes += 1;
+                            cx.update(|_, cx| notify(cx)).ok();
+                        }
+                    })
+                };
+                state.borrow_mut().fade = Some((epoch, task));
+            }
+        }
         let handle = self.handle.clone();
         let axis = geometry.axis;
         let set_along = move |handle: &ScrollHandle, value: Pixels| {
@@ -449,9 +643,21 @@ impl Element for Scrollbar {
                 if let Some((pointer, _)) = state.press.as_mut() {
                     *pointer = event.position;
                 }
-                let hovered = hitbox.is_hovered(window) && geometry.thumb.contains(&event.position);
+                let over_track = hitbox.is_hovered(window);
+                let hovered = over_track && geometry.thumb.contains(&event.position);
+                // Over the strip the bar is revealed again; a move onto or off
+                // the thumb starts a fresh hold.
+                if over_track {
+                    let hidden = !state.visible;
+                    state.shown_at = Some(Instant::now());
+                    state.visible = true;
+                    if hidden {
+                        notify(cx);
+                    }
+                }
                 if hovered != state.hovered {
                     state.hovered = hovered;
+                    state.shown_at = Some(Instant::now());
                     notify(cx);
                 }
             }
@@ -525,6 +731,10 @@ impl Element for Scrollbar {
                 state.press = None;
                 state.hovered =
                     hitbox.is_hovered(window) && geometry.thumb.contains(&event.position);
+                // Let go, then fade: a release with nothing moved (a held
+                // thumb) has revealed nothing on its own.
+                state.shown_at = Some(Instant::now());
+                state.visible = true;
                 notify(cx);
             }
         });
@@ -748,5 +958,106 @@ mod wheel_tests {
             wheel_axis(point(0., -3.), false),
             (Axis::Vertical, point(0., -3.))
         );
+    }
+}
+
+#[cfg(test)]
+mod fade_tests {
+    use super::{
+        BarState, FADE, FADE_STEP, FADE_WAKES, Fade, HOLD, alpha, fade_step, next_wake, point, px,
+        spawns_driver,
+    };
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn the_thumb_is_full_right_after_a_scroll_and_while_the_pointer_holds_it() {
+        let now = Instant::now();
+        assert_eq!(alpha(Some(now), false, now), 1.);
+        assert_eq!(alpha(None, true, now), 1.);
+    }
+
+    #[test]
+    fn the_thumb_fades_through_the_fade_after_the_hold() {
+        let now = Instant::now();
+        let shown = |before: Duration| now.checked_sub(before).unwrap();
+        // The hold keeps it full, then the fade interpolates to gone.
+        assert_eq!(alpha(Some(shown(HOLD)), false, now), 1.);
+        assert_eq!(alpha(Some(shown(HOLD + FADE / 2)), false, now), 0.5);
+        assert_eq!(alpha(Some(shown(HOLD + FADE * 2)), false, now), 0.);
+        // Never revealed, nothing to show.
+        assert_eq!(alpha(None, false, now), 0.);
+    }
+
+    #[test]
+    fn the_driver_holds_then_steps_then_quits() {
+        let now = Instant::now();
+        let shown = |before: Duration| now.checked_sub(before).unwrap();
+        assert_eq!(next_wake(Some(now), now), Some(HOLD));
+        assert_eq!(next_wake(Some(shown(HOLD)), now), Some(FADE_STEP));
+        // A hair past the fade's end (clock rounding), nothing left to wake for.
+        assert_eq!(
+            next_wake(Some(shown(HOLD + FADE + Duration::from_millis(1))), now),
+            None
+        );
+    }
+
+    #[test]
+    fn a_replaced_driver_quits_without_handing_back() {
+        let now = Instant::now();
+        // The state's epoch moved on: the stale driver is done wherever its
+        // slot has been taken over.
+        assert_eq!(fade_step(1, 2, Some(now), false, 0, now), Fade::Done);
+        assert_eq!(fade_step(2, 2, Some(now), false, 0, now), Fade::Wait(HOLD));
+    }
+
+    #[test]
+    fn the_wake_budget_ends_a_driver_that_never_finishes() {
+        let now = Instant::now();
+        let shown = |before: Duration| now.checked_sub(before).unwrap();
+        assert_eq!(
+            fade_step(0, 0, Some(shown(HOLD)), false, FADE_WAKES - 1, now),
+            Fade::Wait(FADE_STEP)
+        );
+        assert_eq!(
+            fade_step(0, 0, Some(shown(HOLD)), false, FADE_WAKES, now),
+            Fade::Done
+        );
+    }
+
+    #[test]
+    fn the_pointer_holding_the_thumb_needs_no_timed_frames() {
+        let now = Instant::now();
+        assert_eq!(fade_step(0, 0, Some(now), true, 0, now), Fade::Done);
+    }
+
+    #[test]
+    fn a_parked_pointer_keeps_the_bar_full_and_spawns_no_driver() {
+        let now = Instant::now();
+        let shown = |before: Duration| now.checked_sub(before).unwrap();
+        // Parked on the thumb past every deadline, the hold keeps the bar full.
+        assert_eq!(alpha(Some(shown(HOLD + FADE * 2)), true, now), 1.);
+        // Such a frame spawns no driver: it would wake at once, find itself
+        // done, hand the frame back, and be respawned every frame.
+        assert!(!spawns_driver(1., true));
+        // Let go, and the fade drives; hidden or absent, nothing drives.
+        assert!(spawns_driver(1., false));
+        assert!(!spawns_driver(0., false));
+    }
+
+    #[test]
+    fn a_held_track_press_keeps_the_bar_shown() {
+        let now = Instant::now();
+        let long_past = now.checked_sub(HOLD + FADE * 2).unwrap();
+        let mut bar = BarState::default();
+        assert!(!bar.active());
+        // Paging landed the thumb under a still-held press: nothing moved and
+        // nothing hovers, yet the bar must not fade away under the button.
+        bar.press = Some((point(px(0.), px(0.)), gpui_kit::Task::ready(())));
+        assert!(bar.active());
+        assert_eq!(alpha(bar.shown_at, bar.active(), long_past), 1.);
+        // Letting go starts the fade clock.
+        bar.press = None;
+        assert!(!bar.active());
+        assert_eq!(alpha(bar.shown_at, bar.active(), long_past), 0.);
     }
 }

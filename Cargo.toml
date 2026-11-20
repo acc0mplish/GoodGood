@@ -9,7 +9,7 @@ gpui-pre = { path = "vendor/gpui-pre" }
 gpui-pre-windows = { path = "vendor/gpui-pre-windows" }
 
 [workspace.package]
-version = "0.5.0"
+version = "2026.11.0"
 edition = "2024"
 rust-version = "1.100.0"
 license = "Apache-2.0"

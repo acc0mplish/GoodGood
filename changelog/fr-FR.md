@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · [English](en-US.md) · [Español](es-ES.md) · [Deutsch](de-DE.md) · [日本語](ja-JP.md) · **Français** · [Русский](ru-RU.md)
 
-Modifications visibles par les utilisateurs dans chaque version de GoodGood. Les numéros de version suivent la [gestion sémantique de version](https://semver.org/lang/fr/). Ce fichier est traduit du [journal des modifications en coréen](ko-KR.md), auquel il correspond entrée par entrée.
+Modifications visibles par les utilisateurs dans chaque version de GoodGood. Les numéros de version suivent le format 2026.11.0 : l’année, le mois et l’ordre de la version dans le mois. Ce fichier est traduit du [journal des modifications en coréen](ko-KR.md), auquel il correspond entrée par entrée.
+
+## 2026.11.0 - 2026-11-20
+
+### Changements incompatibles
+
+- L’identifiant devient `dev.goodgood.taskmanager` : les paramètres, l’historique et le cache de la version précédente ne sont plus lus. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- La licence passe d’AGPL-3.0-or-later à Apache-2.0, et l’identifiant du paquet winget devient acc0mplish.GoodGood. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### Nouvelles fonctionnalités
+
+- Le projet est renommé GoodGood, et le coréen devient la langue source ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Nouvelle licence Apache License 2.0, et l’adresse du dépôt déménage vers acc0mplish ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- Les barres de défilement se masquent automatiquement à la manière des superpositions de Windows 11 ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- Les versions adoptent le schéma YYYY.MM.N ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### Corrections
+
+- Le site web se compile même avec une liste de sponsors vide ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

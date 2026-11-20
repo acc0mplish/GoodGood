@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · **English** · [Español](es-ES.md) · [Deutsch](de-DE.md) · [日本語](ja-JP.md) · [Français](fr-FR.md) · [Русский](ru-RU.md)
 
-User-visible changes in each GoodGood release. Versions follow [Semantic Versioning](https://semver.org/). This file is translated from the [Korean changelog](ko-KR.md), entry for entry.
+User-visible changes in each GoodGood release. Version numbers follow the 2026.11.0 format: the year, the month and the order of the release within that month. This file is translated from the [Korean changelog](ko-KR.md), entry for entry.
+
+## 2026.11.0 - 2026-11-20
+
+### Breaking changes
+
+- The identifier has changed to `dev.goodgood.taskmanager`, and GoodGood no longer reads the settings, history and cache of the previous version. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- The license has changed from AGPL-3.0-or-later to Apache-2.0, and the winget package identifier has changed to acc0mplish.GoodGood. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### Features
+
+- The project has been renamed to GoodGood, and Korean is now the source language ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Relicensed under Apache License 2.0, and the repository address has moved to acc0mplish ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- Scrollbars hide automatically in the Windows 11 overlay style ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- Release versions now follow the YYYY.MM.N scheme ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### Fixes
+
+- The website builds even with an empty sponsor list ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

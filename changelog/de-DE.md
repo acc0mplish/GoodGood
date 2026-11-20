@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · [English](en-US.md) · [Español](es-ES.md) · **Deutsch** · [日本語](ja-JP.md) · [Français](fr-FR.md) · [Русский](ru-RU.md)
 
-Für Benutzer sichtbare Änderungen der einzelnen GoodGood-Versionen. Die Versionsnummern folgen der [semantischen Versionierung](https://semver.org/lang/de/). Diese Datei ist eine Übersetzung des [koreanischen Änderungsprotokolls](ko-KR.md) und entspricht ihm Eintrag für Eintrag.
+Für Benutzer sichtbare Änderungen der einzelnen GoodGood-Versionen. Die Versionsnummern folgen dem Format 2026.11.0: das Jahr, der Monat und die Ordnungszahl der Veröffentlichung in diesem Monat. Diese Datei ist eine Übersetzung des [koreanischen Änderungsprotokolls](ko-KR.md) und entspricht ihm Eintrag für Eintrag.
+
+## 2026.11.0 - 2026-11-20
+
+### Inkompatible Änderungen
+
+- Der Bezeichner hat sich zu `dev.goodgood.taskmanager` geändert; Einstellungen, Verlauf und Cache der vorherigen Version werden nicht mehr gelesen. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Die Lizenz hat von AGPL-3.0-or-later zu Apache-2.0 gewechselt, und die winget-Paket-ID lautet nun acc0mplish.GoodGood. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### Neue Funktionen
+
+- Das Projekt heißt nun GoodGood, und Koreanisch ist die Ausgangssprache ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Neue Lizenzierung unter der Apache License 2.0, und die Repository-Adresse ist zu acc0mplish umgezogen ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- Bildlaufleisten werden im Overlay-Stil von Windows 11 automatisch ausgeblendet ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- Versionsnummern folgen nun dem Schema YYYY.MM.N ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### Fehlerbehebungen
+
+- Die Website baut auch mit einer leeren Sponsorenliste ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

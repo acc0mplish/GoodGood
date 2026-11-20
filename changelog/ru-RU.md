@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · [English](en-US.md) · [Español](es-ES.md) · [Deutsch](de-DE.md) · [日本語](ja-JP.md) · [Français](fr-FR.md) · **Русский**
 
-Изменения в каждой версии GoodGood, заметные пользователям. Номера версий следуют [семантическому версионированию](https://semver.org/lang/ru/). Этот файл переведён из [истории изменений на корейском](ko-KR.md) и соответствует ей пункт за пунктом.
+Изменения в каждой версии GoodGood, заметные пользователям. Номера версий следуют формату 2026.11.0: год, месяц и порядковый номер выпуска в этом месяце. Этот файл переведён из [истории изменений на корейском](ko-KR.md) и соответствует ей пункт за пунктом.
+
+## 2026.11.0 - 2026-11-20
+
+### Несовместимые изменения
+
+- Идентификатор сменился на `dev.goodgood.taskmanager`: настройки, история и кэш предыдущей версии больше не читаются. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Лицензия сменилась с AGPL-3.0-or-later на Apache-2.0, а идентификатор пакета winget стал acc0mplish.GoodGood. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### Новые возможности
+
+- Проект переименован в GoodGood, корейский стал исходным языком ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Лицензия изменена на Apache License 2.0, адрес репозитория перенесён на acc0mplish ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- Полосы прокрутки автоматически скрываются в стиле наложения Windows 11 ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- Номера версий переведены на схему YYYY.MM.N ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### Исправления
+
+- Веб-сайт собирается даже при пустом списке спонсоров ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

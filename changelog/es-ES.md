@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · [English](en-US.md) · **Español** · [Deutsch](de-DE.md) · [日本語](ja-JP.md) · [Français](fr-FR.md) · [Русский](ru-RU.md)
 
-Cambios visibles para el usuario en cada versión de GoodGood. La numeración sigue el [versionado semántico](https://semver.org/lang/es/). Este archivo es una traducción del [registro de cambios en coreano](ko-KR.md), con correspondencia entrada por entrada.
+Cambios visibles para el usuario en cada versión de GoodGood. La numeración sigue el formato 2026.11.0: el año, el mes y el orden de la versión dentro de ese mes. Este archivo es una traducción del [registro de cambios en coreano](ko-KR.md), con correspondencia entrada por entrada.
+
+## 2026.11.0 - 2026-11-20
+
+### Cambios incompatibles
+
+- El identificador ha pasado a `dev.goodgood.taskmanager`, y ya no se leen los ajustes, el historial ni la caché de la versión anterior. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- La licencia ha pasado de AGPL-3.0-or-later a Apache-2.0, y el identificador del paquete de winget ha pasado a acc0mplish.GoodGood. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### Nuevas funciones
+
+- El proyecto se ha renombrado a GoodGood, y el coreano es ahora el idioma de origen ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Relicenciado bajo Apache License 2.0, y la dirección del repositorio se ha movido a acc0mplish ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- Las barras de desplazamiento se ocultan automáticamente al estilo superpuesto de Windows 11 ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- Las versiones siguen ahora el esquema YYYY.MM.N ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### Correcciones
+
+- El sitio web se compila incluso con una lista de patrocinadores vacía ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

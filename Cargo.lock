@@ -2192,7 +2192,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -2225,7 +2225,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood-app"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "anyhow",
  "goodgood-core",
@@ -2239,7 +2239,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood-core"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "log",
  "png 0.18.1",
@@ -2250,7 +2250,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood-service"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "goodgood-core",
  "reqwest",
@@ -2262,7 +2262,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood-update-signer"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "anyhow",
  "base64 0.23.1",
@@ -2273,7 +2273,7 @@ dependencies = [
 
 [[package]]
 name = "goodgood-window-probe"
-version = "0.5.0"
+version = "2026.11.0"
 dependencies = [
  "anyhow",
  "half",

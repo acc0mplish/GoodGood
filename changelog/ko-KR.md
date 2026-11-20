@@ -2,7 +2,25 @@
 
 **한국어** · [English](en-US.md) · [Español](es-ES.md) · [Deutsch](de-DE.md) · [日本語](ja-JP.md) · [Français](fr-FR.md) · [Русский](ru-RU.md)
 
-GoodGood 각 버전에서 사용자가 확인할 수 있는 변경 사항입니다. 버전 번호는 [유의적 버전](https://semver.org/lang/ko/)을 따릅니다. 이 파일이 원문이며, 다른 언어의 변경 기록은 이 파일을 항목별로 번역한 것입니다.
+GoodGood 각 버전에서 사용자가 확인할 수 있는 변경 사항입니다. 버전 번호는 연도와 월, 그 달의 릴리즈 순서를 붙인 2026.11.0 형식을 따릅니다. 이 파일이 원문이며, 다른 언어의 변경 기록은 이 파일을 항목별로 번역한 것입니다.
+
+## 2026.11.0 - 2026-11-20
+
+### 호환성 깨는 변경
+
+- 식별자가 `dev.goodgood.taskmanager`로 바뀌어 이전 버전의 설정, 기록과 캐시를 읽지 않습니다. ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- 라이선스가 AGPL-3.0-or-later에서 Apache-2.0으로 바뀌고 winget 패키지 식별자가 acc0mplish.GoodGood으로 바뀝니다. ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+
+### 새 기능
+
+- GoodGood으로 이름을 바꾸고 한국어를 원문 언어로 삼는다 ([95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275))
+- Apache License 2.0으로 재라이선스하고 저장소 주소를 acc0mplish로 옮긴다 ([d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2))
+- 스크롤바를 Win11 오버레이식으로 자동 숨긴다 ([baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2))
+- 릴리스 버전을 YYYY.MM.N 체계로 바꾼다 ([d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88))
+
+### 수정
+
+- 빈 후원자 목록에서도 웹사이트가 빌드되게 한다 ([f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d))
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

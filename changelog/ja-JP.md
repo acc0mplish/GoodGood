@@ -2,7 +2,25 @@
 
 [한국어](ko-KR.md) · [English](en-US.md) · [Español](es-ES.md) · [Deutsch](de-DE.md) · **日本語** · [Français](fr-FR.md) · [Русский](ru-RU.md)
 
-GoodGood の各バージョンにおける、利用者向けの変更内容です。バージョン番号は[セマンティック バージョニング](https://semver.org/lang/ja/)に従います。このファイルは[韓国語の更新履歴](ko-KR.md)を翻訳したもので、各項目が原文に対応しています。
+GoodGood の各バージョンにおける、利用者向けの変更内容です。バージョン番号は、年と月、その月のリリース順を付けた 2026.11.0 形式に従います。このファイルは[韓国語の更新履歴](ko-KR.md)を翻訳したもので、各項目が原文に対応しています。
+
+## 2026.11.0 - 2026-11-20
+
+### 互換性のない変更
+
+- 識別子が `dev.goodgood.taskmanager` に変わり、以前のバージョンの設定・履歴・キャッシュは読み込まれません。（[95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275)）
+- ライセンスが AGPL-3.0-or-later から Apache-2.0 に変わり、winget パッケージ識別子は acc0mplish.GoodGood になります。（[d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2)）
+
+### 新機能
+
+- プロジェクト名を GoodGood に変更し、韓国語を原文言語としました（[95837de](https://github.com/acc0mplish/GoodGood/commit/95837de59af3b8a09dccb2cda8227b711465f275)）
+- Apache License 2.0 として再ライセンスし、リポジトリのアドレスを acc0mplish に移しました（[d12709b](https://github.com/acc0mplish/GoodGood/commit/d12709bb0b226c299c853eec18d05d0769c239c2)）
+- スクロールバーを Windows 11 のオーバーレイ式で自動的に隠します（[baf1ffc](https://github.com/acc0mplish/GoodGood/commit/baf1ffca6c47f9cccc34638e127bf2b4ecbe5bd2)）
+- リリース バージョンを YYYY.MM.N 方式に変更しました（[d8db761](https://github.com/acc0mplish/GoodGood/commit/d8db76133d4b638363257bb62c63decc0053bf88)）
+
+### 修正
+
+- スポンサー一覧が空でも Web サイトがビルドされるようにしました（[f9c2c50](https://github.com/acc0mplish/GoodGood/commit/f9c2c5007fa716153c7f454901fff8a3f97a505d)）
 
 ## [0.5.0](https://github.com/acc0mplish/GoodGood/compare/v0.4.0...v0.5.0) - 2026-11-12
 

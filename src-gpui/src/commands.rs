@@ -10,6 +10,8 @@ use goodgood_core::actions::{
 use goodgood_core::connections::{self, Connection};
 use goodgood_core::details::{self, ProcessDetails};
 use goodgood_core::filelock::{self, LockReport};
+use goodgood_core::hardware::disk_details::guard::{Begin, Guard};
+use goodgood_core::hardware::disk_details::{DiskDetails, DiskQuery, DiskQueryState};
 use goodgood_core::history::{self, HistoryMoment, HistoryPoint, HistoryUsage};
 use goodgood_core::rules::{ProcessRule, RuleStats};
 use goodgood_core::services::{ServiceAction, ServiceInfo, StartType};
@@ -164,8 +166,44 @@ pub fn process_details(pid: u32, path: Option<String>) -> ProcessDetails {
     details::query(pid, path.as_deref())
 }
 
-pub fn disk_details(index: u32) -> goodgood_core::hardware::disk_details::DiskDetails {
-    goodgood_service::disk_details(index)
+/// Reads one disk behind the crash guard. `manual` is true only for a read the
+/// user asked for; an automatic read stays paused while a marker exists.
+pub fn disk_details(
+    guard: State<'_, Guard>,
+    index: u32,
+    manual: bool,
+) -> Result<DiskDetails, serde_json::Value> {
+    guarded(&guard, index, manual, goodgood_service::disk_details)
+}
+
+/// A read is definitive unless the service query came back `Unavailable`
+/// (timeout, refusal or malformed reply); only a definitive read may clear the
+/// marker.
+fn definitive(details: &DiskDetails) -> bool {
+    !details
+        .queries
+        .iter()
+        .any(|q| q.query == DiskQuery::Service && q.state == DiskQueryState::Unavailable)
+}
+
+fn guarded(
+    guard: &Guard,
+    index: u32,
+    manual: bool,
+    query: impl FnOnce(u32) -> DiskDetails,
+) -> Result<DiskDetails, serde_json::Value> {
+    match guard.begin(manual, index) {
+        Begin::Paused => Err(serde_json::json!({ "code": "readPaused" })),
+        Begin::Unwritable(detail) => {
+            Err(serde_json::json!({ "code": "guardUnwritable", "detail": detail }))
+        }
+        Begin::Started(ticket) => {
+            // A panic in `query` drops the ticket, which keeps the marker.
+            let details = query(index);
+            ticket.finish(definitive(&details));
+            Ok(details)
+        }
+    }
 }
 
 /// Runs `operation` in the privileged service when one runs for this account,
@@ -1241,5 +1279,145 @@ mod tests {
         // Nothing else, so a request cannot name an address of its own.
         assert_eq!(page(Locale::KoKr, "https://example.com"), None);
         assert_eq!(page(Locale::KoKr, ""), None);
+    }
+}
+
+#[cfg(test)]
+mod guard_tests {
+    use super::*;
+    use goodgood_core::hardware::disk_details::guard::MARKER_FILE;
+    use std::cell::Cell;
+    use std::path::PathBuf;
+
+    struct Scratch(PathBuf);
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn scratch(label: &str) -> Scratch {
+        let root = std::env::temp_dir().join(format!(
+            "goodgood-guard-{label}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        Scratch(root)
+    }
+
+    fn details(service: Option<DiskQueryState>) -> DiskDetails {
+        let queries: Vec<_> = service
+            .into_iter()
+            .map(|state| serde_json::json!({ "query": "service", "state": state }))
+            .collect();
+        serde_json::from_value(serde_json::json!({
+            "index": 0,
+            "queriedAt": 0,
+            "volumes": [],
+            "viaService": false,
+            "queries": queries,
+        }))
+        .unwrap()
+    }
+
+    fn code(error: &serde_json::Value) -> &str {
+        error["code"].as_str().unwrap()
+    }
+
+    #[test]
+    fn an_automatic_read_with_a_marker_is_paused_without_querying() {
+        let dir = scratch("paused");
+        let marker = dir.0.join(MARKER_FILE);
+        std::fs::write(&marker, b"x").unwrap();
+        let guard = Guard::new(marker);
+        let called = Cell::new(false);
+        let result = guarded(&guard, 0, false, |_| {
+            called.set(true);
+            details(None)
+        });
+        assert_eq!(code(&result.unwrap_err()), "readPaused");
+        assert!(!called.get());
+    }
+
+    #[test]
+    fn a_manual_read_with_a_marker_proceeds() {
+        let dir = scratch("manual");
+        let marker = dir.0.join(MARKER_FILE);
+        std::fs::write(&marker, b"x").unwrap();
+        let guard = Guard::new(marker.clone());
+        let called = Cell::new(false);
+        let result = guarded(&guard, 0, true, |_| {
+            called.set(true);
+            details(Some(DiskQueryState::Unavailable))
+        });
+        assert!(result.is_ok());
+        assert!(called.get());
+        assert!(marker.exists());
+    }
+
+    #[test]
+    fn an_automatic_read_without_a_marker_writes_it_before_querying() {
+        let dir = scratch("normal");
+        let marker = dir.0.join(MARKER_FILE);
+        let guard = Guard::new(marker.clone());
+        let seen = Cell::new(false);
+        let result = guarded(&guard, 3, false, |index| {
+            seen.set(marker.exists());
+            assert_eq!(index, 3);
+            details(None)
+        });
+        assert!(result.is_ok());
+        assert!(seen.get(), "marker must exist while the read runs");
+    }
+
+    #[test]
+    fn an_unwritable_marker_blocks_automatic_and_manual_reads() {
+        let dir = scratch("unwritable");
+        // A regular file as the parent directory makes the marker unwritable.
+        let blocker = dir.0.join("file");
+        std::fs::write(&blocker, b"x").unwrap();
+        let guard = Guard::new(blocker.join(MARKER_FILE));
+        for manual in [false, true] {
+            let called = Cell::new(false);
+            let result = guarded(&guard, 0, manual, |_| {
+                called.set(true);
+                details(None)
+            });
+            assert_eq!(code(&result.unwrap_err()), "guardUnwritable");
+            assert!(!called.get());
+        }
+    }
+
+    #[test]
+    fn an_indefinite_result_keeps_the_marker() {
+        let dir = scratch("indefinite");
+        let marker = dir.0.join(MARKER_FILE);
+        let guard = Guard::new(marker.clone());
+        let result = guarded(&guard, 0, false, |_| {
+            details(Some(DiskQueryState::Unavailable))
+        });
+        assert!(result.is_ok());
+        assert!(marker.exists());
+        assert!(!definitive(&details(Some(DiskQueryState::Unavailable))));
+        assert!(definitive(&details(Some(
+            DiskQueryState::ServiceUnavailable
+        ))));
+        assert!(definitive(&details(None)));
+    }
+
+    #[test]
+    fn a_panicking_read_keeps_the_marker() {
+        let dir = scratch("panic");
+        let marker = dir.0.join(MARKER_FILE);
+        let guard = Guard::new(marker.clone());
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = guarded(&guard, 0, false, |_| panic!("read crashed"));
+        }));
+        assert!(outcome.is_err());
+        assert!(marker.exists());
     }
 }

@@ -1,4 +1,10 @@
 use super::*;
+use widgets::ToastKind;
+/// Set in `data` while the host refuses the automatic read of a disk until
+/// it is read by hand (the last read may not have finished).
+pub(in crate::frontend) fn disk_paused_key(index: u64) -> String {
+    format!("diskPaused.{index}")
+}
 impl Desktop {
     pub(in crate::frontend) fn request(
         &mut self,
@@ -158,6 +164,11 @@ impl Desktop {
                 }
                 let settings = pending.cache.as_deref() == Some("settings")
                     || (pending.command.starts_with("set_") && value.get("closeToTray").is_some());
+                if pending.command == "disk_details"
+                    && let Some(index) = pending.args["index"].as_u64()
+                {
+                    self.data.remove(&disk_paused_key(index));
+                }
                 if let Some(key) = pending.cache {
                     self.data.insert(key, value.clone());
                 }
@@ -195,6 +206,26 @@ impl Desktop {
                 }
             }
             Err(error) => {
+                if pending.command == "disk_details" {
+                    match error["code"].as_str() {
+                        Some("readPaused") => {
+                            if let Some(index) = pending.args["index"].as_u64() {
+                                self.data.insert(disk_paused_key(index), json!(true));
+                            }
+                            cx.notify();
+                            return;
+                        }
+                        Some("guardUnwritable") => {
+                            self.notify_toast(
+                                ToastKind::Error,
+                                label("performance.disk.guardUnwritable"),
+                            );
+                            cx.notify();
+                            return;
+                        }
+                        _ => {}
+                    }
+                }
                 if pending.cache.as_deref() == Some("settings") {
                     self.send_queued_metrics(window, cx);
                 }

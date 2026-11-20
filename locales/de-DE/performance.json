@@ -321,6 +321,8 @@
       "details": "Details"
     },
     "refresh": "Noch einmal lesen",
+    "readPaused": "Das automatische Lesen wurde angehalten, weil die App möglicherweise beendet wurde, bevor das letzte Lesen des Datenträgers abgeschlossen war. Mit „Noch einmal lesen“ wird manuell gelesen; Sie fahren in dem Wissen fort, dass dieses Lesen Probleme am Speichergerät verursachen kann.",
+    "guardUnwritable": "Die Datei mit dem Leseprotokoll konnte nicht geschrieben werden, daher wurden die Datenträgerdetails nicht gelesen. Prüfen Sie Speicherplatz und Ordnerberechtigungen und versuchen Sie es erneut.",
     "readAt": "Ausgelesen um {time}",
     "loading": "Festplatteninformationen werden gelesen…",
     "unavailable": "Keine Datenträgerdetails.",

@@ -498,7 +498,7 @@ impl Desktop {
             "diskPage" => self.disk_page = value.as_str().unwrap_or("overview").into(),
             "refreshDiskDetails" => {
                 if let Some(index) = value.as_u64() {
-                    self.read_disk_details(index, window, cx);
+                    self.read_disk_details(index, true, window, cx);
                 }
                 return;
             }

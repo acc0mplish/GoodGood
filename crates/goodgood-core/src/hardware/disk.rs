@@ -55,7 +55,7 @@ pub(super) fn bus_name(code: u32) -> &'static str {
 /// controller and with it Windows until the PC is powered off. Disks on every
 /// other bus therefore report no temperature rather than risk that.
 pub(super) fn temperature_query_allowed(bus: &str) -> bool {
-    matches!(bus, "nvme" | "sata" | "ata")
+    matches!(bus, "nvme" | "sata" | "ata") && !super::disk_details::guard::sampler_held()
 }
 const DRIVE_REMOVABLE: u32 = 2;
 const DRIVE_FIXED: u32 = 3;

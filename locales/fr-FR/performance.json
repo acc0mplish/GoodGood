@@ -325,6 +325,8 @@
       "details": "Détails"
     },
     "refresh": "Lire à nouveau",
+    "readPaused": "La lecture automatique a été suspendue, car l’application a pu se fermer avant la fin de la dernière lecture du disque. Si vous sélectionnez « Lire à nouveau », la lecture est lancée manuellement et vous poursuivez en sachant qu’elle peut causer des problèmes au périphérique de stockage.",
+    "guardUnwritable": "Le fichier d’enregistrement des lectures n’a pas pu être écrit ; les détails du disque n’ont donc pas été lus. Vérifiez l’espace de stockage et les autorisations du dossier, puis réessayez.",
     "readAt": "Lecture à {time}",
     "loading": "Lecture des informations sur le disque…",
     "unavailable": "Aucun détail sur le disque.",

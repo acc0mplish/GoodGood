@@ -519,15 +519,18 @@ fn attributes(health: &Value) -> Vec<(&'static str, Vec<Attribute>)> {
 
 impl Desktop {
     /// Reads a disk's details once, on a worker; the answer replaces the last.
+    /// `manual` is true only for the user's own request: the host refuses an
+    /// automatic read while the previous one may not have finished.
     pub(in crate::frontend) fn read_disk_details(
         &mut self,
         index: u64,
+        manual: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         self.request(
             "disk_details",
-            json!({ "index": index }),
+            json!({ "index": index, "manual": manual }),
             Some(&key(index)),
             window,
             cx,
@@ -556,27 +559,27 @@ impl Desktop {
         }
         self.disk_details_open = open.map(|(index, epoch)| (index, epoch, Instant::now()));
         if let Some(index) = index {
-            self.read_disk_details(index, window, cx);
+            self.read_disk_details(index, false, window, cx);
         }
     }
     /// The head's button reading the details again.
-    pub(super) fn disk_refresh_button(&self, index: u64, cx: &mut Context<Self>) -> AnyElement {
-        self.btn_small(
-            "disk-details-refresh",
-            "",
-            Some("RefreshIcon"),
-            widgets::Tone::Ghost,
-        )
-        .accessibility_label(label("performance.disk.refresh"))
-        .tooltip(|window, cx| widgets::tooltip(label("performance.disk.refresh"), window, cx))
-        .on_click(cx.listener(move |this, _, window, cx| {
-            this.act(
-                Action::Preference("refreshDiskDetails".into(), json!(index)),
-                window,
-                cx,
-            )
-        }))
-        .into_any_element()
+    pub(super) fn disk_refresh_button(
+        &self,
+        id: &'static str,
+        index: u64,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        self.btn_small(id, "", Some("RefreshIcon"), widgets::Tone::Ghost)
+            .accessibility_label(label("performance.disk.refresh"))
+            .tooltip(|window, cx| widgets::tooltip(label("performance.disk.refresh"), window, cx))
+            .on_click(cx.listener(move |this, _, window, cx| {
+                this.act(
+                    Action::Preference("refreshDiskDetails".into(), json!(index)),
+                    window,
+                    cx,
+                )
+            }))
+            .into_any_element()
     }
     pub(super) fn disk_details(
         &self,
@@ -588,6 +591,26 @@ impl Desktop {
         let Some(index) = disk["info"]["index"].as_u64() else {
             return div().into_any_element();
         };
+        if self
+            .data
+            .contains_key(&crate::frontend::backend::disk_paused_key(index))
+        {
+            return self.card(
+                label("performance.disk.device"),
+                None,
+                None,
+                false,
+                div()
+                    .flex()
+                    .flex_col()
+                    .items_start()
+                    .gap(px(8.))
+                    .text_color(self.palette.muted)
+                    .child(label("performance.disk.readPaused"))
+                    .child(self.disk_refresh_button("disk-details-paused-refresh", index, cx))
+                    .into_any_element(),
+            );
+        }
         let Some(details) = self.data.get(&key(index)) else {
             return self.disk_details_waiting(index);
         };

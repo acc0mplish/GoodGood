@@ -208,6 +208,12 @@ pub fn run() -> anyhow::Result<()> {
     }
     let meta = goodgood_core::diagnostics::startup_phase("host.metadata", MetaStore::new);
     let rules = Arc::new(RuleRunner::spawn(elevated));
+    // The guard must read the marker (and set the sampler hold) before the
+    // sampler thread builds its disk collector.
+    let local_data = host.path().app_local_data_dir()?;
+    host.manage(goodgood_core::hardware::disk_details::guard::Guard::open(
+        local_data.join(goodgood_core::hardware::disk_details::guard::MARKER_FILE),
+    ));
     let sampler = if options.fixture.is_some() {
         log::info!(target: "goodgood_startup", "phase=host.sampler; fixture=true; native_collection=false");
         Sampler::inactive()
@@ -247,7 +253,6 @@ pub fn run() -> anyhow::Result<()> {
     host.manage(settings);
     host.manage(hotkey::HotkeyState::default());
     host.manage(Latest::default());
-    let local_data = host.path().app_local_data_dir()?;
     let history = local_data.join("history");
     if !options.test {
         goodgood_core::history::prune_expired(&history);

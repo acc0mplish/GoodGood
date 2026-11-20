@@ -2,6 +2,7 @@
 
 mod ata;
 mod ata_health;
+pub mod guard;
 mod io;
 mod legacy;
 mod nvme;

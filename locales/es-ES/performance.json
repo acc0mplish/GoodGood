@@ -325,6 +325,8 @@
       "details": "Detalles"
     },
     "refresh": "Leer de nuevo",
+    "readPaused": "La lectura automática se detuvo porque la aplicación pudo cerrarse antes de que terminara la última lectura del disco. Al pulsar «Leer de nuevo», la lectura se hace manualmente y se continúa sabiendo que puede causar problemas en el dispositivo de almacenamiento.",
+    "guardUnwritable": "No se pudo escribir el archivo de registro de lectura, por lo que no se leyeron los detalles del disco. Compruebe el espacio de almacenamiento y los permisos de la carpeta, y vuelva a intentarlo.",
     "readAt": "Lectura: {time}",
     "loading": "Leyendo información del disco…",
     "unavailable": "No hay detalles del disco.",

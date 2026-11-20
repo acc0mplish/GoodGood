@@ -14,6 +14,11 @@ fn argument<T: serde::de::DeserializeOwned>(args: &Value, key: &str) -> Result<T
     serde_json::from_value(args.get(key).cloned().unwrap_or(Value::Null))
         .map_err(|_| serde_json::json!(goodgood_core::tr!("app.invalidRequest")))
 }
+/// A read counts as manual only when the caller says so; a missing or malformed
+/// flag stays automatic (fail closed).
+fn manual_read(args: &Value) -> bool {
+    args.get("manual").and_then(Value::as_bool).unwrap_or(false)
+}
 pub fn invoke(host: &Host, name: &str, args: Value) -> Result<Value, Value> {
     match name {
         "desktop_shell" => Ok(serde_json::to_value(crate::commands::desktop_shell())
@@ -74,12 +79,12 @@ pub fn invoke(host: &Host, name: &str, args: Value) -> Result<Value, Value> {
             argument::<Option<String>>(&args, "path")?,
         ))
         .expect("serializable command response")),
-        "disk_details" => Ok(
-            serde_json::to_value(crate::commands::disk_details(argument::<u32>(
-                &args, "index",
-            )?))
-            .expect("serializable command response"),
-        ),
+        "disk_details" => crate::commands::disk_details(
+            host.state(),
+            argument::<u32>(&args, "index")?,
+            manual_read(&args),
+        )
+        .map(|details| serde_json::to_value(details).expect("serializable command response")),
         "kill_process" => crate::commands::kill_process(
             host.state(),
             argument::<u32>(&args, "pid")?,
@@ -419,5 +424,20 @@ pub fn invoke(host: &Host, name: &str, args: Value) -> Result<Value, Value> {
         ))
         .expect("serializable command response")),
         _ => Err(serde_json::json!(goodgood_core::tr!("app.invalidRequest"))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::manual_read;
+    use serde_json::json;
+
+    #[test]
+    fn manual_defaults_to_automatic() {
+        assert!(!manual_read(&json!({ "index": 0 })));
+        assert!(!manual_read(&json!({ "manual": "true" })));
+        assert!(!manual_read(&json!({ "manual": null })));
+        assert!(manual_read(&json!({ "manual": true })));
+        assert!(!manual_read(&json!({ "manual": false })));
     }
 }

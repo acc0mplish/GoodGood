@@ -318,6 +318,8 @@
       "details": "Details"
     },
     "refresh": "Read again",
+    "readPaused": "Automatic reading was paused because the app may have exited before the last disk read finished. Selecting 'Read again' reads manually, and you proceed knowing this read may cause problems with the storage device.",
+    "guardUnwritable": "The read record file could not be written, so disk details were not read. Check the storage space and folder permissions, then try again.",
     "readAt": "Read at {time}",
     "loading": "Reading disk information…",
     "unavailable": "No disk details.",

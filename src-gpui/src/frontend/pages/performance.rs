@@ -3113,7 +3113,7 @@ impl Desktop {
             .gap(px(8.))
             .child(pages)
             .when_some(info["index"].as_u64().filter(|_| details), |d, index| {
-                d.child(self.disk_refresh_button(index, cx))
+                d.child(self.disk_refresh_button("disk-details-refresh", index, cx))
             })
             .into_any_element();
         let head = self.perf_head(

@@ -16,34 +16,34 @@
   "refreshStatus": "Status aktualisieren",
   "vitals": {
     "title": "Ressourcenübersicht",
-    "desc": "Der Automatikmodus reserviert Platz für die Übersicht und 10 Prozesszeilen. Reicht der Platz nicht, wird die Übersicht eingeklappt. Eingeklappte Gruppen und Filter beeinflussen diese Entscheidung nicht.",
+    "desc": "Der Automatikmodus klappt die Übersicht bei Platzmangel ein und reserviert 10 Zeilen.",
     "auto": "Automatisch",
     "show": "Immer anzeigen",
     "hide": "Ausgeblendet"
   },
   "visibility": {
     "title": "Systemprozesse ausblenden",
-    "desc": "Legen Sie fest, welche Programme immer sichtbar bleiben und welche zusätzlich ausgeblendet werden. Prozesse und Verbindungen teilen diese Regeln; das Ausblenden wird über das Symbol in der Symbolleiste aktiviert."
+    "desc": "Legen Sie Programme fest, die immer sichtbar oder zusammen ausgeblendet werden."
   },
   "userGroups": {
     "title": "Prozesse nach Benutzer gruppieren",
-    "desc": "Gruppiert die Prozessliste nach angemeldeten Benutzern; Ansichten, Kategorien, Sortierung und Suche funktionieren innerhalb jeder Gruppe unverändert. Der automatische Modus gruppiert nur, solange mehrere Benutzer angemeldet sind, getrennte Sitzungen eingeschlossen. Sitzungen ohne Benutzer, etwa die der Systemdienste, erscheinen unter „System“.",
+    "desc": "Gruppiert Prozesse nach Benutzer; automatisch erst ab zwei angemeldeten Benutzern.",
     "auto": "Automatisch",
     "on": "Immer gruppieren",
     "off": "Nie gruppieren"
   },
   "holdOrder": {
     "title": "Sortierung beim Daraufzeigen anhalten",
-    "desc": "Solange sich der Zeiger über der Prozessliste befindet, bleiben die Zeilen an ihrem Platz und die Werte werden weiter aktualisiert; verlässt der Zeiger die Liste, werden sie neu sortiert. Ist die Option deaktiviert, wird die Liste bei jeder Aktualisierung neu sortiert. Solange ein Kontextmenü oder Dialog geöffnet ist, bleiben die Zeilen weiterhin an ihrem Platz."
+    "desc": "Bleibt der Zeiger über der Liste, behalten Zeilen ihren Platz und Werte werden aktualisiert."
   },
   "language": {
     "title": "Anzeigesprache",
-    "desc": "Gilt sofort, auch für das Menü im Infobereich und Meldungen. „Wie Windows“ übernimmt die Windows-Anzeigesprache.",
+    "desc": "Gilt sofort. „Wie Windows“ übernimmt die Windows-Anzeigesprache.",
     "error": "Die Sprache konnte nicht geändert werden: {error}"
   },
   "theme": {
     "title": "Design",
-    "desc": "„Wie Windows“ übernimmt den Windows-App-Modus und wechselt mit dem System zwischen hell und dunkel.",
+    "desc": "„Wie Windows“ übernimmt den Windows-App-Modus und wechselt mit ihm.",
     "system": "Wie Windows",
     "light": "Hell",
     "dark": "Dunkel",
@@ -51,7 +51,7 @@
   },
   "navigation": {
     "title": "Navigationsposition",
-    "desc": "Im Seitenbereich werden standardmäßig nur Symbole angezeigt. Mit der Schaltfläche ☰ in der oberen linken Ecke wird es erweitert, um Seitennamen anzuzeigen. Die obere Navigation zeigt die Seiten als Registerkarten unterhalb der Symbolleiste an.",
+    "desc": "Die ☰-Schaltfläche erweitert den Seitenbereich; die obere Navigation zeigt Registerkarten.",
     "side": "Seitlich",
     "top": "Oben"
   },
@@ -73,7 +73,7 @@
     },
     "closeToTray": {
       "title": "Beim Schließen im Infobereich behalten",
-      "desc": "GoodGood läuft weiter und lässt sich schnell wieder öffnen. Im ausgeblendeten Zustand gilt das Intervall für den Infobereich; Verlauf und Regeln bleiben aktiv.",
+      "desc": "GoodGood läuft weiter und öffnet sich schnell wieder; Verlauf und Regeln bleiben aktiv.",
       "error": "Die Einstellung konnte nicht gespeichert werden: {error}"
     }
   },
@@ -84,14 +84,14 @@
     "scope": "Tastenkombinationen für häufige Aktionen, Seitennavigation und Listen.",
     "global": "Global",
     "globalHint": "Aktuelle Einstellung. Funktioniert auch bei Verwendung anderer Apps.",
-    "inputHint": "In-App-Tastenkombinationen wirken sich nicht auf andere Apps aus. Tastenkombinationen zum Beenden des Prozesses sind in Textfeldern, Dialogen und Menüs inaktiv.",
+    "inputHint": "In-App-Tastenkombinationen wirken sich nicht auf andere Apps aus.",
     "disabled": "Nicht aktiviert",
     "navigation": "Seiten wechseln",
     "pauseTitle": "Anhalten, solange gedrückt",
     "searchTitle": "Prozesse suchen",
-    "search": "Gehen Sie zur Prozesssuche. Die /-Taste funktioniert auch, wenn Sie nichts eingeben. Wenn Sie auf der Seite „Prozesse“ einen Buchstaben oder eine Ziffer eingeben, wird eine Suche gestartet.",
+    "search": "Zur Prozesssuche. Die /-Taste funktioniert auch außerhalb der Eingabe.",
     "runTask": "Starten Sie auf jeder Seite ein Programm oder öffnen Sie eine Datei oder einen Ordner. Nicht während der Texteingabe.",
-    "pause": "Halten Sie gedrückt, um Aktualisierungen von Prozessen oder Leistung anzuhalten; loslassen, um fortzufahren. Eine manuelle Pause bleibt bestehen.",
+    "pause": "Pausiert Aktualisierungen beim Gedrückthalten und setzt beim Loslassen fort.",
     "end": "Beenden Sie den ausgewählten Prozess oder die ausgewählte App-Gruppe mit Bestätigung.",
     "taskManager": "Öffnen Sie GoodGood, wenn die Task-Manager-Ersetzung aktiviert ist.",
     "close": "Übersicht schließen",
@@ -112,7 +112,7 @@
   },
   "hotkey": {
     "title": "GoodGood ein- oder ausblenden",
-    "desc": "Funktioniert in den meisten Programmen. Eine Kombination besteht normalerweise aus Strg, Alt oder Win plus einer normalen Taste; Jede Seite eines Modifikators funktioniert.",
+    "desc": "Funktioniert in den meisten Programmen. Meist ein Modifikator plus eine normale Taste.",
     "help": "Drücken Sie eine Tastenkombination und lassen Sie sie wieder los, um sie zu speichern. Esc bricht ab; Mit der Rücktaste wird die Tastenkombination deaktiviert.",
     "recording": "Drücken Sie eine neue Tastenkombination…",
     "change": "Ändern",
@@ -127,37 +127,37 @@
     "unknownKey": "Diese Taste",
     "hint": {
       "order": "Halten Sie zuerst die Modifikatoren (Strg, Alt, Umschalt oder Win) gedrückt und drücken Sie dann die andere Taste.",
-      "multipleKeys": "Nur eine gewöhnliche Taste: Eine globale Tastenkombination ist Strg, Alt, Umschalt oder Win plus eine einzelne andere Taste, sodass zwei gewöhnliche Tasten nicht kombiniert werden können.",
+      "multipleKeys": "Es kann nur eine normale Taste verwendet werden.",
       "lockKey": "Feststelltaste, Num-Taste und Scroll-Taste sind nicht Teil einer Kombination und werden ignoriert.",
       "maybeTaken": "Wenn nach dem Drücken einer Kombination nichts passiert, wird sie möglicherweise von Windows oder einer anderen App verwendet."
     },
     "warning": {
-      "common": "{shortcut} hat in vielen Apps eine eigene Verwendung. Als globale Tastenkombination funktioniert es dort nicht mehr.",
-      "inApp": "{shortcut} wechselt Seiten oder sucht in GoodGood. Als globale Tastenkombination wird dies nicht mehr der Fall sein.",
-      "imeSwitch": "Strg+Leertaste wechselt normalerweise die Eingabemethode. Als globale Tastenkombination wird dies nicht mehr der Fall sein.",
+      "common": "{shortcut} hat in vielen Apps eine eigene Verwendung; als globale Kombination funktioniert sie dort nicht.",
+      "inApp": "{shortcut} wird von einer GoodGood-Funktion verwendet; als globale Kombination fällt sie aus.",
+      "imeSwitch": "Strg+Leertaste wechselt meist die Eingabemethode; als globale Kombination fällt sie aus.",
       "numpad": "Ziffern und Dezimaltrennzeichen auf dem Ziffernblock lösen die Tastenkombination nur bei eingeschalteter Num-Taste aus.",
       "printScreen": "{shortcut} kann mit dem Windows-Screenshot oder einer Screenshot-App in Konflikt stehen."
     },
     "error": {
       "invalid": "{shortcut} kann nicht als Tastenkombination verwendet werden: {reason}",
-      "taken": "{shortcut} wird von Windows oder einem anderen Programm verwendet, möglicherweise einer weiteren GoodGood-Instanz. Wählen Sie eine andere Kombination.",
+      "taken": "{shortcut} wird von Windows oder einer anderen App verwendet. Andere Kombination wählen.",
       "failed": "{shortcut} konnte nicht registriert werden (Fehler {code}).",
       "saveFailed": "Die Einstellung konnte nicht gespeichert werden. Die Tastenkombination bleibt unverändert."
     },
     "issue": {
       "invalid": "Die Kombination wird nicht erkannt.",
-      "noKey": "Eine globale Tastenkombination benötigt neben Modifikatortasten auch eine normale Taste. Windows unterscheidet dabei nicht zwischen linker und rechter Strg-, Alt-, Umschalt- oder Win-Taste.",
+      "noKey": "Nur Modifikatoren ergeben keine Kombination; fügen Sie eine normale Taste hinzu.",
       "unsupported": "{key} kann nicht für eine globale Tastenkombination verwendet werden.",
       "lockKey": "Feststelltaste, Num-Taste und Scroll-Taste können nicht Teil einer Kombination sein.",
-      "needsModifier": "Eine Kombination erfordert Strg, Alt oder Win (außer F13–F24 und Umschalt+F1–F11). Andere Nur-Shift-Kombinationen würden das Tippen in jeder App beeinträchtigen.",
+      "needsModifier": "Eine Kombination benötigt Strg, Alt oder Win.",
       "reserved": "{shortcut} wird von Windows oder den meisten Apps verwendet.",
-      "taskManager": "Strg+Umschalt+Esc öffnet Task-Manager. Um GoodGood zu öffnen, aktivieren Sie „Task-Manager ersetzen“ unter Einstellungen → Berechtigungen.",
+      "taskManager": "Strg+Umschalt+Esc öffnet den Task-Manager. Zum Ersetzen in Einstellungen → Berechtigungen aktivieren.",
       "editing": "{shortcut} wird zum Kopieren, Einfügen und anderen Bearbeitungen verwendet."
     }
   },
   "privilege": {
-    "desc": "Ermöglicht GoodGood, das als Standardbenutzer ausgeführt wird, Systemprozesse zu verwalten, Regeln automatisch anzuwenden, Netzwerkverkehr pro Prozess sowie Lese- und Schreibvorgänge auf der Festplatte zu sammeln, Dateisperren zu finden, SMART-Informationen auf der Festplatte zu lesen, Dienste zu steuern und IPv4 TCP-Verbindungen zu schließen. Für die Installation und Deinstallation sind jeweils Administratorrechte erforderlich.",
-    "statusDesc": "GoodGood verbindet sich während der Ausführung automatisch mit dem Dienst. Ist die Erfassung des Netzwerkverkehrs nicht verfügbar, werden die Netzwerkspalten ausgeblendet. Unter jeder Regel steht ihr Anwendungsergebnis.",
+    "desc": "Ermöglicht einem Standardbenutzer privilegierte Aufgaben wie die Verwaltung von Systemprozessen. Installation und Deinstallation erfordern Administratorrechte.",
+    "statusDesc": "Verbindet sich automatisch mit dem Dienst; jede Regel zeigt ihr Ergebnis darunter.",
     "state": {
       "busy": "Warten auf Administratorberechtigung oder Arbeiten am Dienst…",
       "checking": "Dienststatus wird überprüft…",
@@ -171,8 +171,8 @@
       "stopPending": "Wird beendet",
       "unavailable": "Nicht verfügbar"
     },
-    "outdated": "Die Dienstversion {service} stimmt nicht mit GoodGood {app} überein. Klicken Sie auf Dienst aktualisieren.",
-    "incompatible": "Klicken Sie auf „Dienst aktualisieren“, um die zu GoodGood passende Version zu installieren und die Verbindung herzustellen.",
+    "outdated": "Dienstversion {service} stimmt nicht mit GoodGood {app} überein.",
+    "incompatible": "Klicken Sie auf „Dienst aktualisieren“, um die passende Version zu installieren.",
     "install": {
       "title": "Privilegierten Dienst aktivieren?",
       "body": "Nach der Installation kann das aktuelle Windows-Konto über den Hintergrunddienst ohne erneute Freigabe:\n· Prozesse beliebiger Benutzer beenden, anhalten oder fortsetzen, ausgenommen kritische Systemprozesse, sowie Priorität, I/O-Priorität, Speicherpriorität und Effizienzmodus festlegen;\n· beliebige Windows-Dienste starten und beenden und ihren Starttyp ändern, einschließlich Diensten von Sicherheitssoftware und Windows Update;\n· beliebige IPv4 TCP-Verbindungen schließen und Dateisperren, Netzwerkverkehr sowie Datenträger-Lese- und Schreibzugriffe aller Prozesse abfragen;\n· Datenträgeridentität, SMART-Attribute und Zustandsprotokolle über fest vorgegebene, ausschließlich lesende Befehle abfragen;\n· bei installiertem PawnIO CPU-Sensordaten und Mainboard-Lüfterdrehzahlen über fest vorgegebene Module auslesen.\n\nAndere Programme, die unter diesem Konto mit Standardrechten laufen, können diese Vorgänge ebenfalls aufrufen. Das Konto erhält damit einen Teil der Administratorrechte. Installieren Sie den Dienst nur für ein selbst genutztes Konto. Er startet mit Windows. Die Installation erfordert eine Administratorfreigabe; der Dienst kann später in den Einstellungen deinstalliert werden.",
@@ -191,7 +191,7 @@
   },
   "taskManager": {
     "title": "Task-Manager ersetzen",
-    "desc": "Öffnet mit Strg+Umschalt+Esc und anderen Task-Manager-Tastenkombinationen GoodGood. Standardmäßig deaktiviert; das eigenständige Wiederherstellungstool ist nicht von der Schnittstelle oder dem Dienst abhängig. Durch die Aktualisierung des privilegierten Dienstes wird auch der Ersatz aktualisiert und bleibt aktiviert. Durch die Deinstallation des Dienstes wird Windows-Task-Manager wiederhergestellt.",
+    "desc": "Öffnet GoodGood über Task-Manager-Tastenkombinationen wie Strg+Umschalt+Esc.",
     "confirm": {
       "title": "Task-Manager ersetzen?",
       "body": "Strg+Umschalt+Esc und andere Task-Manager-Aufrufe öffnen GoodGood. Die Änderung gilt für den gesamten PC; andere Konten öffnen weiterhin den Windows-Task-Manager. Die Aktivierung erfordert eine Administratorfreigabe. Schlägt der Start fehl, wird versucht, den Windows-Task-Manager zu öffnen. Bewahren Sie das unabhängige Wiederherstellungsprogramm auf, damit die Wiederherstellung auch ohne Oberfläche oder Dienst möglich bleibt."
@@ -220,15 +220,15 @@
   "motion": {
     "window": {
       "title": "Fensterübergänge",
-      "desc": "Blendet das Fenster beim Anzeigen, Ausblenden, Minimieren und Wiederherstellen sanft ein oder aus. Bei deaktivierter Option übernimmt Windows oder ein anderes Fensterverwaltungsprogramm die Übergänge. Folgt standardmäßig der Windows-Einstellung „Animationseffekte“."
+      "desc": "Sanftes Ein- und Ausblenden beim Anzeigen, Ausblenden, Minimieren oder Wiederherstellen."
     },
     "ui": {
       "title": "Oberflächenanimationen",
-      "desc": "Seiten- und Dialogübergänge, die verschiebbare Auswahlmarkierung und Symbolanimationen. Folgt standardmäßig der Windows-Einstellung für Animationseffekte."
+      "desc": "Seiten- und Dialogübergänge, bewegliche Auswahlmarkierung und Symbolanimationen."
     },
     "chart": {
       "title": "Diagrammanimationen",
-      "desc": "Höhere Bildraten ergeben flüssigere Kurven und benötigen mehr Ressourcen: „Flüssig“ belegt etwa 10 %–15 % eines Kerns, „Ausgewogen“ etwa die Hälfte. „Energiesparend“ verschiebt die Kurve jeweils um ein ganzes Pixel; kleinere Diagramme bewegen sich dadurch in Schritten.",
+      "desc": "Höhere Bildraten machen Diagramme flüssiger, kosten aber Ressourcen.",
       "fluid": "Flüssig ({fps} fps)",
       "balanced": "Ausgewogen ({fps} fps)",
       "pixel": "Energiesparend (Pixelschritte)",
@@ -236,7 +236,7 @@
     },
     "acceleration": {
       "title": "Hardwarebeschleunigung",
-      "desc": "Zeichnet die Oberfläche standardmäßig mit der GPU. Bei deaktivierter Option zeichnet die CPU, und GoodGood belegt die GPU nicht mehr. Das hilft, wenn die Oberfläche bei voll ausgelasteter GPU ruckelt oder GoodGood die GPU nicht beanspruchen soll. Die CPU-Auslastung steigt; bei Bedarf lassen sich die Diagrammanimationen reduzieren. Wird sofort wirksam, ohne Neustart.",
+      "desc": "Aus gezeichnet die CPU. Nützlich, wenn das Bild bei ausgelasteter GPU ruckelt.",
       "error": "Die Hardwarebeschleunigung konnte nicht geändert werden: {error}"
     }
   },
@@ -244,28 +244,28 @@
     "intervalDesc": "Kürzere Intervalle ergeben feinere Diagramme, führen aber dazu, dass GoodGood selbst mehr Ressourcen verbraucht.",
     "minimized": {
       "title": "Intervall bei minimiertem Fenster",
-      "desc": "Erfassungsintervall bei minimiertem Fenster. Längere Intervalle verringern den Hintergrundaufwand, verzögern die Anwendung von Regeln auf neue Programme aber um bis zu ein Intervall. Über 5 Sekunden wird auch der Verlauf seltener aufgezeichnet."
+      "desc": "Erfassungsintervall bei minimiertem Fenster; längere Intervalle kosten weniger im Hintergrund."
     },
     "tray": {
       "title": "Intervall im Infobereich",
-      "desc": "Erfassungsintervall bei ausgeblendetem Fenster im Infobereich. Das Symbol im Infobereich und sein Hinweis werden im gleichen Takt aktualisiert. Längere Intervalle verringern den Hintergrundaufwand, verzögern Regeln für neue Programme aber um bis zu ein Intervall. Über 5 Sekunden wird auch der Verlauf seltener aufgezeichnet."
+      "desc": "Erfassungsintervall im Infobereich; längere Intervalle kosten weniger im Hintergrund."
     },
     "background": {
       "error": "Das Aktualisierungsintervall konnte nicht gespeichert werden: {error}"
     },
     "releaseHidden": {
       "title": "Speicher bei ausgeblendetem Fenster freigeben",
-      "desc": "Wenn das Fenster für diese Dauer minimiert oder im Infobereich verborgen ist, gibt GoodGood seine Diagrammbilder frei und gibt ungenutzten Speicher an Windows zurück. Datenerfassung und Verlauf laufen weiter. Beim erneuten Öffnen werden die Diagramme zunächst neu gezeichnet, was einen Moment dauern kann.",
+      "desc": "Nach dieser Zeit verborgen werden Diagrammbilder freigegeben und Speicher an Windows zurückgegeben.",
       "option": "Nach {minutes} Min.",
       "never": "Nie"
     },
     "netUnit": {
       "title": "Einheit der Netzwerkgeschwindigkeit",
-      "desc": "Bytes entsprechen der Einheit der Festplattengeschwindigkeit; Bits passen zu den Verbindungsgeschwindigkeiten der Netzwerkadapter und den Breitbandplänen. Die Netzwerkansicht auf der Seite „Leistung“ zeigt beides."
+      "desc": "Bytes richten sich nach Speichergeschwindigkeiten, Bits nach Leitungs- und Tarif-Einheiten."
     },
     "history": {
       "title": "Verlauf aufzeichnen",
-      "on": "Zeichnet die Ressourcennutzung und die am stärksten ausgelasteten Prozesse alle 5 Sekunden auf. Bei längerem Intervall im minimierten Zustand oder im Infobereich gilt dieses Intervall. Die Daten bleiben 7 Tage ausschließlich auf diesem PC und sind unter „Verlauf“ verfügbar.",
+      "on": "Zeichnet alle 5 Sekunden die Nutzung auf; Daten bleiben 7 Tage auf diesem PC.",
       "off": "Aus. Vorhandene Datensätze verfallen nach 7 Tagen oder können jetzt gelöscht werden.",
       "error": "Die Verlaufseinstellung konnte nicht geändert werden: {error}",
       "saved": "Gespeicherter Verlauf",
@@ -284,7 +284,7 @@
   },
   "rules": {
     "title": "Priorität oder Effizienzmodus beim Programmstart automatisch festlegen",
-    "desc": "Gespeicherte Regeln gelten sofort für laufende Prozesse. Regeln können auch hinzugefügt werden, indem Sie mit der rechten Maustaste auf einen Prozess in der Liste klicken und Regel hinzufügen auswählen.",
+    "desc": "Gespeicherte Regeln gelten sofort für laufende Prozesse.",
     "placeholder": "Programmname, z. B. chrome.exe",
     "add": "Hinzufügen",
     "exists": "Eine Regel für {name} existiert bereits.",
@@ -312,8 +312,8 @@
         "other": "Auf {count} Prozesse angewendet"
       },
       "denied": {
-        "one": "Zugriff auf {count} Prozess verweigert. Den privilegierten Dienst aktivieren; geschützte Prozesse können weiterhin eingeschränkt sein",
-        "other": "Zugriff auf {count} Prozesse verweigert. Den privilegierten Dienst aktivieren; geschützte Prozesse können weiterhin eingeschränkt sein"
+        "one": "Zugriff auf {count} Prozess verweigert. Den privilegierten Dienst aktivieren",
+        "other": "Zugriff auf {count} Prozesse verweigert. Den privilegierten Dienst aktivieren"
       },
       "failed": {
         "one": "Anwendung auf {count} Prozess fehlgeschlagen. Den privilegierten Dienst prüfen und die Regeln erneut speichern",
@@ -340,54 +340,54 @@
     },
     "current": "Aktuelle Version {version} · {build}",
     "detail": {
-      "ready": "Für die Installation ist eine Administratorberechtigung erforderlich. GoodGood wird während der Installation beendet; das Installationsprogramm zeigt nur den Fortschritt an und startet GoodGood neu, wenn es fertig ist.",
+      "ready": "Die Installation erfordert Administratorrechte; GoodGood wird dabei beendet.",
       "portable": "Die portable Version wird nicht automatisch aktualisiert. Laden Sie die neue Version von der Release-Seite herunter.",
       "downloaded": "{received} von {source} heruntergeladen.",
       "downloadedOf": "{received} von {total} von {source} heruntergeladen.",
       "checked": "Zuletzt überprüft: {time}.",
       "checkedFrom": "Zuletzt überprüft: {time}, von {source}.",
-      "source": "Updates stammen aus den GitHub Releases, bei eingerichtetem Proxy über diesen. Die Signatur des Installationsprogramms wird vor der Installation geprüft."
+      "source": "Updates stammen aus GitHub Releases; die Signatur wird vor der Installation geprüft."
     },
     "restart": "Neu starten und aktualisieren",
     "download": "Herunterladen",
     "check": "Nach Updates suchen",
     "auto": {
       "title": "Automatisch nach Updates suchen",
-      "desc": "Überprüft etwa 1 Minute nach dem Start, dann einmal täglich. Neue Versionen werden im Hintergrund heruntergeladen und erst nach Bestätigung installiert."
+      "desc": "Prüft etwa 1 Minute nach dem Start und einmal täglich; Download im Hintergrund."
     },
     "whatsNew": {
       "title": "Neuerungen nach dem Update anzeigen",
-      "desc": "Zeigt die Neuerungen beim ersten Öffnen nach einem Update an, einmal pro Version. Bei deaktivierter Option erscheint nur unten rechts ein Hinweis auf das abgeschlossene Update.",
+      "desc": "Zeigt die Änderungen einmal pro Version beim ersten Öffnen nach einem Update.",
       "view": "Änderungen dieser Version anzeigen"
     },
     "channel": {
       "label": "Updatekanal",
-      "desc": "Beta bietet neue Funktionen früher, kann aber weniger stabil als der Kanal „Stabil“ sein. Nach dem Wechsel von „Beta“ zu „Stabil“ erfolgt ein Update erst, wenn eine stabile Version eine höhere Versionsnummer als die aktuelle Version hat.",
+      "desc": "Beta erhält Funktionen früher, ist aber möglicherweise weniger stabil.",
       "stable": "Stabil",
       "beta": "Beta"
     },
     "route": {
       "label": "Downloadquelle",
-      "desc": "GitHub-Proxys werden von Dritten betrieben und können die IP-Adresse dieses PC und die heruntergeladenen Dateien sehen. Installer-Signaturen decken auch die Versionsnummer ab, sodass ein Proxy ein Update nicht manipulieren oder eine alte Version als neue ausgeben kann.",
+      "desc": "Der GitHub-Proxy wird von Dritten betrieben und sieht die IP dieses PC und heruntergeladene Dateien.",
       "auto": "Automatisch (GitHub, dann Proxys)",
       "direct": "Nur GitHub",
       "proxy": "Nur über GitHub-Proxy"
     },
     "proxy": {
       "label": "GitHub-Proxy",
-      "fallback": "Ist GitHub nicht erreichbar, versucht GoodGood diesen Proxy und danach die übrigen integrierten Proxys.",
+      "fallback": "Ist GitHub nicht erreichbar, wird dieser und dann der integrierte Proxy versucht.",
       "only": "Alle Update-Anfragen laufen über diesen Proxy.",
       "custom": "Benutzerdefiniert…"
     },
     "custom": {
       "title": "Benutzerdefinierter Proxy",
-      "desc": "Ein Präfix, das vor GitHub-URLs hinzugefügt wurde. Es muss https verwenden, z. B. https://example.com/.",
+      "desc": "Präfix vor GitHub-URLs. https ist erforderlich.",
       "label": "Benutzerdefinierte Proxy-URL",
       "save": "Speichern"
     },
     "star": {
       "title": "Stern-Erinnerung",
-      "desc": "Zeigt einmal täglich unten rechts im Fenster eine Karte mit der Bitte um einen Stern auf GitHub an. Wird automatisch deaktiviert, nachdem GitHub über die Karte geöffnet oder die Erinnerung abgestellt wurde."
+      "desc": "Zeigt einmal täglich die Stern-Karte; bei „Nicht mehr erinnern“ bleibt sie aus."
     }
   },
   "about": {
@@ -419,7 +419,7 @@
     },
     "license": {
       "title": "Lizenz",
-      "desc": "GoodGood ist freie Software unter der Apache License, Version 2.0. Die Software darf gemäß dieser Lizenz weitergegeben und geändert werden. GoodGood wird ohne Garantie bereitgestellt.",
+      "desc": "Freie Software unter der Apache License 2.0, ohne Garantie.",
       "view": "Lizenz anzeigen"
     },
     "notices": {
@@ -430,12 +430,12 @@
     },
     "log": {
       "title": "Protokoll",
-      "desc": "Zeichnet die Laufzeitumgebung, den Funktionsstatus, fehlgeschlagene Schritte, Fehlercodes und tatsächliche Pfade zugehöriger Dateien oder Ordner auf. Lokal gespeichert, mit bis zu 1 MB pro Datei und 3 vorherigen Protokollen. Befehlszeilen, Anmeldeinformationen und Dateiinhalte sind ausgeschlossen. Verwenden Sie diesen Eintrag, um Diagnoseprotokolle für Fehlerberichte zu finden.",
+      "desc": "Zeichnet Fehlercodes und Dateipfade auf, ohne Befehlszeilen und Anmeldeinformationen.",
       "open": "Protokollordner öffnen"
     },
     "diagnostics": {
       "title": "Diagnoseinformationen",
-      "desc": "Kopiert die aktuelle Version, den Laufzeitstatus sowie Hardware- und Anzeigeeinstellungen für einen Fehlerbericht. Fehlende Angaben werden als unbekannt gekennzeichnet.",
+      "desc": "Kopiert Version, Laufzeitstatus, Hardware- und Anzeigeeinstellungen.",
       "copy": "Diagnoseinformationen kopieren",
       "unknown": "Unbekannt",
       "version": "Vollständige GoodGood-Version",
@@ -463,16 +463,16 @@
   },
   "sensors": {
     "title": "Kernelsensoren",
-    "desc": "Beim Aktivieren wird PawnIO geprüft. Fehlt der Treiber oder ist er veraltet, wird der offizielle Treiber installiert; andernfalls wird er gestartet. Eine Administratorfreigabe ist erforderlich. Installieren und starten Sie zuerst den privilegierten GoodGood-Dienst. Das Deaktivieren beendet nur die Datenerfassung durch GoodGood.",
+    "desc": "Prüft PawnIO und installiert nötigenfalls den offiziellen Treiber. Zuerst den privilegierten Dienst installieren.",
     "off": "Aus; Windows-Sensoren bleiben verfügbar.",
     "driver": "PawnIO-Website",
-    "preparing": "Der Treiber wird vorbereitet. Bestätigen Sie eine gegebenenfalls angezeigte Administratorfreigabe. Bei der ersten Installation müssen Dateien heruntergeladen werden."
+    "preparing": "Der Treiber wird vorbereitet. Die Administratorfreigabe abschließen."
   },
   "administrator": {
     "development": "Die dauerhafte Administratorautorisierung ist beim Hot-Reload der Entwicklung nicht verfügbar. Verwenden Sie einen Release-Build.",
     "title": "Als Administrator ausführen",
     "allow": "Ausführung als Administrator zulassen",
-    "desc": "Einmal autorisieren, um GoodGood als Administrator über die Anmeldung, Verknüpfungen und Task-Manager-Einstiegspunkte auszuführen.",
+    "desc": "Autorisiert läuft GoodGood als Administrator.",
     "authorized": "Autorisiert",
     "off": "Aus",
     "busy": "Wird ausgeführt",
@@ -481,13 +481,13 @@
     "currentStandard": "Aktueller Prozess: Standardberechtigungen",
     "restart": "GoodGood startet nach dem Wechsel neu und behält Einstellungen und Verlauf bei.",
     "afterOnboarding": "Setzen Sie die Einrichtung nach der Autorisierung fort. GoodGood startet mit den ausgewählten Berechtigungen neu, wenn das Setup abgeschlossen ist.",
-    "standardAccount": "Dieses Konto hat keine Administratoridentität, daher ist der automatische Administratorstart nicht verfügbar. Der privilegierte Dienst kann unterstützte Verwaltungsaktionen ausführen."
+    "standardAccount": "Ohne Administratoridentität ist der automatische Administratorstart nicht verfügbar."
   },
   "appearance": {
     "scaleTitle": "Oberflächenskalierung",
-    "scaleDesc": "Ändern Sie die Größe von Text, Symbolen und Steuerelementen von 80 % auf 150 % (Standard: 100 %). Änderungen gelten sofort und werden automatisch gespeichert.",
+    "scaleDesc": "Passt Text-, Symbol- und Steuerelementgrößen von 80 % auf 150 % an.",
     "fontTitle": "Schriftgröße",
-    "fontDesc": "Basisschriftgröße: 11–20 px, standardmäßig 13 px. Überschriften und ergänzende Texte werden proportional angepasst. Die Einstellung kann mit der Oberflächenskalierung kombiniert werden.",
+    "fontDesc": "Basisgröße 11–20 px; Überschriften und Nebentexte passen sich proportional an.",
     "reset": "Zurücksetzen",
     "saveFailed": "Schnittstelleneinstellungen konnten nicht gespeichert werden. Überprüfen Sie, ob der Konfigurationsordner beschreibbar ist."
   }

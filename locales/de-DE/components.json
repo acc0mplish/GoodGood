@@ -8,7 +8,7 @@
   "tray": {
     "icon": {
       "title": "Symbol im Infobereich",
-      "desc": "Verlauf zeigt die letzten CPU-Messwerte als Spalten, Anteil zeigt die aktuelle Auslastung als Punkteraster und Zahl als Prozentwert. Ab 80 % werden sie bernsteinfarben.",
+      "desc": "Zeigt die CPU-Auslastung als Verlauf, Anteil oder Zahl; ab 80 % bernsteinfarben.",
       "logo": "App-Symbol",
       "load": "Verlauf",
       "share": "Anteil",
@@ -16,7 +16,7 @@
     },
     "card": {
       "title": "Hoverkarte",
-      "desc": "Zeigt aktuelle Werte für CPU, Arbeitsspeicher, GPU und Netzwerk, solange der Mauszeiger auf dem Symbol ruht. Ausgeschaltet erscheint die QuickInfo des Systems."
+      "desc": "Zeigt beim Daraufzeigen auf das Symbol CPU-, Arbeitsspeicher-, GPU- und Netzwerkwerte."
     },
     "menu": {
       "title": "Rechtsklick auf das Symbol",
@@ -32,7 +32,7 @@
   },
   "metrics": {
     "title": "Angezeigte Werte",
-    "desc": "Die ausgewählten Werte erscheinen in der unten aufgeführten Reihenfolge. Bei mehreren GPUs, Datenträgern oder Netzwerkadaptern lassen sie sich für jedes Gerät einzeln auswählen. Ohne ausgewähltes Gerät stammen GPU-Werte von der GPU mit dem meisten dedizierten Speicher, Datenträger- und Netzwerkdatenraten sind Summen, und aktive Zeit und Temperatur zeigen den höchsten Wert aller Datenträger.",
+    "desc": "Die gewählten Werte erscheinen in der Reihenfolge unten; ohne Gerät gelten Raten als Summen.",
     "group": {
       "cpu": "CPU",
       "memory": "Speicher",
@@ -147,7 +147,7 @@
   },
   "desktop": {
     "title": "Desktopanzeige",
-    "desc": "Zeigt die ausgewählten Werte in einem kleinen Fenster auf dem Desktop. Ziehen verschiebt das Fenster, ein Doppelklick öffnet GoodGood, ein Rechtsklick das Menü. Während der Anzeige gilt das „Aktualisierungsintervall“.",
+    "desc": "Zeigt die gewählten Werte in einem kleinen Desktopfenster. Doppelklick öffnet GoodGood.",
     "topmost": {
       "title": "Immer im Vordergrund",
       "desc": "Bleibt über anderen Fenstern."
@@ -174,7 +174,7 @@
   },
   "taskbar": {
     "title": "Taskleistenanzeige",
-    "desc": "Zeigt die ausgewählten Werte in der Taskleiste des Hauptbildschirms. Ein Klick zeigt oder verbirgt das Fenster, ein Rechtsklick öffnet einen Bereich, in dem sich Stil und angezeigte Werte ändern lassen. Während der Anzeige gilt das „Aktualisierungsintervall“.",
+    "desc": "Zeigt gewählte Werte in der Taskleiste des Hauptbildschirms; Klick zeigt oder verbirgt das Fenster.",
     "place": {
       "title": "Position",
       "desc": "„Linke Seite“ gilt nur für die Taskleiste von Windows 11 mit zentrierten Schaltflächen. Andernfalls erscheint die Anzeige neben dem Infobereich.",
@@ -183,7 +183,7 @@
     },
     "style": {
       "title": "Stil",
-      "desc": "Beschriftungen: Namen und Werte in zwei Zeilen. Kurven: eine Kachel je Wert mit Name und Wert über dem jüngsten Verlauf. Kapseln: eine abgerundete Kapsel je Wert in einer Zeile, mit einem Punkt in der Gerätefarbe. Große Zahlen: ein kleiner Name in der Gerätefarbe über einer großen Zahl. Kurven, Kapseln und große Zahlen brauchen Platz für zwei Textzeilen; auf einer niedrigeren Taskleiste erscheinen sie als Beschriftungen.",
+      "desc": "Anzeigestil der Taskleistenwerte. Kurven, Kapseln und große Zahlen brauchen zwei Zeilen; bei niedriger Taskleiste erscheinen Beschriftungen.",
       "labels": "Beschriftungen",
       "curves": "Kurven",
       "capsules": "Kapseln",

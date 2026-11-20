@@ -506,7 +506,7 @@
     "mac": "Physikalische Adresse"
   },
   "gpu": {
-    "utilizationHint": "Die Gesamtauslastung wird anhand der am stärksten ausgelasteten Engine ermittelt und durch Prozess-Engine-Zähler sowie die NVIDIA-GPU-Kernauslastung ergänzt. Native Engine-Diagramme und Treibermesswerte können unterschiedliche Bereiche und Erfassungsintervalle abdecken.",
+    "utilizationHint": "Basiert auf der am stärksten ausgelasteten Engine und kann von Treiberwerten abweichen.",
     "utilSource": {
       "windows": "Windows-Engines",
       "process": "Prozess-Engine-Zähler",
@@ -529,9 +529,9 @@
     "vidHint": "Von der integrierten GPU angeforderte Versorgungsspannung (VID).",
     "unsliceClock": "Takt der gemeinsamen Logik",
     "unsliceClockHint": "Takt des Unslice-Bereichs der integrierten GPU. Er kann unabhängig vom Takt der Grafik-Rechenblöcke angehalten werden.",
-    "clockHint": "Kernelmesswerte werden aus dem aktuellen Multiplikator und der offiziellen nominellen Schrittweite berechnet. Gemessene Abweichungen des Basistakts sind nicht enthalten. Frequenzen werden einschließlich Null numerisch angezeigt; der minimale Betriebstakt beschreibt den unterstützten Bereich.",
+    "clockHint": "Verwendet den aktuellen Multiplikator und den nominalen Schritt; die Basistaktabweichung wird nicht gemessen.",
     "sharedMemoryClock": "Gemeinsam genutzter Speichertakt",
-    "sharedMemoryClockHint": "Takt des Systemspeichers, den die integrierte GPU mitbenutzt. Kernelmesswerte werden aus der Controllerkonfiguration und der nominellen Referenz berechnet, ohne gemessene Abweichungen des Basistakts. Die DDR-Übertragungsrate beträgt etwa das Doppelte dieses Werts.",
+    "sharedMemoryClockHint": "Takt des Systemspeichers, den die integrierte GPU mitbenutzt; die DDR-Rate ist etwa doppelt so hoch.",
     "gtActivity": "GT-Aktivität",
     "mediaActivity": "Medienaktivität",
     "activityHint": "Berechnet aus Hardware-Aktivitätszählern über das Abtastintervall. Sein Umfang unterscheidet sich von der Auslastungszeit der Windows-Engine.",

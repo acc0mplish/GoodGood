@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -93,9 +93,15 @@ async function fixture(t, { tags = [] } = {}) {
     "scripts/lib/version.ts",
     "scripts/lib/release-notes.ts",
   ];
+  // The fixtures start from the historical 0.5.0 so the tests keep passing when
+  // the real repository moves on to later calendar versions.
+  const liveVersion = JSON.parse(await read("package.json")).version;
+  const pinsVersion = ["Cargo.toml", "Cargo.lock", "package.json", "resources/app.json", "resources/changelog.json"];
   for (const file of files) {
-    originals[file] = await read(file);
-    await copyFile(join(repository, file), join(root, file));
+    let text = await read(file);
+    if (pinsVersion.includes(file)) text = text.split(liveVersion).join("0.5.0");
+    originals[file] = text;
+    await writeFile(join(root, file), text);
   }
   // Every workspace member's manifest, which readVersion walks to check Cargo.lock.
   const members = [.../\nmembers = \[([^\]]*)\]/.exec(originals["Cargo.toml"])[1].matchAll(/"([^"]+)"/g)].map(

@@ -439,6 +439,11 @@ impl ReleaseSource {
 
     fn artifact(&self, original: &Url, version: &str) -> Result<Url, String> {
         let file = file_name(version).ok_or_else(|| tr!("updater.invalidVersion"))?;
+        // The installer comes from the release the manifest names: a manifest
+        // that points at another release is not one this version vouches for.
+        if !original.path().contains(&format!("/releases/download/v{version}/")) {
+            return Err(tr!("updater.invalidVersion"));
+        }
         self.via_github(&format!("{REPO}/releases/download/v{version}/{file}"))
     }
 
@@ -1402,16 +1407,16 @@ mod tests {
         assert_eq!(file_name(""), None);
     }
 
-    // Signed with a throwaway key (`tauri signer generate`), never a release key.
-    const TEST_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJDNkMyMzZCOTYwN0Q2MTAKUldRUTFnZVdheU5zTElwbGNISW5BM004RDlaYWhmZ1ZRNkFONXFqdmI0YnY1dnZTMnFhWWdiU3gK";
+    // Signed with a throwaway key, never a release key.
+    const TEST_KEY: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYzMTAwRjE2MTYxMzAxQUIKUldTckFSTVdGZzhROHkyYnA0L2RWakJvN3RITzlvOUlNQm5Ub1NwQXhTbWdjVnZFTGljdTVlc1AK";
     const DATA: &[u8] = b"goodgood signed data";
     /// `DATA`, signed for version 1.2.3.
-    const DATA_SIG: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUTFnZVdheU5zTExIN1c3aUMxUE10KzNRblg5eWwvb1J3aFUyZ1VTR1AvdVdTVkxKU1NvL2VRSldYd1FuMjFOUCt6V1dZRmNMNllOM3dwOWdWM3Y2SDRFY2tPekxTM0FVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDc3CWZpbGU6ZGF0YS5iaW4JdmVyc2lvbjoxLjIuMwpqVW1oV3FjNEMvSnFqdHJ3bjFYOVVEMlQ3RnY4TVE4eUg2WVN4YXhQeGtTSWhkWXk5SkZ6cFlVaU1LQUNpSGZyYmUwLy9YWHRjYWFOYmhuM0Ixd2hBdz09Cg==";
+    const DATA_SIG: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHJzaWduIHNlY3JldCBrZXkKUlVTckFSTVdGZzhROCtSQzJSZ3hFTzNMR0xEdzlOU3VtejlEOWVzaEdOVitOT0x2MXpEY0VrQUwxVVpMbFJlVytDbnVPTG1KWDRDRHB5RWJNZHBKaHFXVGExMS9CYzEyTlF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDc3CWZpbGU6ZGF0YS5iaW4JdmVyc2lvbjoxLjIuMwpiYnZpeDVWR0lPcFJzYldkUlp0RmZjcXhUVFJKa0tWRGxLalVQNmMxSU0yL0VXZHV0VlIvV1NqM2dVKy9QR2xURll3cHFpR1hjMU9NZTczenpmWUpEdz09Cg==";
     /// `DATA`, signed without a version.
-    const DATA_SIG_UNVERSIONED: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUTFnZVdheU5zTEUvbURUZlN0SGlaRGdENVVoNkhHR0N2WDhFeTNQTXc4d2w1YWowTER1QmpvL0pNck51L3YxTmkwOUtid0ZWa0tmL1JxRFA2MlFXR3pBU3IwNGhXUWd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDgwCWZpbGU6ZGF0YS5iaW4KMW56UFRSTUlyNC9wcFI5aS8wd09xcVZPemp5K2c2VFVwU09CMWRpelpEMlFlSG0yc1ZEMnoxanNYcmROUUd4VFhKeTM2YkxhRTRyMjQyOUFuM0lHRGc9PQo=";
+    const DATA_SIG_UNVERSIONED: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHJzaWduIHNlY3JldCBrZXkKUlVTckFSTVdGZzhRODF0OG82TFRVSDcrN2RTWGlTQ1hmQXlvTUExOVZUZ0szWmovdHY2R3M1RnBwTzYydXNrYXJoY1NsZ2t3SnZEbEx1UVhYVDZsSjdkbW1INVlWYXNTL3djPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDgwCWZpbGU6ZGF0YS5iaW4KeERIblhvQzBSRHBhV0pBdnVWVXNBbHlQb3JkUytTUjV0dWFJRCtLRjRGUG1wUStGY01LaGM5eWd3OVk2NDllRGcxVVc3Nmo4RVA4TkFnaU8wa0I5QUE9PQo=";
     const NOTES: &str = r####"{"version":"1.2.3","releases":[{"version":"1.2.3","date":"2026-10-20","notes":"### Fixes\n\n- A fix"},{"version":"1.2.2","date":"2026-10-01","notes":"- Older"}]}"####;
     /// `NOTES`, signed for version 1.2.3.
-    const NOTES_SIG: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUTFnZVdheU5zTE5IZ3o5cVhFN0RzaEV0U2dYM0ZsMXlQMHZodjhlNThjdG9NT2Fnb1JDSEVROWpTRG9CWWwrY0RZd1hkeWhZOHlYVmJnUklaaFRXZjFJcEt2UHZLbXdVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDkxCWZpbGU6bm90ZXMuanNvbgl2ZXJzaW9uOjEuMi4zCjlrWXp3SUNUazB3MGJ2ZmI5L1psVUtKUkhHMjFRQ1Z3SzhJOVlUT05rUWl5Zmg2Z2VHaU52aFE3YXY3RG9TYm5yNEYxWHJiQWhONUxJc21oMWkrSEFnPT0K";
+    const NOTES_SIG: &str = "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHJzaWduIHNlY3JldCBrZXkKUlVTckFSTVdGZzhRODFWdjJEUUlLbTJaVXBlUGtDOGNBRFJETDFLbVV6SXlZaENRQ0R0S3UyamdWMnR2MzFBemMrZVRZVFF3QjZsOStQYXdQcE9pZlArL2hXNGxIamd1S2dVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMTg2NDkxCWZpbGU6bm90ZXMuanNvbgl2ZXJzaW9uOjEuMi4zCk1GaG9OcFNrNUs0UUJCb0s2bGZaWUdvZjlZczZEOUdxSnFBT2trRUVSR3FEeG9HNWFYOVZraVRjYjNHcy9sY0tiREZPeDVzbHh4QnArNGtIR1B0c0JnPT0K";
 
     #[test]
     fn signatures_cover_the_data_and_the_version() {

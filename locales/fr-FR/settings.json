@@ -236,7 +236,7 @@
     },
     "acceleration": {
       "title": "Accélération matérielle",
-      "desc": "Désactivée, le CPU dessine. À utiliser si l’image saccade quand le GPU est saturé.",
+      "desc": "Si désactivé, le CPU dessine. À utiliser si l’image saccade quand le GPU est saturé.",
       "error": "Impossible de changer l’accélération matérielle : {error}"
     }
   },

@@ -40,8 +40,10 @@ const GAP: f32 = 32.;
 const CONTENT: f32 = 780.;
 const NARROW: f32 = 900.;
 /// Cards step to two columns when the area beside the section list is at
-/// least this wide (a maximized window has it; the default window falls
-/// back to one column).
+/// least this wide. A maximized window reaches it at common scale factors
+/// (below 150% on a 1920 px display); the default window stays in one
+/// column. The crossing also depends on the section list's measured rail
+/// width, so it lands a little differently per language.
 const TWO_COL_CONTENT: f32 = 1080.;
 const RULE_PRIORITIES: [&str; 6] = [
     "realtime",

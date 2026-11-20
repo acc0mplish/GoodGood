@@ -2,7 +2,7 @@
   "window": [1800, 1100],
   "steps": [
     {
-      "note": "Settings two-column grid probe (P5 of docs/task-id/verbose-ui-trim/plan.md section 7). Probe sizes are PHYSICAL px; at the display scale of this run (scaleFactor in each inspect line, assumed 1.25) logical width = physical / 1.25, so 1800 -> 1440 (two-col ON), 1658 -> ~1326 (ON boundary), 1650 -> 1320 (OFF, one-col fallback). settingsScrollY is the settings content max scroll offset from inspect layout. Run once with the default language and once with --language de-DE (widest locale) to check cells stay within two text lines."
+      "note": "Settings two-column grid probe (P5 of docs/task-id/verbose-ui-trim/plan.md section 7). Probe sizes are PHYSICAL px; at the display scale of this run (scaleFactor in each inspect line, assumed 1.25) logical width = physical / 1.25, so 1800 -> 1440 (two-col ON), 1700 -> ~1326 (ON boundary), 1650 -> 1320 (OFF, one-col fallback). settingsScrollY is the settings content max scroll offset from inspect layout. Run once with the default language and once with --language de-DE (widest locale) to check cells stay within two text lines."
     },
     {
       "control": { "page": "settings", "settingsSection": "language", "theme": "dark" },
@@ -13,11 +13,11 @@
       "capture": "twocol-1800-language"
     },
     {
-      "probe": "size 1658 1000",
+      "probe": "size 1700 1000",
       "wait": 700,
       "inspect": "layout",
-      "label": "grid-1658",
-      "capture": "boundary-1658-on"
+      "label": "grid-1700",
+      "capture": "boundary-1700-on"
     },
     {
       "probe": "size 1650 1000",
@@ -27,14 +27,14 @@
       "capture": "boundary-1650-off"
     },
     {
-      "note": "Boundary swing 1658 <-> 1650: each crossing must re-render (on_prepaint defer condition covers the two_col transition as well as narrow)."
+      "note": "Boundary swing 1700 <-> 1650: each crossing must re-render (on_prepaint defer condition covers the two_col transition as well as narrow)."
     },
     {
-      "probe": "size 1658 1000",
+      "probe": "size 1700 1000",
       "wait": 500,
       "inspect": "layout",
       "label": "swing-on-a",
-      "capture": "swing-1658-a"
+      "capture": "swing-1700-a"
     },
     {
       "probe": "size 1650 1000",
@@ -44,11 +44,11 @@
       "capture": "swing-1650-a"
     },
     {
-      "probe": "size 1658 1000",
+      "probe": "size 1700 1000",
       "wait": 500,
       "inspect": "layout",
       "label": "swing-on-b",
-      "capture": "swing-1658-b"
+      "capture": "swing-1700-b"
     },
     {
       "probe": "size 1650 1000",

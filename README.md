@@ -12,7 +12,7 @@
 
 설치 없이 [공식 웹사이트](https://goodgoodtask.com/)에서 전체 인터랙티브 인터페이스와 안내 투어를 브라우저에서 바로 사용해 볼 수 있습니다
 
-[![Latest release](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases&sort=semver&label=release&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![Latest release](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases&sort=date&label=release&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
 [![Downloads](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=downloads&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-0078D4)](#-시스템-요구-사항)
 [![License](https://img.shields.io/badge/license-Apache--2.0-A42E2B?logo=apache&logoColor=white)](LICENSE)

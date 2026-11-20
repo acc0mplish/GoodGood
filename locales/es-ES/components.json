@@ -8,7 +8,7 @@
   "tray": {
     "icon": {
       "title": "Icono de la bandeja",
-      "desc": "Tendencia muestra las últimas muestras de CPU en columnas, Proporción ilumina una cuadrícula de puntos según el uso actual y Cifra muestra el porcentaje. A partir del 80 % se vuelven ámbar.",
+      "desc": "Muestra el uso de CPU como tendencia, proporción o cifra; ámbar desde el 80 %.",
       "logo": "Icono de la aplicación",
       "load": "Tendencia",
       "share": "Proporción",
@@ -16,7 +16,7 @@
     },
     "card": {
       "title": "Tarjeta al pasar el puntero",
-      "desc": "Muestra las lecturas en tiempo real de CPU, memoria, GPU y red mientras el puntero está sobre el icono. Desactivada, aparece la información sobre herramientas del sistema."
+      "desc": "Al pasar el puntero por el icono muestra CPU, memoria, GPU y red."
     },
     "menu": {
       "title": "Clic derecho en el icono",
@@ -32,7 +32,7 @@
   },
   "metrics": {
     "title": "Lecturas mostradas",
-    "desc": "Las lecturas elegidas se muestran en el orden siguiente. Con varias GPU, discos o adaptadores de red, se pueden elegir para cada dispositivo. Si no se elige ningún dispositivo, las lecturas de GPU corresponden a la GPU con más memoria dedicada; las velocidades de disco y de red son totales, y la actividad y la temperatura de disco muestran el valor más alto de todos los discos.",
+    "desc": "Los elementos elegidos se muestran en el orden de abajo; sin dispositivo, las velocidades son totales.",
     "group": {
       "cpu": "CPU",
       "memory": "Memoria",
@@ -147,7 +147,7 @@
   },
   "desktop": {
     "title": "Monitor de escritorio",
-    "desc": "Muestra las lecturas elegidas en una pequeña ventana del escritorio. Arrástrela para moverla, haga doble clic para abrir GoodGood o clic derecho para abrir el menú. Mientras está visible, utiliza la «Frecuencia de actualización».",
+    "desc": "Muestra los elementos elegidos en una pequeña ventana del escritorio. Doble clic abre GoodGood.",
     "topmost": {
       "title": "Siempre visible",
       "desc": "Se muestra por encima de las demás ventanas."
@@ -174,7 +174,7 @@
   },
   "taskbar": {
     "title": "Monitor en la barra de tareas",
-    "desc": "Muestra las lecturas elegidas en la barra de tareas de la pantalla principal. Un clic muestra u oculta la ventana; un clic derecho abre un panel para cambiar el estilo y las lecturas mostradas. Mientras está visible, utiliza la «Frecuencia de actualización».",
+    "desc": "Muestra los elementos elegidos en la barra de tareas principal; un clic muestra u oculta la ventana.",
     "place": {
       "title": "Posición",
       "desc": "«Lado izquierdo» solo se aplica a la barra de tareas de Windows 11 con los botones centrados. En otros casos, el monitor aparece junto a la bandeja.",
@@ -183,7 +183,7 @@
     },
     "style": {
       "title": "Estilo",
-      "desc": "Etiquetas: nombres y valores en dos filas. Curvas: una tarjeta por lectura, con su nombre y su valor sobre su curva reciente. Cápsulas: una cápsula redondeada por lectura en una fila, marcada con un punto del color del dispositivo. Cifras grandes: un nombre pequeño en el color del dispositivo sobre una cifra grande. Las curvas, las cápsulas y las cifras grandes necesitan espacio para dos filas de texto; en una barra de tareas más baja se muestran como etiquetas.",
+      "desc": "Estilo de visualización de los elementos de la barra de tareas. Curvas, cápsulas y cifras grandes necesitan dos filas; en una barra baja se muestran como etiquetas.",
       "labels": "Etiquetas",
       "curves": "Curvas",
       "capsules": "Cápsulas",

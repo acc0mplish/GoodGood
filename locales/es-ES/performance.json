@@ -511,7 +511,7 @@
     "mac": "Dirección física"
   },
   "gpu": {
-    "utilizationHint": "El uso global corresponde al motor más ocupado, complementado con los contadores de motores por proceso y el uso del núcleo de GPU de NVIDIA. Los gráficos de motores nativos y las lecturas del controlador pueden tener distintos ámbitos e intervalos de muestreo.",
+    "utilizationHint": "Se basa en el motor más ocupado y puede diferir de las lecturas del controlador.",
     "utilSource": {
       "windows": "Motores Windows",
       "process": "Motores de proceso",
@@ -534,9 +534,9 @@
     "vidHint": "Tensión de alimentación solicitada por la GPU integrada (VID).",
     "unsliceClock": "Frecuencia de lógica compartida",
     "unsliceClockHint": "Reloj de la lógica compartida de la GPU integrada (Unslice), que puede detenerse independientemente del reloj de los bloques de cálculo gráfico.",
-    "clockHint": "Las lecturas del kernel se calculan a partir del multiplicador actual y el incremento nominal oficial, sin incluir la desviación medida del reloj de referencia. Las frecuencias se muestran como valores numéricos, incluido el cero; la frecuencia mínima de funcionamiento indica el rango admitido.",
+    "clockHint": "Usa el multiplicador actual y el paso nominal; no se mide la desviación del reloj de referencia.",
     "sharedMemoryClock": "Reloj de memoria compartida",
-    "sharedMemoryClockHint": "Frecuencia de la memoria del sistema compartida por la GPU integrada. Las lecturas del kernel se calculan a partir de la configuración del controlador y la referencia nominal, sin incluir la desviación medida del reloj de referencia. La tasa de transferencia DDR es aproximadamente el doble de este valor.",
+    "sharedMemoryClockHint": "Reloj de la memoria del sistema compartida por la GPU integrada; la tasa DDR es aproximadamente el doble.",
     "gtActivity": "Actividad GT",
     "mediaActivity": "Actividad de los medios",
     "activityHint": "Calculado a partir de contadores de actividad de hardware durante el intervalo de muestreo. Su alcance difiere del tiempo de actividad del motor Windows.",

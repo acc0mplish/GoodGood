@@ -146,7 +146,7 @@ mod tests {
     fn a_manifest_without_a_signed_artifact_cannot_be_offered() {
         assert!(matches!(
             parse_release(
-                serde_json::json!({"version":"999.0.0","platforms":{"windows-x86_64":{"url":"https://example.invalid/update.exe"}}}),
+                serde_json::json!({"version":"9999.0.0","platforms":{"windows-x86_64":{"url":"https://example.invalid/update.exe"}}}),
                 "unused"
             ),
             Err(Error::MissingSignedVersion)
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn unsafe_download_schemes_are_rejected() {
         for scheme in ["http", "file", "javascript"] {
-            assert!(parse_release(serde_json::json!({"version":"999.0.0","url":format!("{scheme}://example.invalid/update"),"signature":"signature"}),"unused").is_err());
+            assert!(parse_release(serde_json::json!({"version":"9999.0.0","url":format!("{scheme}://example.invalid/update"),"signature":"signature"}),"unused").is_err());
         }
     }
 }

@@ -8,7 +8,7 @@
   "tray": {
     "icon": {
       "title": "Icône de la zone de notification",
-      "desc": "Tendance affiche les dernières mesures du CPU en colonnes, Part allume une grille de points selon l’utilisation actuelle et Chiffre affiche le pourcentage. À partir de 80 %, ils passent à l’ambre.",
+      "desc": "Affiche l’utilisation du CPU en tendance, part ou chiffre ; ambre à partir de 80 %.",
       "logo": "Icône de l’application",
       "load": "Tendance",
       "share": "Part",
@@ -16,7 +16,7 @@
     },
     "card": {
       "title": "Carte au survol",
-      "desc": "Affiche les mesures en temps réel du CPU, de la mémoire, du GPU et du réseau tant que le pointeur reste sur l’icône. Désactivée, l’info-bulle du système s’affiche."
+      "desc": "Le survol de l’icône affiche les valeurs CPU, mémoire, GPU et réseau."
     },
     "menu": {
       "title": "Clic droit sur l’icône",
@@ -32,7 +32,7 @@
   },
   "metrics": {
     "title": "Mesures affichées",
-    "desc": "Les mesures choisies s’affichent dans l’ordre ci-dessous. Avec plusieurs GPU, disques ou adaptateurs réseau, elles peuvent être choisies pour chaque périphérique. Sans périphérique choisi, les mesures GPU proviennent du GPU doté du plus de mémoire dédiée, les débits disque et réseau sont des totaux, et le temps d’activité et la température disque indiquent la valeur la plus élevée parmi les disques.",
+    "desc": "Les éléments choisis s’affichent dans l’ordre ci-dessous ; sans appareil, les débits sont des totaux.",
     "group": {
       "cpu": "CPU",
       "memory": "Mémoire",
@@ -147,7 +147,7 @@
   },
   "desktop": {
     "title": "Moniteur de bureau",
-    "desc": "Affiche les mesures choisies dans une petite fenêtre sur le bureau. Faites-la glisser pour la déplacer, double-cliquez pour ouvrir GoodGood et cliquez avec le bouton droit pour ouvrir le menu. Pendant l’affichage, GoodGood utilise la « Fréquence d’actualisation ».",
+    "desc": "Affiche les éléments choisis dans une petite fenêtre du bureau. Un double clic ouvre GoodGood.",
     "topmost": {
       "title": "Toujours au premier plan",
       "desc": "S’affiche au-dessus des autres fenêtres."
@@ -174,7 +174,7 @@
   },
   "taskbar": {
     "title": "Moniteur de barre des tâches",
-    "desc": "Affiche les mesures choisies dans la barre des tâches de l’écran principal. Un clic affiche ou masque la fenêtre ; un clic droit ouvre un panneau pour changer le style et les mesures affichées. Pendant l’affichage, GoodGood utilise la « Fréquence d’actualisation ».",
+    "desc": "Affiche les éléments choisis dans la barre des tâches de l’écran principal. Un clic affiche ou masque la fenêtre.",
     "place": {
       "title": "Position",
       "desc": "« Côté gauche » ne s’applique qu’à la barre des tâches de Windows 11 avec les boutons centrés. Sinon, le moniteur s’affiche près de la zone de notification.",
@@ -183,7 +183,7 @@
     },
     "style": {
       "title": "Style",
-      "desc": "Étiquettes : noms et valeurs sur deux lignes. Courbes : une vignette par mesure, avec son nom et sa valeur au-dessus de sa courbe récente. Pastilles : une pastille arrondie par mesure sur une ligne, marquée d’un point de la couleur de l’appareil. Grands chiffres : un petit nom dans la couleur de l’appareil au-dessus d’un grand chiffre. Les courbes, les pastilles et les grands chiffres demandent la hauteur de deux lignes de texte ; sur une barre des tâches plus basse, ils s’affichent en étiquettes.",
+      "desc": "Style d’affichage des éléments de la barre des tâches. Courbes, pastilles et grands chiffres demandent deux lignes de hauteur ; sinon, étiquettes.",
       "labels": "Étiquettes",
       "curves": "Courbes",
       "capsules": "Pastilles",

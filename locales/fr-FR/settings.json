@@ -16,34 +16,34 @@
   "refreshStatus": "Actualiser l’état",
   "vitals": {
     "title": "Vue d’ensemble des ressources",
-    "desc": "Le mode automatique réserve la place de la vue d’ensemble et de 10 lignes de processus. La vue se replie si l’espace manque. La réduction des groupes et les filtres n’influencent pas ce calcul.",
+    "desc": "Le mode automatique replie la vue d’ensemble si l’espace manque et réserve 10 lignes.",
     "auto": "Automatique",
     "show": "Toujours afficher",
     "hide": "Masquée"
   },
   "visibility": {
     "title": "Masquage des processus système",
-    "desc": "Choisissez les programmes à toujours afficher et ceux à masquer en plus des processus système. Processus et Connexions partagent ces règles ; activez le masquage avec l’icône de la barre d’outils."
+    "desc": "Choisissez les programmes à toujours afficher ou à masquer ensemble."
   },
   "userGroups": {
     "title": "Grouper les processus par utilisateur",
-    "desc": "Regroupe la liste des processus par utilisateur connecté ; les vues, les catégories, le tri et la recherche fonctionnent de la même façon dans chaque groupe. Le mode automatique ne regroupe que lorsque plusieurs utilisateurs sont connectés, sessions déconnectées comprises. Les sessions sans utilisateur, comme celle des services système, figurent sous « Système ».",
+    "desc": "Regroupe les processus par utilisateur ; automatique dès deux utilisateurs connectés.",
     "auto": "Automatique",
     "on": "Toujours grouper",
     "off": "Ne jamais grouper"
   },
   "holdOrder": {
     "title": "Suspendre le tri au survol",
-    "desc": "Tant que le pointeur est sur la liste des processus, les lignes restent en place et les valeurs continuent d’être actualisées ; elles sont triées de nouveau quand le pointeur quitte la liste. Option désactivée, la liste est triée à chaque actualisation. Les lignes restent en place tant qu’un menu contextuel ou une boîte de dialogue est ouvert."
+    "desc": "Pointeur sur la liste : les lignes gardent leur place et les valeurs s’actualisent."
   },
   "language": {
     "title": "Langue d’affichage",
-    "desc": "S’applique immédiatement, y compris aux menus de la zone de notification et aux messages. « Comme Windows » suit la langue d’affichage de Windows.",
+    "desc": "S’applique immédiatement. « Comme Windows » suit la langue d’affichage de Windows.",
     "error": "Impossible de changer la langue : {error}"
   },
   "theme": {
     "title": "Thème",
-    "desc": "« Comme Windows » suit le mode des applications Windows et bascule entre clair et sombre avec le système.",
+    "desc": "« Comme Windows » suit le mode des applications Windows et bascule avec lui.",
     "system": "Comme Windows",
     "light": "Clair",
     "dark": "Sombre",
@@ -51,7 +51,7 @@
   },
   "navigation": {
     "title": "Position de navigation",
-    "desc": "Le volet latéral affiche uniquement les icônes par défaut ; le bouton ☰ dans son coin supérieur gauche le développe pour afficher les noms des pages. La navigation supérieure affiche les pages sous forme d’onglets sous la barre d’outils.",
+    "desc": "Le bouton ☰ déploie le volet latéral ; la navigation supérieure montre des onglets.",
     "side": "Latérale",
     "top": "En haut"
   },
@@ -73,7 +73,7 @@
     },
     "closeToTray": {
       "title": "Conserver dans la zone de notification à la fermeture",
-      "desc": "GoodGood reste actif pour se rouvrir rapidement. Lorsqu’il est masqué, il utilise la fréquence de la zone de notification et continue d’enregistrer l’historique et d’appliquer les règles.",
+      "desc": "GoodGood reste actif pour se rouvrir vite ; l’historique et les règles continuent.",
       "error": "Impossible d’enregistrer le paramètre : {error}"
     }
   },
@@ -84,14 +84,14 @@
     "scope": "Actions quotidiennes, raccourcis de navigation et de liste.",
     "global": "Global",
     "globalHint": "Paramètre actuel. Fonctionne également lorsque vous utilisez d’autres applications.",
-    "inputHint": "Les raccourcis intégrés à l’application n’affectent pas les autres applications. Les raccourcis de fin de processus sont inactifs dans les champs de texte, les boîtes de dialogue et les menus.",
+    "inputHint": "Les raccourcis dans l’application n’affectent pas les autres applications.",
     "disabled": "Non activé",
     "navigation": "Changer de page",
     "pauseTitle": "Suspendre pendant l’appui",
     "searchTitle": "Rechercher des processus",
-    "search": "Accédez à la recherche de processus. La touche / fonctionne également lorsque vous ne tapez pas, et sur la page Processus, la saisie d’une lettre ou d’un chiffre lance une recherche.",
+    "search": "Va à la recherche de processus. La touche / fonctionne aussi hors saisie.",
     "runTask": "Lancez un programme ou ouvrez un fichier ou un dossier depuis n’importe quelle page. Inactif pendant la saisie.",
-    "pause": "Maintenez la touche enfoncée pour suspendre l’actualisation sur Processus ou Performances, puis relâchez-la pour reprendre. Une pause manuelle reste active.",
+    "pause": "Suspend les mises à jour tant que la touche est tenue, reprend au relâchement.",
     "end": "Terminez le processus ou le groupe d’applications sélectionné, avec confirmation.",
     "taskManager": "Ouvrez GoodGood lorsque le remplacement de Gestionnaire des tâches est activé.",
     "close": "Fermer l’aide",
@@ -112,7 +112,7 @@
   },
   "hotkey": {
     "title": "Afficher ou masquer GoodGood",
-    "desc": "Fonctionne dans la plupart des programmes. Une combinaison comporte généralement Ctrl, Alt ou Win plus une touche ordinaire ; chaque côté d’un modificateur fonctionne.",
+    "desc": "Fonctionne dans la plupart des programmes. Souvent un modificateur et une touche ordinaire.",
     "help": "Appuyez et relâchez une combinaison de touches pour l’enregistrer. Esc annule ; Retour arrière désactive le raccourci.",
     "recording": "Appuyez sur une nouvelle combinaison de touches…",
     "change": "Modifier",
@@ -127,37 +127,37 @@
     "unknownKey": "Cette touche",
     "hint": {
       "order": "Maintenez d’abord les modificateurs (Ctrl, Alt, Shift ou Win), puis appuyez sur l’autre touche.",
-      "multipleKeys": "Une seule touche ordinaire : un raccourci global est Ctrl, Alt, Shift ou Win plus une seule autre touche, donc deux touches ordinaires ne peuvent pas être combinées.",
+      "multipleKeys": "Une seule touche ordinaire peut être utilisée.",
       "lockKey": "Le verrouillage des majuscules, le verrouillage numérique et le verrouillage du défilement ne font pas partie d’une combinaison et sont ignorés.",
       "maybeTaken": "Si rien ne se passe après avoir appuyé sur une combinaison, Windows ou une autre application l’utilise peut-être."
     },
     "warning": {
-      "common": "{shortcut} a sa propre utilisation dans de nombreuses applications. En tant que raccourci global, il cessera de fonctionner à cet endroit.",
-      "inApp": "{shortcut} change de page ou effectue une recherche dans GoodGood. En tant que raccourci global, cela ne sera plus le cas.",
-      "imeSwitch": "Ctrl+Espace change généralement la méthode de saisie. En tant que raccourci global, cela ne sera plus le cas.",
+      "common": "{shortcut} a une utilisation propre dans beaucoup d’applications ; en raccourci global, il n’y fonctionne plus.",
+      "inApp": "{shortcut} est utilisé par une fonction de GoodGood ; en global, cette fonction s’arrête.",
+      "imeSwitch": "Ctrl+Espace change la méthode de saisie ; en raccourci global, cette fonction s’arrête.",
       "numpad": "Les chiffres et le séparateur décimal du pavé numérique déclenchent le raccourci uniquement lorsque Verr. num est activé.",
       "printScreen": "{shortcut} peut entrer en conflit avec la capture d’écran de Windows ou une application de capture d’écran."
     },
     "error": {
       "invalid": "Impossible d’utiliser {shortcut} comme raccourci : {reason}",
-      "taken": "{shortcut} est utilisé par Windows ou une autre application (éventuellement un autre GoodGood en cours d’exécution). Choisissez une combinaison différente.",
+      "taken": "{shortcut} est utilisé par Windows ou une autre application. Choisissez une autre combinaison.",
       "failed": "Impossible d’enregistrer {shortcut} (erreur {code}).",
       "saveFailed": "Impossible d’enregistrer le réglage. Le raccourci reste inchangé."
     },
     "issue": {
       "invalid": "La combinaison n’est pas reconnue.",
-      "noKey": "Un raccourci global ne peut pas être composé uniquement de touches de modification ; ajoutez une touche ordinaire. Windows ne distingue pas les touches Ctrl, Alt, Shift et Win gauches et droites.",
+      "noKey": "Des modificateurs seuls ne suffisent pas ; ajoutez une touche ordinaire.",
       "unsupported": "{key} ne peut pas être utilisé dans un raccourci global.",
       "lockKey": "Le verrouillage des majuscules, le verrouillage numérique et le verrouillage du défilement ne peuvent pas faire partie d’une combinaison.",
-      "needsModifier": "Une combinaison nécessite Ctrl, Alt ou Win (sauf F13–F24 et Shift+F1–F11). D’autres combinaisons Shift uniquement interféreraient avec la saisie dans chaque application.",
+      "needsModifier": "Une combinaison nécessite Ctrl, Alt ou Win.",
       "reserved": "{shortcut} est utilisé par Windows ou par la plupart des applications.",
-      "taskManager": "Ctrl+Shift+Esc ouvre le Gestionnaire des tâches. Pour ouvrir GoodGood, activez « Remplacer le Gestionnaire des tâches » dans Paramètres → Autorisations.",
+      "taskManager": "Ctrl+Shift+Esc ouvre le Gestionnaire des tâches. Pour le remplacer, activez Paramètres → Autorisations.",
       "editing": "{shortcut} est utilisé pour copier, coller et autres modifications."
     }
   },
   "privilege": {
-    "desc": "Permet à GoodGood exécuté en tant qu’utilisateur standard de gérer les processus système, d’appliquer automatiquement des règles, de collecter le trafic réseau par processus et les lectures et écritures de disque, de rechercher les verrous de fichiers, de lire les informations du disque SMART, de contrôler les services et de fermer les connexions IPv4 TCP. L’installation et la désinstallation nécessitent l’autorisation de l’administrateur.",
-    "statusDesc": "GoodGood se connecte automatiquement au service pendant son exécution. Les colonnes réseau sont masquées lorsque la collecte réseau n’est pas disponible ; chaque règle affiche ses résultats en dessous.",
+    "desc": "Permet à un utilisateur standard de gérer les processus système et autres tâches privilégiées. Installation et suppression exigent des droits d’administrateur.",
+    "statusDesc": "Se connecte automatiquement au service ; chaque règle affiche son résultat en dessous.",
     "state": {
       "busy": "En attente de l’autorisation de l’administrateur ou travail sur le service…",
       "checking": "Vérification de l’état du service…",
@@ -171,8 +171,8 @@
       "stopPending": "Arrêt en cours",
       "unavailable": "Indisponible"
     },
-    "outdated": "La version du service {service} ne correspond pas à GoodGood {app}. Cliquez sur « Mettre le service à jour ».",
-    "incompatible": "Cliquez sur « Mettre le service à jour » pour installer la version correspondant à GoodGood et établir la connexion.",
+    "outdated": "La version du service {service} ne correspond pas à GoodGood {app}.",
+    "incompatible": "Cliquez sur « Mettre le service à jour » pour installer la version correspondante.",
     "install": {
       "title": "Activer le service privilégié ?",
       "body": "Après l’installation, le compte Windows actuel peut utiliser le service en arrière-plan sans nouvelle autorisation pour :\n· terminer, suspendre ou reprendre les processus de tout utilisateur, sauf les processus système critiques, et régler leur priorité, leur priorité d’I/O, leur priorité mémoire et leur mode d’efficacité ;\n· démarrer et arrêter tout service Windows et modifier son type de démarrage, y compris les services des logiciels de sécurité et de Windows Update ;\n· fermer toute connexion IPv4 TCP et consulter les fichiers utilisés, le trafic réseau et les lectures et écritures disque de tous les processus ;\n· consulter l’identité des disques, les attributs SMART et les journaux de santé avec des commandes fixes en lecture seule ;\n· lire les données des capteurs CPU et les vitesses des ventilateurs de la carte mère via des modules fixes lorsque PawnIO est installé.\n\nLes autres programmes exécutés avec des droits standard sous ce compte peuvent aussi utiliser ces opérations, ce qui accorde au compte une partie des droits d’administrateur. Installez le service uniquement sur un compte que vous utilisez personnellement. Il démarre avec Windows. Son installation nécessite une autorisation d’administrateur ; il peut être désinstallé ensuite dans Paramètres.",
@@ -191,7 +191,7 @@
   },
   "taskManager": {
     "title": "Remplacer le Gestionnaire des tâches",
-    "desc": "Permet à Ctrl+Shift+Esc et à d’autres raccourcis Gestionnaire des tâches d’ouvrir GoodGood. Désactivé par défaut ; l’outil de récupération autonome ne dépend pas de l’interface ou du service. La mise à jour du service privilégié met également à jour le remplacement et le maintient activé ; la désinstallation du service restaure Gestionnaire des tâches Windows.",
+    "desc": "Ouvre GoodGood via les raccourcis du Gestionnaire des tâches comme Ctrl+Shift+Esc.",
     "confirm": {
       "title": "Remplacer le Gestionnaire des tâches ?",
       "body": "Ctrl+Shift+Esc et les autres accès au Gestionnaire des tâches ouvriront GoodGood. La modification concerne tout le PC ; les autres comptes continueront à ouvrir le Gestionnaire des tâches Windows. L’activation nécessite une autorisation d’administrateur. Si GoodGood ne démarre pas, une tentative d’ouverture du Gestionnaire des tâches Windows est effectuée. Conservez l’outil de récupération autonome pour pouvoir restaurer le réglage si l’interface ou le service ne fonctionne plus."
@@ -220,15 +220,15 @@
   "motion": {
     "window": {
       "title": "Transitions de fenêtres",
-      "desc": "Estompez la fenêtre lors de son affichage, de son masquage, de sa réduction ou de sa restauration. Désactivez-la pour laisser Windows ou un autre gestionnaire de fenêtres gérer les transitions. Suit le paramètre d’effets d’animation Windows par défaut."
+      "desc": "Estompe la fenêtre lors de son affichage, masquage, réduction ou restauration."
     },
     "ui": {
       "title": "Animations de l’interface",
-      "desc": "Transitions de page et de boîte de dialogue, marqueur de sélection coulissant et animation des icônes. Suit le paramètre d’effets d’animation Windows par défaut."
+      "desc": "Transitions de pages et dialogues, marqueur de sélection mobile, animations des icônes."
     },
     "chart": {
       "title": "Animations des graphiques",
-      "desc": "Une fréquence d’images plus élevée améliore la fluidité mais utilise plus de ressources : « Fluide » occupe environ 10 %–15 % d’un cœur et « Équilibré » environ la moitié. « Économie d’énergie » déplace la courbe d’un pixel entier à la fois ; les petits graphiques avancent donc par à-coups.",
+      "desc": "Une fréquence d’images plus élevée fluidifie les graphiques mais consomme plus de ressources.",
       "fluid": "Fluide ({fps} fps)",
       "balanced": "Équilibré ({fps} fps)",
       "pixel": "Économie d’énergie (pas de pixel)",
@@ -236,7 +236,7 @@
     },
     "acceleration": {
       "title": "Accélération matérielle",
-      "desc": "Par défaut, le GPU dessine l’interface. Une fois l’option désactivée, le CPU la dessine et GoodGood n’utilise plus le GPU. Utile si l’interface saccade lorsque le GPU est saturé, ou pour éviter qu’GoodGood sollicite le GPU. L’utilisation du CPU augmente ; si nécessaire, les animations des graphiques peuvent être réduites. S’applique immédiatement, sans redémarrage.",
+      "desc": "Désactivée, le CPU dessine. À utiliser si l’image saccade quand le GPU est saturé.",
       "error": "Impossible de changer l’accélération matérielle : {error}"
     }
   },
@@ -244,28 +244,28 @@
     "intervalDesc": "Des intervalles plus courts donnent des graphiques plus fins mais font que GoodGood lui-même utilise plus de ressources.",
     "minimized": {
       "title": "Actualisation lorsque la fenêtre est réduite",
-      "desc": "Intervalle de collecte lorsque la fenêtre est réduite. Un intervalle plus long réduit la consommation en arrière-plan, mais peut retarder l’application des règles aux nouveaux programmes d’un intervalle au maximum. Au-delà de 5 secondes, l’historique est aussi enregistré moins souvent."
+      "desc": "Intervalle de collecte pendant la réduction. Un intervalle long réduit le coût en arrière-plan."
     },
     "tray": {
       "title": "Actualisation dans la zone de notification",
-      "desc": "Intervalle de collecte lorsque la fenêtre est masquée dans la zone de notification ; l’icône et son infobulle suivent le même rythme. Un intervalle plus long réduit la consommation en arrière-plan, mais peut retarder les règles pour les nouveaux programmes d’un intervalle au maximum. Au-delà de 5 secondes, l’historique est aussi enregistré moins souvent."
+      "desc": "Intervalle de collecte pendant le masquage. Un intervalle long réduit le coût en arrière-plan."
     },
     "background": {
       "error": "Impossible d’enregistrer le taux de rafraîchissement : {error}"
     },
     "releaseHidden": {
       "title": "Libérer la mémoire lorsque la fenêtre est masquée",
-      "desc": "Lorsque la fenêtre reste réduite ou masquée dans la zone de notification pendant cette durée, GoodGood libère les images des graphiques et rend la mémoire inutilisée à Windows. L’échantillonnage et l’historique continuent. À la réouverture, les graphiques sont d’abord redessinés, ce qui peut prendre un instant.",
+      "desc": "Après ce temps masqué, les images des graphiques sont libérées et la mémoire rendue à Windows.",
       "option": "Après {minutes} min",
       "never": "Jamais"
     },
     "netUnit": {
       "title": "Unité de vitesse réseau",
-      "desc": "Les octets correspondent à l’unité de vitesse du disque ; les bits correspondent aux vitesses de liaison de l’adaptateur réseau et aux forfaits haut débit. La vue réseau sur la page Performances affiche les deux."
+      "desc": "Les octets suivent les unités de vitesse de stockage ; les bits, les vitesses de liaison et les forfaits."
     },
     "history": {
       "title": "Enregistrer l’historique",
-      "on": "Enregistre les ressources utilisées et les processus les plus chargés toutes les 5 secondes, ou selon l’intervalle de la fenêtre réduite ou de la zone de notification s’il est plus long. Les données restent uniquement sur ce PC pendant 7 jours et sont consultables dans Historique.",
+      "on": "Enregistre l’utilisation toutes les 5 secondes ; les données restent sur ce PC pendant 7 jours.",
       "off": "Désactivé. Les enregistrements existants expirent après 7 jours ou peuvent être effacés maintenant.",
       "error": "Impossible de modifier le paramètre d’historique : {error}",
       "saved": "Historique enregistré",
@@ -284,7 +284,7 @@
   },
   "rules": {
     "title": "Définir automatiquement la priorité ou le mode d’efficacité au démarrage d’un programme",
-    "desc": "Les règles enregistrées s’appliquent immédiatement aux processus en cours d’exécution. Des règles peuvent également être ajoutées en cliquant avec le bouton droit sur un processus dans la liste et en sélectionnant Ajouter une règle.",
+    "desc": "Les règles enregistrées s’appliquent immédiatement aux processus en cours d’exécution.",
     "placeholder": "Nom du programme, par ex. chrome.exe",
     "add": "Ajouter",
     "exists": "Une règle pour {name} existe déjà.",
@@ -313,9 +313,9 @@
         "other": "Appliqué à {count} processus"
       },
       "denied": {
-        "one": "Accès refusé pour {count} processus. Activez le service privilégié ; les processus protégés peuvent rester inaccessibles",
-        "many": "Accès refusé pour {count} processus. Activez le service privilégié ; les processus protégés peuvent rester inaccessibles",
-        "other": "Accès refusé pour {count} processus. Activez le service privilégié ; les processus protégés peuvent rester inaccessibles"
+        "one": "Accès refusé pour {count} processus. Activez le service privilégié",
+        "many": "Accès refusé pour {count} processus. Activez le service privilégié",
+        "other": "Accès refusé pour {count} processus. Activez le service privilégié"
       },
       "failed": {
         "one": "Impossible d’appliquer la règle à {count} processus. Vérifiez le service privilégié, puis enregistrez à nouveau les règles",
@@ -343,54 +343,54 @@
     },
     "current": "Version actuelle {version} · {build}",
     "detail": {
-      "ready": "L’installation nécessite l’autorisation de l’administrateur. GoodGood se ferme pendant l’installation ; le programme d’installation affiche uniquement sa progression et redémarre GoodGood une fois l’opération terminée.",
+      "ready": "L’installation exige des droits d’administrateur ; GoodGood se ferme pendant l’opération.",
       "portable": "La version portable ne se met pas à jour automatiquement. Téléchargez la nouvelle version depuis la page de publication.",
       "downloaded": "Téléchargé {received} depuis {source}.",
       "downloadedOf": "Téléchargé {received} de {total} à partir de {source}.",
       "checked": "Dernière vérification : {time}.",
       "checkedFrom": "Dernière vérification : {time}, de {source}.",
-      "source": "Les mises à jour proviennent des versions GitHub Releases, via un proxy si l’un est défini. La signature du programme d’installation est vérifiée avant l’installation."
+      "source": "Mises à jour depuis les versions GitHub ; signature vérifiée avant l’installation."
     },
     "restart": "Redémarrer et mettre à jour",
     "download": "Télécharger",
     "check": "Rechercher des mises à jour",
     "auto": {
       "title": "Rechercher automatiquement les mises à jour",
-      "desc": "Vérifie environ 1 minute après le démarrage, puis une fois par jour. Les nouvelles versions sont téléchargées en arrière-plan et ne sont installées qu’après confirmation."
+      "desc": "Vérifie environ 1 minute après le démarrage puis chaque jour ; téléchargement en arrière-plan."
     },
     "whatsNew": {
       "title": "Afficher les nouveautés après la mise à jour",
-      "desc": "Affiche les nouveautés lors de la première ouverture après une mise à jour, une fois par version. Si cette option est désactivée, seul un avis en bas à droite indique la fin de la mise à jour.",
+      "desc": "Affiche les changements une fois par version à la première ouverture après mise à jour.",
       "view": "Voir les changements de cette version"
     },
     "channel": {
       "label": "Canal de mise à jour",
-      "desc": "La version bêta bénéficie de nouvelles fonctionnalités plus tôt mais peut être moins stable que Stable. Après être passé de la version bêta à stable, GoodGood n’est mis à jour qu’une fois qu’une version stable est plus récente que la version actuelle.",
+      "desc": "La version bêta reçoit les nouveautés plus tôt mais peut être moins stable.",
       "stable": "Stable",
       "beta": "Bêta"
     },
     "route": {
       "label": "Source de téléchargement",
-      "desc": "Les proxys GitHub sont gérés par des tiers et peuvent voir l’adresse IP de ce PC et les fichiers qu’il télécharge. Les signatures de l’installateur couvrent également le numéro de version, de sorte qu’un proxy ne peut pas falsifier une mise à jour ou faire passer une ancienne version pour une nouvelle.",
+      "desc": "Le proxy GitHub est exploité par un tiers et peut voir l’IP de ce PC et les fichiers téléchargés.",
       "auto": "Automatique (GitHub, puis les proxys)",
       "direct": "GitHub uniquement",
       "proxy": "Via le proxy GitHub uniquement"
     },
     "proxy": {
       "label": "Proxy GitHub",
-      "fallback": "Si GitHub n’est pas disponible, GoodGood essaie ce proxy, puis les autres proxys intégrés.",
+      "fallback": "Si GitHub est indisponible, ce proxy est essayé, puis celui intégré.",
       "only": "Toutes les demandes de mise à jour passent par ce proxy.",
       "custom": "Personnalisé…"
     },
     "custom": {
       "title": "Proxy personnalisé",
-      "desc": "Préfixe ajouté avant les URL GitHub. Il doit utiliser https, par exemple https://example.com/.",
+      "desc": "Préfixe ajouté avant les URL GitHub. https est obligatoire.",
       "label": "Adresse du proxy personnalisé",
       "save": "Enregistrer"
     },
     "star": {
       "title": "Rappel d’étoile",
-      "desc": "Affiche une fois par jour, en bas à droite de la fenêtre, une carte invitant à attribuer une étoile sur GitHub. L’option se désactive automatiquement après l’ouverture de GitHub depuis la carte ou le choix de « Ne plus rappeler »."
+      "desc": "Affiche la carte d’étoile une fois par jour ; se coupe en choisissant de ne plus rappeler."
     }
   },
   "about": {
@@ -422,7 +422,7 @@
     },
     "license": {
       "title": "Licence",
-      "desc": "GoodGood est un logiciel libre distribué sous la licence Apache 2.0. Il peut être redistribué et modifié selon les termes de cette licence. GoodGood est fourni sans garantie.",
+      "desc": "Logiciel libre distribué sous la licence Apache 2.0, fourni sans garantie.",
       "view": "Afficher la licence"
     },
     "notices": {
@@ -433,12 +433,12 @@
     },
     "log": {
       "title": "Journal",
-      "desc": "Enregistre l’environnement d’exécution, l’état des fonctionnalités, les étapes ayant échoué, les codes d’erreur et les chemins réels des fichiers ou dossiers associés. Stocké localement, avec jusqu’à 1 MB par fichier et 3 journaux précédents. Les lignes de commande, les informations d’identification et le contenu des fichiers sont exclus. Utilisez cette entrée pour localiser les journaux de diagnostic pour les rapports de bogues.",
+      "desc": "Enregistre les codes d’erreur et les chemins de fichiers, sans lignes de commande ni informations d’identification.",
       "open": "Ouvrir le dossier des journaux"
     },
     "diagnostics": {
       "title": "Informations de diagnostic",
-      "desc": "Copie la version actuelle, l’état d’exécution, le matériel et les paramètres d’affichage pour les coller dans un rapport de problème. Les informations manquantes sont indiquées comme inconnues.",
+      "desc": "Copie la version actuelle, l’état d’exécution, le matériel et les paramètres d’affichage.",
       "copy": "Copier les informations de diagnostic",
       "unknown": "Inconnu",
       "version": "Version complète d’GoodGood",
@@ -466,16 +466,16 @@
   },
   "sensors": {
     "title": "Capteurs du noyau",
-    "desc": "L’activation de cette option vérifie PawnIO, installe le pilote officiel s’il est manquant ou obsolète et le démarre si nécessaire. L’autorisation d’administrateur est requise. Installez et démarrez d’abord le service privilégié GoodGood. La désactivation de cette option arrête uniquement la collecte du capteur GoodGood.",
+    "desc": "Vérifie PawnIO et installe au besoin le pilote officiel. Installez d’abord le service privilégié.",
     "off": "Désactivé ; Les capteurs Windows restent disponibles.",
     "driver": "Site Web PawnIO",
-    "preparing": "Préparation du pilote. Confirmez la demande d’autorisation d’administrateur si elle apparaît ; la première installation nécessite le téléchargement de fichiers."
+    "preparing": "Préparation du pilote. Terminez la demande de droits d’administrateur."
   },
   "administrator": {
     "development": "L’autorisation d’administrateur persistante n’est pas disponible avec le rechargement à chaud de développement. Utilisez une version release.",
     "title": "Exécuter en tant qu’administrateur",
     "allow": "Autoriser l’exécution en tant qu’administrateur",
-    "desc": "Autorisez une fois à exécuter GoodGood en tant qu’administrateur à partir de la connexion, des raccourcis et des points d’entrée Gestionnaire des tâches.",
+    "desc": "Une fois autorisé, GoodGood s’exécute en tant qu’administrateur.",
     "authorized": "Autorisé",
     "off": "Désactivé",
     "busy": "En cours",
@@ -484,13 +484,13 @@
     "currentStandard": "Processus actuel : autorisations standard",
     "restart": "GoodGood redémarre après la commutation, en conservant les paramètres et l’historique.",
     "afterOnboarding": "Après l’autorisation, vous pouvez poursuivre le guide. GoodGood redémarre avec les droits choisis à la fin du guide.",
-    "standardAccount": "Ce compte n’a pas d’identité d’administrateur, le démarrage automatique de l’administrateur n’est donc pas disponible. Le service privilégié peut effectuer des actions administratives prises en charge."
+    "standardAccount": "Sans identité d’administrateur, le démarrage administrateur automatique est indisponible."
   },
   "appearance": {
     "scaleTitle": "Échelle de l’interface",
-    "scaleDesc": "Redimensionnez le texte, les icônes et les contrôles de 80 % à 150 % (par défaut : 100 %). Les modifications s’appliquent immédiatement et sont enregistrées automatiquement.",
+    "scaleDesc": "Ajuste la taille du texte, des icônes et des contrôles de 80 % à 150 %.",
     "fontTitle": "Taille de la police",
-    "fontDesc": "Taille de police de base : 11 à 20 px (par défaut : 13 px). Les titres et le texte secondaire sont mis à l’échelle proportionnellement. Se combine avec la mise à l’échelle de l’interface.",
+    "fontDesc": "La police de base fait 11 à 20 px ; titres et textes secondaires suivent proportionnellement.",
     "reset": "Réinitialiser",
     "saveFailed": "Impossible d’enregistrer les préférences d’interface. Vérifiez que le dossier de configuration est accessible en écriture."
   }

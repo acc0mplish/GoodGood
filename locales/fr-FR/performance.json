@@ -511,7 +511,7 @@
     "mac": "Adresse physique"
   },
   "gpu": {
-    "utilizationHint": "L’utilisation globale correspond au moteur le plus chargé, complétée par les compteurs de moteurs par processus et l’utilisation du cœur GPU NVIDIA. Les graphiques des moteurs natifs et les mesures du pilote peuvent couvrir des périmètres et des intervalles d’échantillonnage différents.",
+    "utilizationHint": "Basé sur le moteur le plus chargé et peut différer des mesures du pilote.",
     "utilSource": {
       "windows": "Moteurs Windows",
       "process": "Moteurs de processus",
@@ -534,9 +534,9 @@
     "vidHint": "Tension d’alimentation cible demandée par le GPU intégré (VID).",
     "unsliceClock": "Fréquence de la logique partagée",
     "unsliceClockHint": "Horloge de la logique partagée (Unslice) du GPU intégré. Elle peut être arrêtée indépendamment de celle des blocs de calcul graphique.",
-    "clockHint": "Les mesures du noyau sont calculées à partir du multiplicateur actuel et du pas nominal officiel, sans inclure l’écart mesuré de l’horloge de référence. Les fréquences sont affichées numériquement, y compris zéro ; la fréquence minimale décrit la plage prise en charge.",
+    "clockHint": "Mesures du noyau : multiplicateur actuel et pas nominal ; l’écart de l’horloge de référence n’est pas mesuré.",
     "sharedMemoryClock": "Horloge de la mémoire partagée",
-    "sharedMemoryClockHint": "Horloge de la mémoire système partagée par le GPU intégré. Les lectures du noyau utilisent la configuration du contrôleur et la référence nominale, sans mesurer l’écart de l’horloge de référence. Le taux de transfert DDR est environ le double de cette valeur.",
+    "sharedMemoryClockHint": "Horloge de la mémoire système partagée par le GPU intégré ; le débit DDR est environ le double.",
     "gtActivity": "Activité GT",
     "mediaActivity": "Activité multimédia",
     "activityHint": "Calculé à partir des compteurs d’activité matérielle sur l’intervalle d’échantillonnage. Sa portée diffère du temps d’occupation du moteur Windows.",

@@ -281,7 +281,7 @@
     "inUseDescription": "Speicher, der von Prozessen, Treibern oder dem Betriebssystem verwendet wird",
     "modifiedDescription": "Speicher, dessen Inhalt auf die Festplatte geschrieben werden muss, bevor er für einen anderen Zweck verwendet werden kann",
     "standbyDescription": "Speicher, der zwischengespeicherte Daten und Code enthält, der nicht aktiv verwendet wird",
-    "freeDescription": "Speicher, der derzeit nicht verwendet wird und der zuerst umgewidmet wird, wenn Prozesse, Treiber oder das Betriebssystem mehr Speicher benötigen",
+    "freeDescription": "Speicher, der zuerst wiederverwendet wird, wenn Prozesse, Treiber oder das Betriebssystem mehr Speicher brauchen",
     "inUse": "In Verwendung",
     "available": "Verfügbar",
     "committed": "Zugesichert",
@@ -619,6 +619,6 @@
     "model": "Modell",
     "serial": "Seriennummer",
     "manufactured": "Herstellungsdatum",
-    "wornNote": "Die volle Ladekapazität ist auf {percent} % der Designkapazität gesunken, sodass eine volle Ladung nicht so lange hält wie bei einem neuen Akku."
+    "wornNote": "Die volle Ladekapazität ist auf {percent} % der Designkapazität gesunken, sodass eine volle Ladung kürzer hält als bei einem neuen Akku."
   }
 }

@@ -281,7 +281,7 @@
     "inUseDescription": "Memory used by processes, drivers, or the operating system",
     "modifiedDescription": "Memory whose contents must be written to disk before it can be used for another purpose",
     "standbyDescription": "Memory that contains cached data and code that is not actively in use",
-    "freeDescription": "Memory that is not currently in use, and that will be repurposed first when processes, drivers, or the operating system need more memory",
+    "freeDescription": "Memory reused first when processes, drivers or the operating system need more memory",
     "inUse": "In use",
     "available": "Available",
     "committed": "Committed",
@@ -616,6 +616,6 @@
     "model": "Model",
     "serial": "Serial number",
     "manufactured": "Manufacture date",
-    "wornNote": "Full charge capacity has dropped to {percent}% of the design capacity, so a full charge won't last as long as it would on a new battery."
+    "wornNote": "Full charge capacity has dropped to {percent}% of the design capacity, so a full charge lasts less than on a new battery."
   }
 }

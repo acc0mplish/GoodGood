@@ -20,13 +20,13 @@
     },
     "menu": {
       "title": "Clic derecho en el icono",
-      "desc": "El panel rápido muestra lecturas en tiempo real, los procesos más activos y las acciones habituales; el menú solo muestra las acciones habituales.",
+      "desc": "El panel rápido también muestra lecturas y los procesos más activos; el menú solo muestra las acciones habituales.",
       "panel": "Panel rápido",
       "menu": "Menú"
     },
     "moved": {
       "title": "Bandeja y componentes",
-      "desc": "El icono de la bandeja, el panel rápido, lo que ocurre al cerrar la ventana y la actualización en la bandeja están ahora en la página Componentes.",
+      "desc": "El icono de la bandeja, el panel rápido, la acción al cerrar y la frecuencia de actualización están ahora en la página Componentes.",
       "open": "Abrir Componentes"
     }
   },
@@ -177,7 +177,7 @@
     "desc": "Muestra los elementos elegidos en la barra de tareas principal; un clic muestra u oculta la ventana.",
     "place": {
       "title": "Posición",
-      "desc": "«Lado izquierdo» solo se aplica a la barra de tareas de Windows 11 con los botones centrados. En otros casos, el monitor aparece junto a la bandeja.",
+      "desc": "«Lado izquierdo» solo se aplica a la barra de tareas de Windows 11 con los botones centrados.",
       "tray": "Junto a la bandeja",
       "start": "Lado izquierdo"
     },

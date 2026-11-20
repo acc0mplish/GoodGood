@@ -20,13 +20,13 @@
     },
     "menu": {
       "title": "Clic droit sur l’icône",
-      "desc": "Le panneau rapide affiche les mesures en temps réel, les processus les plus actifs et les actions courantes ; le menu n’affiche que les actions courantes.",
+      "desc": "Le panneau rapide affiche aussi les mesures et les principaux processus ; le menu n’affiche que les actions courantes.",
       "panel": "Panneau rapide",
       "menu": "Menu"
     },
     "moved": {
       "title": "Zone de notification et composants",
-      "desc": "L’icône, le panneau rapide, le comportement à la fermeture de la fenêtre et l’actualisation dans la zone de notification se trouvent désormais sur la page Composants.",
+      "desc": "L’icône, le panneau rapide, l’action à la fermeture et la fréquence d’actualisation se trouvent désormais sur la page Composants.",
       "open": "Ouvrir Composants"
     }
   },
@@ -177,7 +177,7 @@
     "desc": "Affiche les éléments choisis dans la barre des tâches de l’écran principal. Un clic affiche ou masque la fenêtre.",
     "place": {
       "title": "Position",
-      "desc": "« Côté gauche » ne s’applique qu’à la barre des tâches de Windows 11 avec les boutons centrés. Sinon, le moniteur s’affiche près de la zone de notification.",
+      "desc": "« Côté gauche » ne s’applique qu’à la barre des tâches de Windows 11 avec les boutons centrés.",
       "tray": "Près de la zone de notification",
       "start": "Côté gauche"
     },

@@ -20,13 +20,13 @@
     },
     "menu": {
       "title": "Rechtsklick auf das Symbol",
-      "desc": "Das Schnellfenster zeigt aktuelle Werte, die aktivsten Prozesse und häufige Aktionen; das Menü nur die häufigen Aktionen.",
+      "desc": "Das Schnellfenster zeigt zusätzlich aktuelle Werte und die aktivsten Prozesse; das Menü nur die häufigen Aktionen.",
       "panel": "Schnellfenster",
       "menu": "Menü"
     },
     "moved": {
       "title": "Infobereich und Komponenten",
-      "desc": "Symbol, Schnellfenster, Verhalten beim Schließen und das Intervall im Infobereich befinden sich jetzt auf der Seite „Komponenten“.",
+      "desc": "Symbol, Schnellfenster, Aktion beim Schließen und Aktualisierungsintervall befinden sich jetzt auf der Seite „Komponenten“.",
       "open": "Komponenten öffnen"
     }
   },
@@ -177,7 +177,7 @@
     "desc": "Zeigt gewählte Werte in der Taskleiste des Hauptbildschirms; Klick zeigt oder verbirgt das Fenster.",
     "place": {
       "title": "Position",
-      "desc": "„Linke Seite“ gilt nur für die Taskleiste von Windows 11 mit zentrierten Schaltflächen. Andernfalls erscheint die Anzeige neben dem Infobereich.",
+      "desc": "„Linke Seite“ gilt nur für die Taskleiste von Windows 11 mit zentrierten Schaltflächen.",
       "tray": "Neben dem Infobereich",
       "start": "Linke Seite"
     },

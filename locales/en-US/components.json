@@ -20,13 +20,13 @@
     },
     "menu": {
       "title": "Right-clicking the tray icon",
-      "desc": "The quick panel shows live readings, the busiest processes and common actions; the menu lists the common actions only.",
+      "desc": "The quick panel also shows live readings and the busiest processes; the menu lists the common actions only.",
       "panel": "Quick panel",
       "menu": "Menu"
     },
     "moved": {
       "title": "Tray and components",
-      "desc": "The tray icon, the quick panel, what closing the window does and the refresh rate in the tray are now on the Components page.",
+      "desc": "The tray icon, the quick panel, the close action and the refresh rate are now on the Components page.",
       "open": "Open Components"
     }
   },
@@ -177,7 +177,7 @@
     "desc": "Shows chosen items on the main taskbar; clicking shows or hides the window.",
     "place": {
       "title": "Position",
-      "desc": "“Left side” applies only to the Windows 11 taskbar with centered buttons. Otherwise the monitor appears next to the tray.",
+      "desc": "“Left side” applies only to the Windows 11 taskbar with centered buttons.",
       "tray": "Next to tray",
       "start": "Left side"
     },

@@ -8,7 +8,7 @@
   "tray": {
     "icon": {
       "title": "Tray icon",
-      "desc": "Trend shows the latest CPU samples as columns, Share lights a grid of dots for the current usage, and Number shows the percentage. All turn amber from 80%.",
+      "desc": "Shows CPU usage as trend, share or number; amber from 80%.",
       "logo": "App icon",
       "load": "Trend",
       "share": "Share",
@@ -16,7 +16,7 @@
     },
     "card": {
       "title": "Hover card",
-      "desc": "Shows live CPU, memory, GPU and network readings while the pointer rests on the tray icon. When off, the system tooltip shows instead."
+      "desc": "Hovering the icon shows CPU, memory, GPU and network values."
     },
     "menu": {
       "title": "Right-clicking the tray icon",
@@ -32,7 +32,7 @@
   },
   "metrics": {
     "title": "Readings shown",
-    "desc": "Chosen readings appear in the order below. With more than one GPU, disk or network adapter, readings can be chosen for each device. When no device is chosen, GPU readings come from the GPU with the most dedicated memory, disk speeds and network rates are totals, and disk active time and temperature show the highest value of all disks.",
+    "desc": "Chosen items appear in the order below; without a device, speeds are totals.",
     "group": {
       "cpu": "CPU",
       "memory": "Memory",
@@ -147,7 +147,7 @@
   },
   "desktop": {
     "title": "Desktop monitor",
-    "desc": "Shows the chosen readings in a small window on the desktop. Drag to move it, double-click to open GoodGood, and right-click to open the menu. While it is shown, GoodGood samples at the “Refresh rate”.",
+    "desc": "Shows chosen items in a small desktop window. Double-click opens GoodGood.",
     "topmost": {
       "title": "Always on top",
       "desc": "Stays above other windows."
@@ -174,7 +174,7 @@
   },
   "taskbar": {
     "title": "Taskbar monitor",
-    "desc": "Shows the chosen readings on the taskbar of the main display. A click shows or hides the window; a right-click opens a panel to change the style and the readings shown. While it is shown, GoodGood samples at the “Refresh rate”.",
+    "desc": "Shows chosen items on the main taskbar; clicking shows or hides the window.",
     "place": {
       "title": "Position",
       "desc": "“Left side” applies only to the Windows 11 taskbar with centered buttons. Otherwise the monitor appears next to the tray.",
@@ -183,7 +183,7 @@
     },
     "style": {
       "title": "Style",
-      "desc": "Labels: names and values in two rows. Curves: a tile per reading, its name and value over its recent curve. Capsules: a rounded capsule per reading in one row, marked with a dot in the device's color. Large figures: a small name in the device's color over a large figure. Curves, capsules and large figures need room for two rows of text; on a lower taskbar they show as labels.",
+      "desc": "Display style for taskbar items. Curves, capsules and large figures need two rows of height; on a lower taskbar they show as labels.",
       "labels": "Labels",
       "curves": "Curves",
       "capsules": "Capsules",

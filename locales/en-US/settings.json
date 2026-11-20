@@ -16,34 +16,34 @@
   "refreshStatus": "Refresh status",
   "vitals": {
     "title": "Process overview band",
-    "desc": "Automatic mode reserves space for the overview band and 10 process rows, and collapses the band when space is insufficient. Collapsing groups or filtering does not affect this decision.",
+    "desc": "Automatic mode collapses the overview when space is short and reserves 10 rows.",
     "auto": "Automatic",
     "show": "Always show",
     "hide": "Hidden"
   },
   "visibility": {
     "title": "System process hiding rules",
-    "desc": "Customize programs to always show or also hide. Processes and Connections share these rules; use the toolbar icon to enable hiding."
+    "desc": "Choose programs to always show or hide together."
   },
   "userGroups": {
     "title": "Group processes by user",
-    "desc": "Groups the process list by signed-in user; views, categories, sorting, and search work the same within each group. Automatic mode groups only while more than one user is signed in, including disconnected sessions. Sessions without a user, such as the one running system services, are listed under System.",
+    "desc": "Groups processes by user. Automatic applies only with two or more users.",
     "auto": "Automatic",
     "on": "Always group",
     "off": "Never group"
   },
   "holdOrder": {
     "title": "Pause sorting while hovering",
-    "desc": "While the pointer is over the process list, rows keep their places and readings keep updating; they re-sort once the pointer leaves. When off, the list re-sorts with every update. Rows still keep their places while a context menu or dialog is open."
+    "desc": "While the pointer is over the list, rows keep their place and readings update."
   },
   "language": {
     "title": "Display language",
-    "desc": "Takes effect at once, including the tray menu and messages. “Same as Windows” follows the Windows display language.",
+    "desc": "Applies at once. “Same as Windows” follows the Windows display language.",
     "error": "Couldn't change the language: {error}"
   },
   "theme": {
     "title": "Theme",
-    "desc": "“Same as Windows” follows the Windows app mode and switches between light and dark when Windows does.",
+    "desc": "“Same as Windows” follows the Windows app mode and switches with it.",
     "system": "Same as Windows",
     "light": "Light",
     "dark": "Dark",
@@ -51,7 +51,7 @@
   },
   "navigation": {
     "title": "Navigation position",
-    "desc": "The side pane shows only icons by default; the ☰ button in its top-left corner expands it to show page names. Top navigation shows the pages as tabs below the toolbar.",
+    "desc": "The ☰ button expands the side pane; top navigation shows page tabs.",
     "side": "Side",
     "top": "Top"
   },
@@ -73,7 +73,7 @@
     },
     "closeToTray": {
       "title": "Keep in the system tray when closed",
-      "desc": "Keeps GoodGood running so it reopens quickly. While hidden, it samples at the tray refresh rate, and history and rules keep working.",
+      "desc": "Keeps GoodGood running so it reopens quickly; history and rules keep working.",
       "error": "Couldn't save the setting: {error}"
     }
   },
@@ -84,14 +84,14 @@
     "scope": "Everyday actions, navigation and list shortcuts.",
     "global": "Global",
     "globalHint": "Current setting. Also works while using other apps.",
-    "inputHint": "In-app shortcuts do not affect other apps. End-process shortcuts are inactive in text fields, dialogs and menus.",
+    "inputHint": "In-app shortcuts do not affect other apps.",
     "disabled": "Not enabled",
     "navigation": "Switch pages",
     "pauseTitle": "Pause while held",
     "searchTitle": "Search processes",
-    "search": "Go to process search. The / key also works when not typing, and on the Processes page typing a letter or digit starts a search.",
+    "search": "Go to process search. The / key also works when not typing.",
     "runTask": "Start a program or open a file or folder from any page. Not while typing.",
-    "pause": "Hold to pause updates on Processes or Performance; release to resume. A manual pause stays in effect.",
+    "pause": "Pauses updates while held and resumes when released.",
     "end": "End the selected process or app group, with confirmation.",
     "taskManager": "Open GoodGood when Task Manager replacement is enabled.",
     "close": "Close reference",
@@ -112,7 +112,7 @@
   },
   "hotkey": {
     "title": "Show or hide GoodGood",
-    "desc": "Works in most programs. A combination usually has Ctrl, Alt or Win plus one ordinary key; either side of a modifier works.",
+    "desc": "Works in most programs. Usually a modifier plus one ordinary key.",
     "help": "Press and release a key combination to save it. Esc cancels; Backspace turns the shortcut off.",
     "recording": "Press a new key combination…",
     "change": "Change",
@@ -127,37 +127,37 @@
     "unknownKey": "This key",
     "hint": {
       "order": "Hold the modifiers (Ctrl, Alt, Shift or Win) first, then press the other key.",
-      "multipleKeys": "Only one ordinary key: a global shortcut is Ctrl, Alt, Shift or Win plus a single other key, so two ordinary keys can't be combined.",
+      "multipleKeys": "Only one ordinary key can be used.",
       "lockKey": "Caps Lock, Num Lock and Scroll Lock aren't part of a combination and are ignored.",
       "maybeTaken": "If nothing happens after pressing a combination, Windows or another app may be using it."
     },
     "warning": {
-      "common": "{shortcut} has its own use in many apps. As a global shortcut, it will stop working there.",
-      "inApp": "{shortcut} switches pages or searches in GoodGood. As a global shortcut, it will no longer do that.",
-      "imeSwitch": "Ctrl+Space usually switches the input method. As a global shortcut, it will no longer do that.",
+      "common": "{shortcut} has its own use in many apps; as a global shortcut it stops working there.",
+      "inApp": "{shortcut} is used by a GoodGood feature; a global shortcut stops that feature.",
+      "imeSwitch": "Ctrl+Space usually switches the input method; a global shortcut stops that.",
       "numpad": "Keypad digits and the decimal point trigger the shortcut only while Num Lock is on.",
       "printScreen": "{shortcut} may conflict with the Windows screenshot or a screenshot app."
     },
     "error": {
       "invalid": "{shortcut} can't be used as a shortcut: {reason}",
-      "taken": "{shortcut} is in use by Windows or another app (possibly another running GoodGood). Choose a different combination.",
+      "taken": "{shortcut} is used by Windows or another app. Choose a different combination.",
       "failed": "Couldn't register {shortcut} (error {code}).",
       "saveFailed": "Couldn't save the setting. The shortcut is unchanged."
     },
     "issue": {
       "invalid": "The combination isn't recognized.",
-      "noKey": "Modifier keys alone can't be a shortcut; add an ordinary key. Windows shortcuts also don't tell left and right Ctrl, Alt, Shift or Win apart.",
+      "noKey": "Modifiers alone can't make a shortcut; add an ordinary key.",
       "unsupported": "{key} can't be used in a global shortcut.",
       "lockKey": "Caps Lock, Num Lock and Scroll Lock can't be part of a combination.",
-      "needsModifier": "A combination needs Ctrl, Alt or Win (except F13–F24 and Shift+F1–F11). Other Shift-only combinations would interfere with typing in every app.",
+      "needsModifier": "A combination needs Ctrl, Alt or Win.",
       "reserved": "{shortcut} is used by Windows or by most apps.",
-      "taskManager": "Ctrl+Shift+Esc opens Task Manager. To have it open GoodGood, turn on “Replace Task Manager” in Settings → Permissions.",
+      "taskManager": "Ctrl+Shift+Esc opens Task Manager. To replace it, turn it on in Settings → Permissions.",
       "editing": "{shortcut} is used for copy, paste and other editing."
     }
   },
   "privilege": {
-    "desc": "Lets GoodGood running as a standard user manage system processes, apply rules automatically, collect per-process network traffic and disk reads and writes, find file locks, read disk SMART information, control services and close IPv4 TCP connections. Installing and uninstalling both require administrator permission.",
-    "statusDesc": "GoodGood connects to the service automatically while it runs. The network columns are hidden when network collection is unavailable; each rule shows its results below it.",
+    "desc": "Lets a standard user perform privileged tasks such as managing system processes. Installing and removing require administrator permission.",
+    "statusDesc": "Connects to the service automatically; each rule shows its result below.",
     "state": {
       "busy": "Waiting for administrator permission or working on the service…",
       "checking": "Checking service status…",
@@ -171,8 +171,8 @@
       "stopPending": "Stopping",
       "unavailable": "Unavailable"
     },
-    "outdated": "Service version {service} doesn't match GoodGood {app}. Click Update service.",
-    "incompatible": "Click Update service to install the version that matches GoodGood; GoodGood then connects to it.",
+    "outdated": "Service version {service} does not match GoodGood {app}.",
+    "incompatible": "Click Update service to install the version matching GoodGood.",
     "install": {
       "title": "Enable the privileged service?",
       "body": "Once it's installed, the current Windows account can use the background service, without asking for permission again, to:\n· end, suspend or resume processes of any user (except critical system processes) and set their priority, I/O priority, memory priority and efficiency mode;\n· start and stop any Windows service and change its startup type, including services of security software and Windows Update;\n· close any IPv4 TCP connection, and see every process's file locks, network traffic, and disk reads and writes;\n· query disk identity, SMART attributes, and health logs using fixed read-only commands;\n· read CPU sensor data and motherboard fan speeds through fixed modules when PawnIO is installed.\n\nOther programs running as a standard user under this account can use these operations too, which effectively gives the account some administrator rights. Install it only on an account that you use yourself. The service starts with Windows. Installing requires administrator permission; the service can be uninstalled in Settings later.",
@@ -191,7 +191,7 @@
   },
   "taskManager": {
     "title": "Replace Task Manager",
-    "desc": "Makes Ctrl+Shift+Esc and other Task Manager shortcuts open GoodGood. Off by default; the standalone recovery tool doesn't depend on the interface or the service. Updating the privileged service also updates the replacement and keeps it enabled; uninstalling the service restores Windows Task Manager.",
+    "desc": "Makes Task Manager shortcuts such as Ctrl+Shift+Esc open GoodGood.",
     "confirm": {
       "title": "Replace Task Manager?",
       "body": "Ctrl+Shift+Esc and other ways of opening Task Manager will open GoodGood. The change applies to the whole PC; other accounts still open Windows Task Manager. Turning it on requires administrator permission. If GoodGood fails to start, it attempts to open the built-in Task Manager. Keep the standalone recovery tool so the change can be undone if the interface or the service can't run."
@@ -220,15 +220,15 @@
   "motion": {
     "window": {
       "title": "Window transitions",
-      "desc": "Fade the window when showing, hiding, minimizing or restoring it. Turn off to let Windows or another window manager handle transitions. Follows the Windows Animation effects setting by default."
+      "desc": "Fades the window when shown, hidden, minimized or restored."
     },
     "ui": {
       "title": "Interface animations",
-      "desc": "Page and dialog transitions, the sliding selection marker, and icon motion. Follows the Windows Animation effects setting by default."
+      "desc": "Page and dialog transitions, selection movement and icon animations."
     },
     "chart": {
       "title": "Chart animations",
-      "desc": "Higher frame rates make charts smoother but use more resources: Smooth takes about 10–15% of one core and Balanced about half that. Power saving moves one whole pixel at a time, so smaller charts move in steps.",
+      "desc": "Higher frame rates make charts smoother but use more resources.",
       "fluid": "Smooth ({fps} fps)",
       "balanced": "Balanced ({fps} fps)",
       "pixel": "Power saving (pixel steps)",
@@ -236,7 +236,7 @@
     },
     "acceleration": {
       "title": "Hardware acceleration",
-      "desc": "Draws the interface with the GPU by default. When off, the CPU draws it and GoodGood no longer uses the GPU. Use this if the interface stutters while the GPU is fully loaded, or to keep GoodGood off the GPU. CPU usage rises, so a lower chart animation setting can help. Takes effect immediately, without a restart.",
+      "desc": "When off, the CPU draws. Use if the screen stutters while the GPU is busy.",
       "error": "Couldn't change hardware acceleration: {error}"
     }
   },
@@ -244,28 +244,28 @@
     "intervalDesc": "Shorter intervals give finer charts but make GoodGood itself use more resources.",
     "minimized": {
       "title": "Refresh rate while minimized",
-      "desc": "How often GoodGood samples while its window is minimized. Longer intervals cost less in the background, but rules can take up to one interval to apply to newly started programs, and above 5 seconds history is recorded more sparsely."
+      "desc": "Sampling interval while minimized; longer intervals cost less in the background."
     },
     "tray": {
       "title": "Refresh rate in the tray",
-      "desc": "How often GoodGood samples while it's hidden in the tray; the tray icon and its tooltip update at the same pace. Longer intervals cost less in the background, but rules can take up to one interval to apply to newly started programs, and above 5 seconds history is recorded more sparsely."
+      "desc": "Sampling interval while hidden in the tray; longer intervals cost less in the background."
     },
     "background": {
       "error": "Couldn't save the refresh rate: {error}"
     },
     "releaseHidden": {
       "title": "Free memory when hidden",
-      "desc": "After the window has been minimized or in the tray for this long, GoodGood frees its chart images and returns unused memory to Windows. Sampling and history continue. When you open the window again, charts are drawn again first, which can take a moment.",
+      "desc": "After this time hidden, chart images are freed and memory returned to Windows.",
       "option": "After {minutes} min",
       "never": "Never"
     },
     "netUnit": {
       "title": "Network speed unit",
-      "desc": "Bytes match the unit of disk speeds; bits match network adapter link speeds and broadband plans. The network view on the Performance page shows both."
+      "desc": "Bytes match storage speed units; bits match link speeds and data plans."
     },
     "history": {
       "title": "Record history",
-      "on": "Records resource usage and the top processes every 5 seconds, or at the minimized or tray refresh rate when that is slower. The data stays on this PC for 7 days and can be viewed on the History page.",
+      "on": "Records usage every 5 seconds; data stays on this PC for 7 days.",
       "off": "Off. Existing records expire after 7 days, or can be cleared now.",
       "error": "Couldn't change the history setting: {error}",
       "saved": "Saved history",
@@ -284,7 +284,7 @@
   },
   "rules": {
     "title": "Set priority or efficiency mode when a program starts",
-    "desc": "Saved rules apply to running processes right away. Rules can also be added by right-clicking a process in the list and selecting Add rule.",
+    "desc": "Saved rules apply to running processes at once.",
     "placeholder": "Program name, e.g. chrome.exe",
     "add": "Add",
     "exists": "A rule for {name} already exists.",
@@ -312,8 +312,8 @@
         "other": "Applied to {count} processes"
       },
       "denied": {
-        "one": "Access denied for {count} process; enable the privileged service, though protected processes may still be restricted",
-        "other": "Access denied for {count} processes; enable the privileged service, though protected processes may still be restricted"
+        "one": "Access denied for {count} process; enable the privileged service",
+        "other": "Access denied for {count} processes; enable the privileged service"
       },
       "failed": {
         "one": "Couldn't apply to {count} process; check the privileged service status, then save the rules again",
@@ -340,54 +340,54 @@
     },
     "current": "Current version {version} · {build}",
     "detail": {
-      "ready": "Installing requires administrator permission. GoodGood exits during the installation; the installer only shows its progress and restarts GoodGood when it's done.",
+      "ready": "Installing requires administrator permission; GoodGood exits during it.",
       "portable": "The portable version doesn't update automatically. Download the new version from the release page.",
       "downloaded": "Downloaded {received} from {source}.",
       "downloadedOf": "Downloaded {received} of {total} from {source}.",
       "checked": "Last checked: {time}.",
       "checkedFrom": "Last checked: {time}, from {source}.",
-      "source": "Updates come from GitHub Releases, through a proxy when one is set. GoodGood verifies the installer signature before installation."
+      "source": "Updates come from GitHub Releases; the signature is verified before installing."
     },
     "restart": "Restart and update",
     "download": "Download",
     "check": "Check for updates",
     "auto": {
       "title": "Check for updates automatically",
-      "desc": "Checks about 1 minute after startup, then once a day. New versions download in the background and are installed only after confirmation."
+      "desc": "Checks about 1 minute after startup and once a day; downloads in the background."
     },
     "whatsNew": {
       "title": "Show what's new after updating",
-      "desc": "Shows what the new version changed the first time the window opens after an update, once per version. When this is off, only a notice in the bottom-right corner says that GoodGood was updated.",
+      "desc": "Shows changes once per version at the first open after an update.",
       "view": "See this version's changes"
     },
     "channel": {
       "label": "Update channel",
-      "desc": "Beta gets new features earlier but may be less stable than Stable. After switching from Beta to Stable, GoodGood updates only once a stable version is newer than the current one.",
+      "desc": "Beta gets features sooner but may be less stable.",
       "stable": "Stable",
       "beta": "Beta"
     },
     "route": {
       "label": "Download source",
-      "desc": "GitHub proxies are run by third parties and can see this PC's IP address and the files it downloads. Installer signatures also cover the version number, so a proxy can't tamper with an update or pass off an old version as a new one.",
+      "desc": "The GitHub proxy is run by a third party and can see this PC's IP and downloaded files.",
       "auto": "Automatic (GitHub, then proxies)",
       "direct": "GitHub only",
       "proxy": "GitHub proxy only"
     },
     "proxy": {
       "label": "GitHub proxy",
-      "fallback": "If GitHub is unavailable, GoodGood tries this proxy, then the other built-in proxies.",
+      "fallback": "If GitHub is unavailable, this proxy is tried, then the built-in one.",
       "only": "All update requests go through this proxy.",
       "custom": "Custom…"
     },
     "custom": {
       "title": "Custom proxy",
-      "desc": "A prefix added before GitHub URLs. It must use https, e.g. https://example.com/.",
+      "desc": "A prefix added before GitHub URLs. Must use https.",
       "label": "Custom proxy URL",
       "save": "Save"
     },
     "star": {
       "title": "Star reminder",
-      "desc": "Shows a card in the bottom-right corner of the window once a day, asking for a star on GitHub. Turns off automatically after opening GitHub from the card or choosing not to be reminded again."
+      "desc": "Shows the star request card once a day; turns off if you decline reminders."
     }
   },
   "about": {
@@ -419,7 +419,7 @@
     },
     "license": {
       "title": "License",
-      "desc": "GoodGood is free software, released under the Apache License, Version 2.0. It can be redistributed and modified under the terms of that license. GoodGood comes with no warranty.",
+      "desc": "Free software under the Apache License 2.0, with no warranty.",
       "view": "View license"
     },
     "notices": {
@@ -430,12 +430,12 @@
     },
     "log": {
       "title": "Log",
-      "desc": "Records the runtime environment, feature status, failed steps, error codes and actual paths of related files or folders. Stored locally, with up to 1 MB per file and 3 previous logs. Command lines, credentials and file contents are excluded. Use this entry to locate diagnostic logs for bug reports.",
+      "desc": "Logs error codes and file paths. Command lines and credentials are not logged.",
       "open": "Open log folder"
     },
     "diagnostics": {
       "title": "Diagnostic information",
-      "desc": "Copy the current version, runtime state, hardware and display settings to paste into an issue report. Missing information is marked as unknown.",
+      "desc": "Copies version, run state, hardware and display settings.",
       "copy": "Copy diagnostic information",
       "unknown": "Unknown",
       "version": "Full GoodGood version",
@@ -463,16 +463,16 @@
   },
   "sensors": {
     "title": "Kernel sensors",
-    "desc": "Turning this on checks PawnIO, installs the official driver if missing or outdated, and starts it when needed. Administrator permission is required. Install and start the GoodGood privileged service first. Turning this off only stops GoodGood sensor collection.",
+    "desc": "Checks PawnIO and installs the official driver if missing. Install the privileged service first.",
     "off": "Off; Windows sensors remain available.",
     "driver": "PawnIO website",
-    "preparing": "Preparing the driver. Complete the administrator prompt if shown; the first installation downloads a package."
+    "preparing": "Preparing the driver. Complete the administrator prompt."
   },
   "administrator": {
     "development": "Persistent administrator authorization is unavailable with development hot reload. Use a release build.",
     "title": "Run as administrator",
     "allow": "Allow running as administrator",
-    "desc": "Authorize once to run GoodGood as administrator from sign-in, shortcuts, and Task Manager entry points.",
+    "desc": "Authorized, GoodGood runs as administrator.",
     "authorized": "Authorized",
     "off": "Off",
     "busy": "Working",
@@ -481,13 +481,13 @@
     "currentStandard": "Current process: standard permissions",
     "restart": "GoodGood restarts after switching, keeping settings and history.",
     "afterOnboarding": "Continue setup after authorizing. GoodGood restarts with the selected permissions when setup finishes.",
-    "standardAccount": "This account has no administrator identity, so automatic administrator startup is unavailable. The privileged service can perform supported administrative actions."
+    "standardAccount": "No administrator identity, so automatic administrator startup is unavailable."
   },
   "appearance": {
     "scaleTitle": "Interface scale",
-    "scaleDesc": "Resize text, icons and controls from 80% to 150% (default: 100%). Changes apply immediately and are saved automatically.",
+    "scaleDesc": "Adjusts text, icon and control sizes from 80% to 150%.",
     "fontTitle": "Font size",
-    "fontDesc": "Base font size: 11–20 px (default: 13 px). Headings and secondary text scale proportionally. Combines with interface scaling.",
+    "fontDesc": "Base font size is 11–20 px; headings and secondary text scale with it.",
     "reset": "Reset",
     "saveFailed": "Could not save interface preferences. Check that the configuration folder is writable."
   }

@@ -1,0 +1,106 @@
+{
+  "window": [1800, 1100],
+  "steps": [
+    {
+      "note": "Settings two-column grid probe (P5 of docs/task-id/verbose-ui-trim/plan.md section 7). Probe sizes are PHYSICAL px; at the display scale of this run (scaleFactor in each inspect line, assumed 1.25) logical width = physical / 1.25, so 1800 -> 1440 (two-col ON), 1658 -> ~1326 (ON boundary), 1650 -> 1320 (OFF, one-col fallback). settingsScrollY is the settings content max scroll offset from inspect layout. Run once with the default language and once with --language de-DE (widest locale) to check cells stay within two text lines."
+    },
+    {
+      "control": { "page": "settings", "settingsSection": "language", "theme": "dark" },
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1800",
+      "expect": { "page": "settings" },
+      "capture": "twocol-1800-language"
+    },
+    {
+      "probe": "size 1658 1000",
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1658",
+      "capture": "boundary-1658-on"
+    },
+    {
+      "probe": "size 1650 1000",
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1650",
+      "capture": "boundary-1650-off"
+    },
+    {
+      "note": "Boundary swing 1658 <-> 1650: each crossing must re-render (on_prepaint defer condition covers the two_col transition as well as narrow)."
+    },
+    {
+      "probe": "size 1658 1000",
+      "wait": 500,
+      "inspect": "layout",
+      "label": "swing-on-a",
+      "capture": "swing-1658-a"
+    },
+    {
+      "probe": "size 1650 1000",
+      "wait": 500,
+      "inspect": "layout",
+      "label": "swing-off-a",
+      "capture": "swing-1650-a"
+    },
+    {
+      "probe": "size 1658 1000",
+      "wait": 500,
+      "inspect": "layout",
+      "label": "swing-on-b",
+      "capture": "swing-1658-b"
+    },
+    {
+      "probe": "size 1650 1000",
+      "wait": 500,
+      "inspect": "layout",
+      "label": "swing-off-b",
+      "capture": "swing-1650-b"
+    },
+    {
+      "probe": "size 1240 860",
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1240",
+      "capture": "onecol-1240"
+    },
+    {
+      "probe": "size 1000 680",
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1000",
+      "capture": "onecol-1000"
+    },
+    {
+      "probe": "size 1800 1100",
+      "wait": 700,
+      "inspect": "layout",
+      "label": "grid-1800-return",
+      "capture": "twocol-1800-return"
+    },
+    {
+      "note": "Sections holding the widest descriptions: privilege carries the longest card description; motion holds the narrow window/ui cards that were two-col candidates."
+    },
+    {
+      "control": { "settingsSection": "privilege" },
+      "wait": 700,
+      "inspect": "layout",
+      "label": "privilege-1800",
+      "capture": "twocol-1800-privilege"
+    },
+    {
+      "control": { "settingsSection": "motion" },
+      "wait": 700,
+      "inspect": "layout",
+      "label": "motion-1800",
+      "capture": "twocol-1800-motion"
+    },
+    {
+      "control": { "settingsSection": "update" },
+      "wait": 700,
+      "inspect": "layout",
+      "label": "update-1800",
+      "capture": "twocol-1800-update"
+    }
+  ]
+}

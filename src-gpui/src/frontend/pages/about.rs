@@ -257,6 +257,7 @@ impl Desktop {
                 }))
                 .into_any_element(),
             ],
+            false,
         ));
         cards.push(self.setting_text(
             "onboarding",
@@ -275,6 +276,7 @@ impl Desktop {
                 }))
                 .into_any_element(),
             ],
+            false,
         ));
         for (id, key) in [
             ("license", "settings.about.license.view"),
@@ -292,6 +294,7 @@ impl Desktop {
                         }))
                         .into_any_element(),
                 ],
+                false,
             ));
         }
         cards.push(self.setting_text(
@@ -306,6 +309,7 @@ impl Desktop {
                     }))
                     .into_any_element(),
             ],
+            false,
         ));
         div()
             .flex()

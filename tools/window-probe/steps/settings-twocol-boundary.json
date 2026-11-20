@@ -1,0 +1,27 @@
+{
+  "window": [1800, 1000],
+  "steps": [
+    {
+      "note": "Bracket the real two-column threshold. plan.md section 6 predicted ON from logical 1326 (probe 1658 physical) assuming rail_width = MIN_RAIL 180, but rail_width is the measured widest section label (settings.rs:924-935), so the real boundary sits higher. A size counts as ON when a half-width card appears beside an empty cell (grid auto-placement hole)."
+    },
+    {
+      "control": { "page": "settings", "settingsSection": "language", "theme": "dark" },
+      "wait": 700
+    },
+    { "probe": "size 1650 1000", "wait": 700, "inspect": "layout", "label": "b-1650", "capture": "b-1650" },
+    { "probe": "size 1680 1000", "wait": 700, "inspect": "layout", "label": "b-1680", "capture": "b-1680" },
+    { "probe": "size 1690 1000", "wait": 700, "inspect": "layout", "label": "b-1690", "capture": "b-1690" },
+    { "probe": "size 1700 1000", "wait": 700, "inspect": "layout", "label": "b-1700", "capture": "b-1700" },
+    { "probe": "size 1712 1000", "wait": 700, "inspect": "layout", "label": "b-1712", "capture": "b-1712" },
+    { "probe": "size 1720 1000", "wait": 700, "inspect": "layout", "label": "b-1720", "capture": "b-1720" },
+    { "probe": "size 1760 1000", "wait": 700, "inspect": "layout", "label": "b-1760", "capture": "b-1760" },
+    { "probe": "size 1800 1000", "wait": 700, "inspect": "layout", "label": "b-1800", "capture": "b-1800" },
+    {
+      "note": "Threshold swing across the MEASURED boundary (1700 ON / 1690 OFF, ko-KR): each crossing must re-render via the on_prepaint defer condition (settings.rs:1114-1115 covers two_col as well as narrow). The plan's original 1658 <-> 1650 swing sits entirely below the real threshold and crosses nothing."
+    },
+    { "probe": "size 1700 1000", "wait": 500, "inspect": "layout", "label": "swing-on-a", "capture": "swing-1700-a" },
+    { "probe": "size 1690 1000", "wait": 500, "inspect": "layout", "label": "swing-off-a", "capture": "swing-1690-a" },
+    { "probe": "size 1700 1000", "wait": 500, "inspect": "layout", "label": "swing-on-b", "capture": "swing-1700-b" },
+    { "probe": "size 1690 1000", "wait": 500, "inspect": "layout", "label": "swing-off-b", "capture": "swing-1690-b" }
+  ]
+}

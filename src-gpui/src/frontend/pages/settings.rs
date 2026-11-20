@@ -39,6 +39,10 @@ const UPDATE_DOT: f32 = 6.;
 const GAP: f32 = 32.;
 const CONTENT: f32 = 780.;
 const NARROW: f32 = 900.;
+/// Cards step to two columns when the area beside the section list is at
+/// least this wide (a maximized window has it; the default window falls
+/// back to one column).
+const TWO_COL_CONTENT: f32 = 1080.;
 const RULE_PRIORITIES: [&str; 6] = [
     "realtime",
     "high",
@@ -213,7 +217,14 @@ impl Desktop {
         })
     }
 
-    /// One setting (`.setting`): icon, title and description, controls on the right.
+    /// One setting (`.setting`): icon, title and description, controls on the
+    /// right. `two_col` sits the card in one cell of the settings page's
+    /// two-column grid; `false` spans it across both cells (outside a grid,
+    /// either placement is ignored). Half cells are only dealt to cards in
+    /// adjacent pairs — a lone half card would leave its neighbour cell
+    /// empty and its row to itself — and only where the description keeps
+    /// to two lines in a cell in the longest locale (de-DE).
+    #[allow(clippy::too_many_arguments)]
     pub(in crate::frontend) fn setting(
         &self,
         id: &str,
@@ -222,12 +233,15 @@ impl Desktop {
         desc: Option<AnyElement>,
         error: Option<String>,
         controls: Vec<AnyElement>,
+        two_col: bool,
     ) -> AnyElement {
         let p = self.palette;
         let tint = self.located_tint(id);
         let (border, fill) = self.located_colors(tint);
         div()
             .id(SharedString::from(format!("setting-{id}")))
+            .when(two_col, |d| d.col_span(1))
+            .when(!two_col, |d| d.col_span_full())
             .flex()
             .items_center()
             .gap(px(16.))
@@ -294,6 +308,7 @@ impl Desktop {
         title: &str,
         desc: &str,
         controls: Vec<AnyElement>,
+        two_col: bool,
     ) -> AnyElement {
         self.setting(
             id,
@@ -302,6 +317,7 @@ impl Desktop {
             Some(label(desc).into_any_element()),
             None,
             controls,
+            two_col,
         )
     }
 
@@ -326,6 +342,7 @@ impl Desktop {
         let (border, fill) = self.located_colors(tint);
         div()
             .id(SharedString::from(format!("setting-{id}")))
+            .col_span_full()
             .flex()
             .flex_col()
             .border_1()
@@ -538,6 +555,7 @@ impl Desktop {
             "settings.startup.startPage.title",
             "settings.startup.startPage.desc",
             vec![select],
+            false,
         )
     }
 
@@ -583,6 +601,7 @@ impl Desktop {
             "settings.startup.trayPage.title",
             "settings.startup.trayPage.desc",
             vec![select],
+            false,
         )
     }
 
@@ -926,6 +945,8 @@ impl Desktop {
         let narrow = width <= threshold;
         let layout = rail_width + GAP + CONTENT;
         let lead = if narrow { 0. } else { rail_width + GAP };
+        // Two columns only where the cards keep their width beside the list.
+        let two_col = !narrow && width - lead >= TWO_COL_CONTENT;
         // One column of the page's width at most `layout`, 4 px in from its
         // sides and centred: the sections, and the list over them.
         let column = || div().w_full().max_w(px(layout));
@@ -933,10 +954,9 @@ impl Desktop {
             .into_iter()
             .enumerate()
             .map(|(index, section)| {
-                column()
-                    .flex_shrink_0()
-                    .pl(px(lead))
-                    .child(self.settings_section_view(index, section, &settings, window, cx))
+                column().flex_shrink_0().pl(px(lead)).child(
+                    self.settings_section_view(index, section, &settings, two_col, window, cx),
+                )
             })
             .collect::<Vec<_>>();
         let body = div()
@@ -1090,8 +1110,12 @@ impl Desktop {
                         if measured.replace(width) == width {
                             return;
                         }
-                        // Drawn again only when the list moves in or out.
-                        if (f32::from(width) - scrollbar::SIZE <= threshold) != narrow {
+                        // Drawn again only when the list moves in or out, or
+                        // the cards step between one and two columns.
+                        let content = f32::from(width) - scrollbar::SIZE;
+                        let now_narrow = content <= threshold;
+                        let now_two_col = !now_narrow && content - lead >= TWO_COL_CONTENT;
+                        if (now_narrow != narrow) || (now_two_col != two_col) {
                             window.defer(cx, move |_, cx| {
                                 let _ = owner.update(cx, |_, cx| cx.notify());
                             });
@@ -1108,6 +1132,7 @@ impl Desktop {
         index: usize,
         section: &str,
         settings: &Value,
+        two_col: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -1121,6 +1146,7 @@ impl Desktop {
                     "settings.language.title",
                     "settings.language.desc",
                     vec![self.language_select("settings-language", cx)],
+                    false,
                 ));
                 let themes = ["system", "light", "dark"]
                     .map(|value| (value, label(&format!("settings.theme.{value}"))));
@@ -1136,6 +1162,7 @@ impl Desktop {
                         Some("set_theme"),
                         cx,
                     )],
+                    false,
                 ));
                 let positions = [("side", "NavSideIcon"), ("top", "NavTopIcon")];
                 cards.push(self.setting_text(
@@ -1162,6 +1189,7 @@ impl Desktop {
                             .collect(),
                         cx,
                     )],
+                    false,
                 ));
                 cards.push(self.appearance_setting(
                     &appearance::SCALE,
@@ -1170,6 +1198,7 @@ impl Desktop {
                     "settings.appearance.scaleTitle",
                     "settings.appearance.scaleDesc",
                     "%",
+                    false,
                     window,
                     cx,
                 ));
@@ -1180,6 +1209,7 @@ impl Desktop {
                     "settings.appearance.fontTitle",
                     "settings.appearance.fontDesc",
                     "px",
+                    false,
                     window,
                     cx,
                 ));
@@ -1189,6 +1219,7 @@ impl Desktop {
                     "settings.vitals.title",
                     "settings.vitals.desc",
                     vec![self.vitals_mode_setting(cx)],
+                    false,
                 ));
                 cards.push(self.setting_text(
                     "processVisibility",
@@ -1196,6 +1227,7 @@ impl Desktop {
                     "settings.visibility.title",
                     "settings.visibility.desc",
                     vec![self.visibility_editor_button(cx)],
+                    false,
                 ));
                 cards.push(self.setting_text(
                     "groupByUser",
@@ -1203,6 +1235,7 @@ impl Desktop {
                     "settings.userGroups.title",
                     "settings.userGroups.desc",
                     vec![self.user_grouping_setting(cx)],
+                    false,
                 ));
                 let hold = self.toggle(
                     "holdOrder",
@@ -1221,6 +1254,7 @@ impl Desktop {
                     "settings.holdOrder.title",
                     "settings.holdOrder.desc",
                     vec![hold],
+                    false,
                 ));
             }
             "startup" => {
@@ -1238,6 +1272,7 @@ impl Desktop {
                     "settings.startup.autostart.title",
                     "settings.startup.autostart.desc",
                     vec![autostart],
+                    false,
                 ));
                 cards.push(self.start_page_setting(cx));
                 // The tray's settings are on the Components page.
@@ -1262,6 +1297,7 @@ impl Desktop {
                     "settings.shortcuts.title",
                     "settings.shortcuts.desc",
                     vec![view],
+                    false,
                 ));
             }
             "privilege" => {
@@ -1293,6 +1329,7 @@ impl Desktop {
                     "settings.motion.window.title",
                     "settings.motion.window.desc",
                     vec![window_motion],
+                    false,
                 ));
                 let motion = self.motion_toggle("ui-motion", window, cx);
                 cards.push(self.setting_text(
@@ -1301,6 +1338,7 @@ impl Desktop {
                     "settings.motion.ui.title",
                     "settings.motion.ui.desc",
                     vec![motion],
+                    false,
                 ));
                 let chart = self.chart_select("chart-mode", window, cx);
                 cards.push(self.setting_text(
@@ -1309,6 +1347,7 @@ impl Desktop {
                     "settings.motion.chart.title",
                     "settings.motion.chart.desc",
                     vec![chart],
+                    false,
                 ));
                 let acceleration = self.toggle(
                     "hardwareAcceleration",
@@ -1334,6 +1373,7 @@ impl Desktop {
                     "settings.motion.acceleration.title",
                     "settings.motion.acceleration.desc",
                     vec![acceleration],
+                    false,
                 ));
             }
             "data" => self.data_cards(settings, &mut cards, window, cx),
@@ -1348,8 +1388,12 @@ impl Desktop {
             .flex_col()
             .flex_shrink_0()
             .gap(px(4.))
+            // Two columns only while the window is wide enough; `grid` here
+            // overrides `flex`, one cell at a time otherwise.
+            .when(two_col, |d| d.grid().grid_cols(2))
             .child(
                 div()
+                    .col_span_full()
                     .mt(px(if index == 0 { 6. } else { 28. }))
                     .mb(px(6.))
                     .text_size(theme::font(14.))
@@ -1601,6 +1645,7 @@ impl Desktop {
             ),
             self.ui.errors.get("sensors").cloned(),
             vec![driver, switch],
+            false,
         )
     }
 
@@ -1937,6 +1982,7 @@ impl Desktop {
             "shell.interval.label",
             "settings.data.intervalDesc",
             vec![interval],
+            false,
         ));
         // The tray's interval is on the Components page.
         let select = self.background_select("settings", "minimized", cx);
@@ -1946,6 +1992,7 @@ impl Desktop {
             "settings.data.minimized.title",
             "settings.data.minimized.desc",
             vec![select],
+            false,
         ));
         let minutes = self.release_hidden_minutes();
         let release = self.select(
@@ -1976,6 +2023,7 @@ impl Desktop {
             "settings.data.releaseHidden.title",
             "settings.data.releaseHidden.desc",
             vec![release],
+            false,
         ));
         let unit = self.prefs.get::<String>("netUnit", "bytes".into());
         let units = self.segments(
@@ -2002,6 +2050,7 @@ impl Desktop {
             "settings.data.netUnit.title",
             "settings.data.netUnit.desc",
             vec![units],
+            false,
         ));
         let history = boolean(settings, "history");
         let toggle = self.setting_toggle(
@@ -2022,6 +2071,7 @@ impl Desktop {
                 "settings.data.history.off"
             },
             vec![toggle],
+            true,
         ));
         let usage = self.data.get("historyUsage").cloned();
         let bytes = usage.as_ref().map(|u| number(u, "bytes")).unwrap_or(0.);
@@ -2058,6 +2108,7 @@ impl Desktop {
             Some(usage_text.into_any_element()),
             None,
             vec![clear],
+            true,
         ));
     }
 
@@ -2105,6 +2156,7 @@ impl Desktop {
         title: &str,
         desc: &str,
         unit: &'static str,
+        two_col: bool,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -2188,7 +2240,7 @@ impl Desktop {
                 this.commit_appearance(setting, default, window, cx);
             }))
             .into_any_element();
-        self.setting_text(id, glyph, title, desc, vec![number, reset])
+        self.setting_text(id, glyph, title, desc, vec![number, reset], two_col)
     }
 
     fn appearance_value(&self, setting: &appearance::Setting) -> u32 {
@@ -2616,6 +2668,7 @@ impl Desktop {
             Some(label("settings.rules.desc").into_any_element()),
             self.ui.errors.get("ruleDraft").cloned(),
             vec![add],
+            false,
         ));
         let stats = self.data.get("ruleStats").cloned().unwrap_or(Value::Null);
         for rule in values(&settings["rules"]).to_vec() {
@@ -2773,9 +2826,11 @@ impl Desktop {
                 Some(summary.into_any_element()),
                 None,
                 vec![priority, efficiency, toggle, delete],
+                false,
             );
             cards.push(if focused {
                 div()
+                    .col_span_full()
                     .rounded(px(6.))
                     .border_1()
                     .border_color(p.accent)
@@ -2977,6 +3032,7 @@ impl Desktop {
                 }
                 .or_else(|| self.ui.errors.get("install").cloned()),
                 controls,
+                false,
             ),
         );
         let auto = self.toggle(
@@ -2994,6 +3050,26 @@ impl Desktop {
             "settings.update.auto.title",
             "settings.update.auto.desc",
             vec![auto],
+            true,
+        ));
+        // The star reminder pairs with the auto check: half cards come in
+        // adjacent pairs, a lone one would leave its neighbour cell empty.
+        let star = self.toggle(
+            "star-reminder",
+            label("settings.update.star.title"),
+            self.prefs.get(star::REMIND, true),
+            false,
+            |this, on, window, cx| this.preference(star::REMIND, json!(on), window, cx),
+            window,
+            cx,
+        );
+        cards.push(self.setting_text(
+            "starReminder",
+            "StarIcon",
+            "settings.update.star.title",
+            "settings.update.star.desc",
+            vec![star],
+            true,
         ));
         let view = self
             .btn(
@@ -3020,6 +3096,7 @@ impl Desktop {
             "settings.update.whatsNew.title",
             "settings.update.whatsNew.desc",
             vec![view, whats_new],
+            false,
         ));
         let channels = ["stable", "beta"];
         let channel = text(settings, "updateChannel").to_owned();
@@ -3043,6 +3120,7 @@ impl Desktop {
             "settings.update.channel.label",
             "settings.update.channel.desc",
             vec![channel_select],
+            false,
         ));
         let routes = ["auto", "direct", "proxy"];
         let route = text(settings, "updateRoute").to_owned();
@@ -3066,6 +3144,7 @@ impl Desktop {
             "settings.update.route.label",
             "settings.update.route.desc",
             vec![route_select],
+            false,
         ));
         if route != "direct" {
             let proxy = text(settings, "updateProxy").to_owned();
@@ -3121,6 +3200,7 @@ impl Desktop {
                     "settings.update.proxy.only"
                 },
                 vec![proxy_select],
+                false,
             ));
             if custom {
                 let initial = self.ui.proxy_draft.clone().unwrap_or_else(|| proxy.clone());
@@ -3164,25 +3244,10 @@ impl Desktop {
                     "settings.update.custom.title",
                     "settings.update.custom.desc",
                     vec![form],
+                    false,
                 ));
             }
         }
-        let star = self.toggle(
-            "star-reminder",
-            label("settings.update.star.title"),
-            self.prefs.get(star::REMIND, true),
-            false,
-            |this, on, window, cx| this.preference(star::REMIND, json!(on), window, cx),
-            window,
-            cx,
-        );
-        cards.push(self.setting_text(
-            "starReminder",
-            "StarIcon",
-            "settings.update.star.title",
-            "settings.update.star.desc",
-            vec![star],
-        ));
         let _ = p;
     }
 
@@ -3511,6 +3576,7 @@ impl Desktop {
         let (border, fill) = self.located_colors(tint);
         let card = div()
             .id("setting-hotkey")
+            .col_span_full()
             .flex()
             .flex_col()
             .border_1()
@@ -3546,6 +3612,7 @@ impl Desktop {
         // The card clips its drawer, so its ring sits on a wrapper.
         match self.located_ring(tint) {
             Some(ring) => div()
+                .col_span_full()
                 .relative()
                 .flex()
                 .flex_col()

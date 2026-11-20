@@ -171,6 +171,7 @@ impl Desktop {
                     ),
                     None,
                     vec![self.state_pill(label("components.planned.state"), "off")],
+                    false,
                 )
             })
             .collect::<Vec<_>>();
@@ -295,6 +296,7 @@ impl Desktop {
                 "components.tray.icon.title",
                 "components.tray.icon.desc",
                 vec![icon],
+                false,
             ),
             self.setting_text(
                 "trayCard",
@@ -302,6 +304,7 @@ impl Desktop {
                 "components.tray.card.title",
                 "components.tray.card.desc",
                 vec![card],
+                false,
             ),
             self.setting_text(
                 "trayMenu",
@@ -309,6 +312,7 @@ impl Desktop {
                 "components.tray.menu.title",
                 "components.tray.menu.desc",
                 vec![menu],
+                false,
             ),
             self.setting_text(
                 "closeToTray",
@@ -316,6 +320,7 @@ impl Desktop {
                 "settings.startup.closeToTray.title",
                 "settings.startup.closeToTray.desc",
                 vec![close],
+                false,
             ),
             self.tray_page_setting(cx),
             self.setting_text(
@@ -324,6 +329,7 @@ impl Desktop {
                 "settings.data.tray.title",
                 "settings.data.tray.desc",
                 vec![interval],
+                false,
             ),
         ]
     }
@@ -726,6 +732,7 @@ impl Desktop {
             Some(desc),
             None,
             Vec::new(),
+            false,
         )
     }
 
@@ -776,6 +783,7 @@ impl Desktop {
                 "components.desktop.title",
                 "components.desktop.desc",
                 vec![enabled],
+                false,
             ),
             self.metric_card(
                 "desktopMetrics",
@@ -790,6 +798,7 @@ impl Desktop {
                 "components.desktop.topmost.title",
                 "components.desktop.topmost.desc",
                 vec![topmost],
+                false,
             ),
             self.setting_text(
                 "desktopLocked",
@@ -797,6 +806,7 @@ impl Desktop {
                 "components.desktop.locked.title",
                 "components.desktop.locked.desc",
                 vec![locked],
+                false,
             ),
             self.setting_text(
                 "desktopClickThrough",
@@ -804,6 +814,7 @@ impl Desktop {
                 "components.desktop.clickThrough.title",
                 "components.desktop.clickThrough.desc",
                 vec![through],
+                false,
             ),
             self.setting_text(
                 "desktopOpacity",
@@ -811,6 +822,7 @@ impl Desktop {
                 "components.desktop.opacity.title",
                 "components.desktop.opacity.desc",
                 vec![opacity],
+                false,
             ),
         ]
     }
@@ -872,6 +884,7 @@ impl Desktop {
                 "components.taskbar.title",
                 "components.taskbar.desc",
                 vec![enabled],
+                false,
             ),
             self.metric_card(
                 "taskbarMetrics",
@@ -886,6 +899,7 @@ impl Desktop {
                 "components.taskbar.style.title",
                 "components.taskbar.style.desc",
                 vec![style],
+                false,
             ),
             self.setting_text(
                 "taskbarPlace",
@@ -893,6 +907,7 @@ impl Desktop {
                 "components.taskbar.place.title",
                 "components.taskbar.place.desc",
                 vec![place],
+                false,
             ),
         ]
     }
@@ -916,6 +931,7 @@ impl Desktop {
             "components.tray.moved.title",
             "components.tray.moved.desc",
             vec![open],
+            false,
         )
     }
 }

@@ -30,6 +30,7 @@ import {
   Settings,
   Shield,
   ShieldCheck,
+  Sparkles,
   Terminal,
   TriangleAlert,
 } from "lucide-react";
@@ -86,6 +87,7 @@ const icons = {
   Settings,
   Shield,
   ShieldCheck,
+  Sparkles,
   Terminal,
   TriangleAlert,
 };

@@ -30,7 +30,7 @@ Try the full interactive interface and guided tour right in your browser on the 
 
 <br>
 
-GoodGood queries Windows native APIs directly in Rust, with an interface built on GPUI Kit native components and charts that flow smoothly at the display's refresh rate. The project is named after GoodGood Panoptes, the hundred-eyed giant of Greek mythology.
+GoodGood queries Windows native APIs directly in Rust, with an interface built on GPUI Kit native components and charts that flow smoothly at the display's refresh rate. The project is named after Argos Panoptes, the hundred-eyed giant of Greek mythology.
 
 ## ⭐ Star history
 
@@ -117,7 +117,7 @@ For code checks, packaging the installer, and cleaning caches, see the [developm
 
 | Action | Keys |
 |---|---|
-| Switch pages | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| Switch pages | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>9</kbd> |
 | Search processes | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
 | Temporarily pause updates | Hold <kbd>Ctrl</kbd>; release to resume (Processes and Performance) |
 | Open details | <kbd>Enter</kbd> |
@@ -133,6 +133,7 @@ The documentation is in Korean; [online documentation](https://goodgoodtask.com/
 | Document | Overview |
 |---|---|
 | [User guide](docs/guide/README.md) | Interface and operations, background tray and shortcuts, settings, hardware data sources and limitations |
+| [Feature guide](docs/guide/features.md) | Processes and task control, performance and hardware, history, services and startup apps, connections and ports, files in use, tray and monitors, layout, permissions |
 | [Development guide](docs/development/README.md) | Environment and commands, builds and caches, performance baselines and measurement |
 | [Architecture](docs/architecture/README.md) | System layers and data flow, tech stack, module responsibilities |
 | [Design](docs/design/README.md) | Design principles, chart animation, window appearance and materials |

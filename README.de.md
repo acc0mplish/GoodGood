@@ -32,7 +32,7 @@ Die interaktive Oberfläche und die Funktionsübersicht können auf der [offizie
 
 <br>
 
-GoodGood fragt die nativen Windows-APIs direkt über Rust ab. Die Oberfläche verwendet native Komponenten von GPUI Kit; die Diagramme bewegen sich flüssig mit der Bildwiederholrate des Displays. Namensgeber ist GoodGood Panoptes, der hundertäugige Riese aus der griechischen Mythologie.
+GoodGood fragt die nativen Windows-APIs direkt über Rust ab. Die Oberfläche verwendet native Komponenten von GPUI Kit; die Diagramme bewegen sich flüssig mit der Bildwiederholrate des Displays. Namensgeber ist Argos Panoptes, der hundertäugige Riese aus der griechischen Mythologie.
 
 <a id="star-history"></a>
 
@@ -73,7 +73,7 @@ Wenn GoodGood im Alltag hilfreich ist, unterstützt ein Stern auf GitHub das Pro
 </tr>
 <tr>
 <td width="50%" valign="top"><b>Task-Manager ersetzen</b><br>Kann den <a href="docs/architecture/task-manager.md">Windows-Task-Manager ersetzen</a> und auf <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Esc</kbd> öffnen; führt neue Aufgaben aus und startet den Windows-Explorer neu</td>
-<td width="50%" valign="top"><b>Oberfläche und Sprachen</b><br>Mica-Hintergrund, Akzentfarbe sowie helles oder dunkles Design folgen Windows; 8 Oberflächensprachen</td>
+<td width="50%" valign="top"><b>Oberfläche und Sprachen</b><br>Mica-Hintergrund, Akzentfarbe sowie helles oder dunkles Design folgen Windows; 7 Oberflächensprachen</td>
 </tr>
 <tr>
 <td width="50%" valign="top"><b>Updates in der Anwendung</b><br>Stabile und Beta-Versionen, Download im Hintergrund, Änderungen in der Anwendung einsehbar</td>
@@ -131,7 +131,7 @@ Codeprüfungen, das Erstellen des Installationsprogramms und die Cache-Bereinigu
 
 | Aktion | Tasten |
 |---|---|
-| Seite wechseln | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| Seite wechseln | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>9</kbd> |
 | Prozesse suchen | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
 | Aktualisierung vorübergehend anhalten | <kbd>Ctrl</kbd> gedrückt halten; zum Fortsetzen loslassen, auf den Seiten Prozesse und Leistung |
 | Details öffnen | <kbd>Enter</kbd> |
@@ -149,6 +149,7 @@ Die ausführliche Dokumentation ist auf Koreanisch verfasst. Die [Online-Dokumen
 | Dokument | Inhalt |
 |---|---|
 | [Benutzeranleitung](docs/guide/README.md) | Oberfläche und Bedienung, Infobereich und Tastenkombinationen, Einstellungen, Hardwaredaten und deren Grenzen |
+| [Funktionsübersicht](docs/guide/features.md) | Prozesse und Aufgabensteuerung, Leistung und Hardware, Verlauf, Dienste und Autostart-Apps, Verbindungen und Ports, verwendete Dateien, Infobereich und Monitore, Anordnung, Berechtigungen |
 | [Entwicklungsanleitung](docs/development/README.md) | Umgebung und Befehle, Builds und Caches, Leistungsreferenzen und Messverfahren |
 | [Architektur](docs/architecture/README.md) | Systemschichten, Datenfluss, Technologien und Modulaufgaben |
 | [Design](docs/design/README.md) | Gestaltungsprinzipien, Diagrammanimationen, Fenster und Materialien |

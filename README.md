@@ -12,7 +12,7 @@
 
 설치 없이 [공식 웹사이트](https://goodgoodtask.com/)에서 전체 인터랙티브 인터페이스와 안내 투어를 브라우저에서 바로 사용해 볼 수 있습니다
 
-[![Latest release](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases&sort=date&label=release&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
+[![Latest release](https://img.shields.io/github/v/release/acc0mplish/GoodGood?include_prereleases=&sort=semver&label=release&color=2f80ed)](https://github.com/acc0mplish/GoodGood/releases)
 [![Downloads](https://img.shields.io/github/downloads/acc0mplish/GoodGood/total?label=downloads&color=2ea44f)](https://github.com/acc0mplish/GoodGood/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011%20x64-0078D4)](#-시스템-요구-사항)
 [![License](https://img.shields.io/badge/license-Apache--2.0-A42E2B?logo=apache&logoColor=white)](LICENSE)
@@ -30,7 +30,7 @@
 
 <br>
 
-GoodGood은 Rust로 Windows 네이티브 API를 직접 조회하며, GPUI Kit 네이티브 구성 요소로 만든 인터페이스와 화면 주사율에 맞춰 매끄럽게 흐르는 곡선을 갖추었습니다. 프로젝트 이름은 그리스 신화에서 백 개의 눈을 가진 거인인 GoodGood Panoptes에서 따왔습니다.
+GoodGood은 Rust로 Windows 네이티브 API를 직접 조회하며, GPUI Kit 네이티브 구성 요소로 만든 인터페이스와 화면 주사율에 맞춰 매끄럽게 흐르는 곡선을 갖추었습니다. 프로젝트 이름은 그리스 신화에서 백 개의 눈을 가진 거인인 아르고스 판옵테스에서 따왔습니다.
 
 ## ⭐ 별표 기록
 
@@ -117,7 +117,7 @@ GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 �
 
 | 동작 | 키 |
 |---|---|
-| 페이지 전환 | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| 페이지 전환 | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>9</kbd> |
 | 프로세스 검색 | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
 | 새로 고침 일시 중지 | <kbd>Ctrl</kbd>을 누르고 있는 동안 멈추며, 놓으면 다시 시작합니다(프로세스와 성능) |
 | 세부 정보 열기 | <kbd>Enter</kbd> |
@@ -133,6 +133,7 @@ GoodGood이 일상 작업에 도움이 된다면 GitHub에서 별표를 남겨 �
 | 문서 | 내용 |
 |---|---|
 | [사용 가이드](docs/guide/README.md) | 인터페이스와 조작, 알림 영역과 바로 가기, 설정, 하드웨어 데이터의 출처와 한계 |
+| [기능 안내](docs/guide/features.md) | 프로세스와 작업 제어, 성능과 하드웨어, 기록, 서비스와 시작 프로그램, 연결과 포트, 파일 사용 항목, 알림 영역과 모니터, 화면 배치, 권한 |
 | [개발 가이드](docs/development/README.md) | 환경과 명령, 빌드와 캐시, 성능 기준선과 측정 |
 | [아키텍처](docs/architecture/README.md) | 계층과 데이터 흐름, 기술 스택, 모듈의 역할 |
 | [디자인](docs/design/README.md) | 디자인 원칙, 곡선 애니메이션, 창 모양과 재질 |

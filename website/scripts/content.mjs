@@ -54,6 +54,7 @@ export const contentFile = (file, id) => "docs/" + folders[id] + "/" + pageName(
 const pageIcons = {
   "docs/README.md": "BookOpen",
   "docs/guide/README.md": "MousePointerClick",
+  "docs/guide/features.md": "Sparkles",
   "docs/guide/resident-mode.md": "Keyboard",
   "docs/guide/settings.md": "Settings",
   "docs/guide/hardware-data.md": "Cpu",

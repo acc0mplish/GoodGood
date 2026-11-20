@@ -131,7 +131,7 @@ La [guía de desarrollo](docs/development/README.md) explica las comprobaciones 
 
 | Acción | Teclas |
 |---|---|
-| Cambiar de página | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| Cambiar de página | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>9</kbd> |
 | Buscar procesos | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
 | Pausar temporalmente las actualizaciones | Mantener <kbd>Ctrl</kbd>; soltar para reanudar, en Procesos y Rendimiento |
 | Abrir detalles | <kbd>Enter</kbd> |
@@ -149,6 +149,7 @@ Las guías detalladas están en coreano. La [documentación en línea](https://g
 | Documento | Contenido |
 |---|---|
 | [Guía de uso](docs/guide/README.md) | Interfaz y operaciones, bandeja y atajos, configuración, fuentes y límites de los datos de hardware |
+| [Guía de funciones](docs/guide/features.md) | Procesos y control de tareas, rendimiento y hardware, historial, servicios y aplicaciones de inicio, conexiones y puertos, archivos en uso, bandeja y monitores, distribución, permisos |
 | [Guía de desarrollo](docs/development/README.md) | Entorno y comandos, compilación y cachés, referencias y medición del rendimiento |
 | [Arquitectura](docs/architecture/README.md) | Capas del sistema, flujo de datos, tecnologías y responsabilidades de los módulos |
 | [Diseño](docs/design/README.md) | Principios de diseño, animación de gráficos, aspecto y materiales de las ventanas |

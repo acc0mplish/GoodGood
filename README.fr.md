@@ -81,7 +81,7 @@ Si GoodGood facilite le travail au quotidien, une étoile sur GitHub est une fa�
 </tr>
 </table>
 
-<sub>En raison des contraintes de place et de format d’image d’un README, les démonstrations ci-dessus sont des reproductions simplifiées de l’interface d’GoodGood, avec des processus et des données d’exemple. Elles sont fournies à titre indicatif ; l’application elle-même fait foi.</sub>
+<sub>En raison des contraintes de place et de format d’image d’un README, les démonstrations ci-dessus sont des reproductions simplifiées de l’interface de GoodGood, avec des processus et des données d’exemple. Elles sont fournies à titre indicatif ; l’application elle-même fait foi.</sub>
 
 <a id="download"></a>
 
@@ -131,7 +131,7 @@ Le [guide de développement](docs/development/README.md) détaille les vérifica
 
 | Action | Touches |
 |---|---|
-| Changer de page | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>8</kbd> |
+| Changer de page | <kbd>Ctrl</kbd>+<kbd>1</kbd> … <kbd>Ctrl</kbd>+<kbd>9</kbd> |
 | Rechercher des processus | <kbd>Ctrl</kbd>+<kbd>F</kbd> |
 | Suspendre temporairement l’actualisation | Maintenir <kbd>Ctrl</kbd>, puis relâcher pour reprendre, sur les pages Processus et Performances |
 | Ouvrir les détails | <kbd>Enter</kbd> |
@@ -149,6 +149,7 @@ La documentation détaillée est en coréen. La [documentation en ligne](https:/
 | Document | Contenu |
 |---|---|
 | [Guide d’utilisation](docs/guide/README.md) | Interface et opérations, zone de notification et raccourcis, paramètres, sources et limites des données matérielles |
+| [Guide des fonctions](docs/guide/features.md) | Processus et contrôle des tâches, performances et matériel, historique, services et applications au démarrage, connexions et ports, fichiers utilisés, zone de notification et moniteurs, disposition, autorisations |
 | [Guide de développement](docs/development/README.md) | Environnement et commandes, compilation et caches, références et mesures de performances |
 | [Architecture](docs/architecture/README.md) | Couches du système, flux de données, technologies et responsabilités des modules |
 | [Conception](docs/design/README.md) | Principes de conception, animations des graphiques, apparence et matériaux des fenêtres |

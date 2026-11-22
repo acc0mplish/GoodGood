@@ -23,6 +23,14 @@
 
 <br>
 
+<!-- gitreels:start -->
+<p align="center">
+  <a href="https://gitreels.com/acc0mplish/GoodGood"><img src="https://gitreels.com/acc0mplish/GoodGood.webp" alt="acc0mplish/GoodGood in 15 seconds" width="100%"></a>
+  <br>
+  <a href="https://gitreels.com"><img src="https://gitreels.com/badge.svg" alt="Made with GitReels" height="24"></a>
+</p>
+<!-- gitreels:end -->
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/screenshot-ko-dark.png">
   <img src="docs/images/screenshot-ko-light.png" alt="앱을 이름순으로 정렬한 GoodGood의 프로세스 페이지. 목록 위의 곡선은 최근 1분 동안의 CPU, 메모리, 디스크, 네트워크와 GPU 활동을 보여 줍니다.">

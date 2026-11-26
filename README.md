@@ -28,6 +28,7 @@
   <a href="https://gitreels.com/acc0mplish/GoodGood"><img src="https://gitreels.com/acc0mplish/GoodGood.webp" alt="acc0mplish/GoodGood in 15 seconds" width="100%"></a>
   <br>
   <a href="https://gitreels.com"><img src="https://gitreels.com/badge.svg" alt="Made with GitReels" height="24"></a>
+  <a href="https://gitreels.com/acc0mplish/GoodGood"><img src="https://gitreels.com/api/badges/rotw/acc0mplish/GoodGood.svg" alt="Reel of the Week #3 on GitReels" height="24"></a>
 </p>
 <!-- gitreels:end -->
 
